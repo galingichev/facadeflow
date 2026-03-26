@@ -1,0 +1,162 @@
+import React from 'react';
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  ViewStyle,
+  TextStyle,
+  TouchableOpacityProps,
+} from 'react-native';
+import { config } from '../../src/config';
+
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+export type ButtonSize = 'small' | 'medium' | 'large';
+
+interface ButtonProps extends TouchableOpacityProps {
+  title: string;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  loading?: boolean;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
+  fullWidth?: boolean;
+  style?: ViewStyle;
+  textStyle?: TextStyle;
+}
+
+export const Button: React.FC<ButtonProps> = ({
+  title,
+  variant = 'primary',
+  size = 'medium',
+  loading = false,
+  leftIcon,
+  rightIcon,
+  fullWidth = false,
+  style,
+  textStyle,
+  disabled,
+  accessibilityLabel,
+  ...rest
+}) => {
+  const getBackgroundColor = () => {
+    if (disabled) return config.theme.border;
+    switch (variant) {
+      case 'primary':
+        return config.theme.primary;
+      case 'secondary':
+        return config.theme.secondary;
+      case 'outline':
+      case 'ghost':
+        return 'transparent';
+      case 'danger':
+        return config.theme.error;
+      default:
+        return config.theme.primary;
+    }
+  };
+
+  const getTextColor = () => {
+    if (disabled) return config.theme.textSecondary;
+    switch (variant) {
+      case 'primary':
+      case 'secondary':
+      case 'danger':
+        return '#ffffff';
+      case 'outline':
+      case 'ghost':
+        return config.theme.primary;
+      default:
+        return '#ffffff';
+    }
+  };
+
+  const getBorderColor = () => {
+    if (disabled) return config.theme.border;
+    if (variant === 'outline') return config.theme.primary;
+    return 'transparent';
+  };
+
+  const getSizeStyles = (): { button: ViewStyle; text: TextStyle } => {
+    switch (size) {
+      case 'small':
+        return {
+          button: { paddingVertical: 8, paddingHorizontal: 12, height: 36 },
+          text: { fontSize: 14 },
+        };
+      case 'medium':
+        return {
+          button: { paddingVertical: 12, paddingHorizontal: 16, height: 44 },
+          text: { fontSize: 16 },
+        };
+      case 'large':
+        return {
+          button: { paddingVertical: 16, paddingHorizontal: 24, height: 52 },
+          text: { fontSize: 18 },
+        };
+    }
+  };
+
+  const sizeStyles = getSizeStyles();
+  const a11yLabel = accessibilityLabel || title;
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.button,
+        {
+          backgroundColor: getBackgroundColor(),
+          borderColor: getBorderColor(),
+          borderWidth: variant === 'outline' ? 1 : 0,
+        },
+        sizeStyles.button,
+        fullWidth && styles.fullWidth,
+        style,
+      ]}
+      disabled={disabled || loading}
+      activeOpacity={0.8}
+      accessibilityLabel={a11yLabel}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || loading }}
+      {...rest}
+    >
+      {loading ? (
+        <ActivityIndicator color={getTextColor()} size="small" />
+      ) : (
+        <>
+          {leftIcon && <>{leftIcon}</>}
+          <Text
+            style={[
+              styles.text,
+              { color: getTextColor() },
+              sizeStyles.text,
+              textStyle,
+              leftIcon && { marginLeft: 8 },
+              rightIcon && { marginRight: 8 },
+            ]}
+          >
+            {title}
+          </Text>
+          {rightIcon && <>{rightIcon}</>}
+        </>
+      )}
+    </TouchableOpacity>
+  );
+};
+
+const styles = StyleSheet.create({
+  button: {
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  text: {
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  fullWidth: {
+    width: '100%',
+  },
+});
