@@ -276,6 +276,25 @@ CREATE INDEX idx_voice_notes_task_id ON voice_notes(task_id);
 CREATE INDEX idx_voice_notes_created_at ON voice_notes(created_at DESC);
 
 -- ============================================
+-- SUPPLIERS
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS suppliers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  contact_name TEXT,
+  email TEXT,
+  phone TEXT,
+  website TEXT,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_suppliers_name ON suppliers USING gin(to_tsvector('english', name));
+CREATE INDEX idx_suppliers_email ON suppliers(email);
+
+-- ============================================
 -- INVENTORY ITEMS
 -- ============================================
 
@@ -298,25 +317,6 @@ CREATE TABLE IF NOT EXISTS inventory_items (
 CREATE INDEX idx_inventory_items_sku ON inventory_items(sku);
 CREATE INDEX idx_inventory_items_category ON inventory_items(category);
 CREATE INDEX idx_inventory_items_supplier_id ON inventory_items(supplier_id);
-
--- ============================================
--- SUPPLIERS
--- ============================================
-
-CREATE TABLE IF NOT EXISTS suppliers (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  contact_name TEXT,
-  email TEXT,
-  phone TEXT,
-  website TEXT,
-  notes TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX idx_suppliers_name ON suppliers USING gin(to_tsvector('english', name));
-CREATE INDEX idx_suppliers_email ON suppliers(email);
 
 -- ============================================
 -- FUNCTIONS & TRIGGERS

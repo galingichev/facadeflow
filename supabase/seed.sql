@@ -10,13 +10,11 @@
 -- The IDs here are placeholders - replace with actual auth.user IDs
 -- ============================================
 
--- INSERT INTO users (id, name, email, role) VALUES
---   ('00000000-0000-0000-0000-000000000001', 'Galin Gichev', 'galin@example.com', 'admin'),
---   ('00000000-0000-0000-0000-000000000002', 'John Smith', 'john@example.com', 'estimator'),
---   ('00000000-0000-0000-0000-000000000003', 'Mike Johnson', 'mike@example.com', 'field_technician')
--- ON CONFLICT (id) DO UPDATE SET
---   name = EXCLUDED.name,
---   role = EXCLUDED.role;
+INSERT INTO users (id, name, email, role) VALUES
+  ('f1b66f89-4a07-43a7-aa39-1034f41845ff', 'Galin Test', 'test@example.com', 'admin')
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  role = EXCLUDED.role;
 
 -- ============================================
 -- SAMPLE CLIENTS
@@ -68,12 +66,12 @@ INSERT INTO projects (id, client_id, name, description, address, status, start_d
     '2025-03-25',
     45000.00,
     120.00,
-    '00000000-0000-0000-0000-000000000001' -- admin user
+    'f1b66f89-4a07-43a7-aa39-1034f41845ff' -- admin user
   ),
   (
     '55555555-5555-5555-5555-555555555555',
     '22222222-2222-2222-2222-222222222222',
-    "Sarah''s Kitchen Bay Window",
+    'Sarah''s Kitchen Bay Window',
     'Install custom bay window in kitchen. Customer wants view of garden. Requires minor framing modifications. Lead time on glass is 2 weeks.',
     '{"street": "456 Oak Avenue", "city": "Springfield", "state": "IL", "country": "USA", "zip": "62702"}',
     'quoted',
@@ -81,7 +79,7 @@ INSERT INTO projects (id, client_id, name, description, address, status, start_d
     NULL,
     3500.00,
     8.00,
-    '00000000-0000-0000-0000-000000000001'
+    'f1b66f89-4a07-43a7-aa39-1034f41845ff'
   ),
   (
     '66666666-6666-6666-6666-666666666666',
@@ -94,7 +92,7 @@ INSERT INTO projects (id, client_id, name, description, address, status, start_d
     '2025-02-14',
     12000.00,
     40.00,
-    '00000000-0000-0000-0000-000000000001'
+    'f1b66f89-4a07-43a7-aa39-1034f41845ff'
   ),
   (
     '77777777-7777-7777-7777-777777777777',
@@ -107,7 +105,7 @@ INSERT INTO projects (id, client_id, name, description, address, status, start_d
     NULL,
     18500.00,
     32.00,
-    '00000000-0000-0000-0000-000000000001'
+    'f1b66f89-4a07-43a7-aa39-1034f41845ff'
   )
 ON CONFLICT DO NOTHING;
 
@@ -123,10 +121,10 @@ INSERT INTO tasks (id, project_id, title, description, status, priority, assigne
     'Order 50 double-pane vinyl windows from supplier. Confirm lead time of 2 weeks. Request sample color chips.',
     'done',
     'high',
-    '00000000-0000-0000-0000-000000000001',
+    'f1b66f89-4a07-43a7-aa39-1034f41845ff',
     '2025-03-05',
     30,
-    '00000000-0000-0000-0000-000000000001'
+    'f1b66f89-4a07-43a7-aa39-1034f41845ff'
   ),
   (
     'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
@@ -135,10 +133,10 @@ INSERT INTO tasks (id, project_id, title, description, status, priority, assigne
     'Need key fob for weekend work. Call John at Acme to arrange delivery. Also need parking permits for crew truck.',
     'todo',
     'medium',
-    '00000000-0000-0000-0000-000000000001',
+    'f1b66f89-4a07-43a7-aa39-1034f41845ff',
     '2025-03-18',
     15,
-    '00000000-0000-0000-0000-000000000001'
+    'f1b66f89-4a07-43a7-aa39-1034f41845ff'
   ),
   (
     'cccccccc-cccc-cccc-cccc-cccccccccccc',
@@ -147,10 +145,10 @@ INSERT INTO tasks (id, project_id, title, description, status, priority, assigne
     'Field visit to confirm exact dimensions before ordering custom window. Check square of opening and note any abnormalities.',
     'in_progress',
     'high',
-    '00000000-0000-0000-0000-000000000001',
+    'f1b66f89-4a07-43a7-aa39-1034f41845ff',
     '2025-03-19',
     60,
-    '00000000-0000-0000-0000-000000000001'
+    'f1b66f89-4a07-43a7-aa39-1034f41845ff'
   ),
   (
     'dddddddd-dddd-dddd-dddd-dddddddddddd',
@@ -159,10 +157,10 @@ INSERT INTO tasks (id, project_id, title, description, status, priority, assigne
     'Remove all debris, pressure wash building facade again, get client sign-off on completed work. Final invoice.',
     'done',
     'medium',
-    '00000000-0000-0000-0000-000000000001',
+    'f1b66f89-4a07-43a7-aa39-1034f41845ff',
     '2025-02-14',
     120,
-    '00000000-0000-0000-0000-000000000001'
+    'f1b66f89-4a07-43a7-aa39-1034f41845ff'
   ),
   (
     'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
@@ -171,10 +169,10 @@ INSERT INTO tasks (id, project_id, title, description, status, priority, assigne
     'Review scope, confirm finish date, discuss material selections. Get signed contract.',
     'todo',
     'urgent',
-    '00000000-0000-0000-0000-000000000001',
+    'f1b66f89-4a07-43a7-aa39-1034f41845ff',
     '2025-03-20',
     90,
-    '00000000-0000-0000-0000-000000000001'
+    'f1b66f89-4a07-43a7-aa39-1034f41845ff'
   )
 ON CONFLICT DO NOTHING;
 
@@ -183,56 +181,50 @@ ON CONFLICT DO NOTHING;
 -- ============================================
 
 -- Sarah''s Kitchen Bay Window Estimate (Draft)
-INSERT INTO estimates (id, project_id, number, items, subtotal, tax_rate, tax_amount, adjustments, total, status, notes, terms, created_by) VALUES
+INSERT INTO estimates (id, project_id, number, subtotal, tax_rate, tax_amount, status, notes, terms, created_by) VALUES
   (
     'ffffffff-ffff-ffff-ffff-ffffffffffff',
     '55555555-5555-5555-5555-555555555555',
-    'EST-2025-042',  -- Will be auto-generated if left null
-    NULL,  -- items go in separate table
+    'EST-2025-042',
     3950.00,
     0.0875,
     345.62,
-    '{"description": "Discount for repeat customer", "amount": -200}',
-    4095.62,
     'draft',
     'Price valid for 30 days. Includes cleanup. Lead time 2 weeks.',
     '50% deposit required before work begins. Balance due upon completion.',
-    '00000000-0000-0000-0000-000000000001'
+    'f1b66f89-4a07-43a7-aa39-1034f41845ff'
   );
 
-INSERT INTO estimate_items (id, estimate_id, description, quantity, unit_price, unit, total, category, sort_order) VALUES
-  ('11111111-1111-1111-1111-111111111111', 'ffffffff-ffff-ffff-ffff-ffffffffffff', 'Custom Bay Window - Double Pane Vinyl, 72x60', 1, 2400.00, 'each', 2400.00, 'material', 1),
-  ('22222222-2222-2222-2222-222222222222', 'ffffffff-ffff-ffff-ffff-ffffffffffff', 'Framing modifications (carpentry)', 1, 800.00, 'each', 800.00, 'labor', 2),
-  ('33333333-3333-3333-3333-333333333333', 'ffffffff-ffff-ffff-ffff-ffffffffffff', 'Sealant and weatherproofing', 1, 150.00, 'each', 150.00, 'material', 3),
-  ('44444444-4444-4444-4444-444444444444', 'ffffffff-ffff-ffff-ffff-ffffffffffff', 'Install labor (2 technicians, 4 hours)', 1, 600.00, 'each', 600.00, 'labor', 4);
+INSERT INTO estimate_items (id, estimate_id, description, quantity, unit_price, unit, category, sort_order) VALUES
+  ('11111111-1111-1111-1111-111111111111', 'ffffffff-ffff-ffff-ffff-ffffffffffff', 'Custom Bay Window - Double Pane Vinyl, 72x60', 1, 2400.00, 'each', 'material', 1),
+  ('22222222-2222-2222-2222-222222222222', 'ffffffff-ffff-ffff-ffff-ffffffffffff', 'Framing modifications (carpentry)', 1, 800.00, 'each', 'labor', 2),
+  ('33333333-3333-3333-3333-333333333333', 'ffffffff-ffff-ffff-ffff-ffffffffffff', 'Sealant and weatherproofing', 1, 150.00, 'each', 'material', 3),
+  ('44444444-4444-4444-4444-444444444444', 'ffffffff-ffff-ffff-ffff-ffffffffffff', 'Install labor (2 technicians, 4 hours)', 1, 600.00, 'each', 'labor', 4);
 
 -- Acme Office Estimate (Accepted)
-INSERT INTO estimates (id, project_id, number, items, subtotal, tax_rate, tax_amount, adjustments, total, status, notes, terms, sent_at, accepted_at, pdf_url, created_by) VALUES
+INSERT INTO estimates (id, project_id, number, subtotal, tax_rate, tax_amount, status, notes, terms, sent_at, accepted_at, pdf_url, created_by) VALUES
   (
     '55555555-5555-5555-5555-555555555555',
     '44444444-4444-4444-4444-444444444444',
     NULL,
-    NULL,
     24270.00,
     0.0875,
     2123.62,
-    '{"description": "Volume discount", "amount": -2000}',
-    24393.62,
     'accepted',
     'Work to be performed on weekends to minimize disruption. All materials upgraded to premium grade.',
     '30% deposit required, 40% at midpoint, 30% upon completion.',
     '2025-02-20T11:00:00Z',
     '2025-02-25T14:30:00Z',
     'https://storage.example.com/estimates/est_002_final.pdf',
-    '00000000-0000-0000-0000-000000000001'
+    'f1b66f89-4a07-43a7-aa39-1034f41845ff'
   );
 
-INSERT INTO estimate_items (id, estimate_id, description, quantity, unit_price, unit, total, category, sort_order) VALUES
-  ('66666666-6666-6666-6666-666666666666', '55555555-5555-5555-5555-555555555555', 'Double Pane Vinyl Window - Standard, 36x48', 50, 280.00, 'each', 14000.00, 'material', 1),
-  ('77777777-7777-7777-7777-777777777777', '55555555-5555-5555-5555-555555555555', 'Removal and disposal of old windows', 50, 45.00, 'each', 2250.00, 'labor', 2),
-  ('88888888-8888-8888-8888-888888888888', '55555555-5555-5555-5555-555555555555', 'Installation labor per unit', 50, 95.00, 'each', 4750.00, 'labor', 3),
-  ('99999999-9999-9999-9999-999999999999', '55555555-5555-5555-5555-555555555555', 'Caulking and perimeter sealing', 1, 900.00, 'each', 900.00, 'material', 4),
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '55555555-5555-5555-5555-555555555555', 'Project management (10% of subtotal)', 1, 2170.00, 'each', 2170.00, 'overhead', 5);
+INSERT INTO estimate_items (id, estimate_id, description, quantity, unit_price, unit, category, sort_order) VALUES
+  ('66666666-6666-6666-6666-666666666666', '55555555-5555-5555-5555-555555555555', 'Double Pane Vinyl Window - Standard, 36x48', 50, 280.00, 'each', 'material', 1),
+  ('77777777-7777-7777-7777-777777777777', '55555555-5555-5555-5555-555555555555', 'Removal and disposal of old windows', 50, 45.00, 'each', 'labor', 2),
+  ('88888888-8888-8888-8888-888888888888', '55555555-5555-5555-5555-555555555555', 'Installation labor per unit', 50, 95.00, 'each', 'labor', 3),
+  ('99999999-9999-9999-9999-999999999999', '55555555-5555-5555-5555-555555555555', 'Caulking and perimeter sealing', 1, 900.00, 'each', 'material', 4),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '55555555-5555-5555-5555-555555555555', 'Project management (10% of subtotal)', 1, 2170.00, 'each', 'overhead', 5);
 
 -- ============================================
 -- SAMPLE SUPPLIERS
