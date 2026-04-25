@@ -11,7 +11,7 @@ export const config = {
 
   // API
   api: {
-    baseUrl: expoExtra?.API_URL || process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api',
+    baseUrl: expoExtra?.API_URL || process.env.EXPO_PUBLIC_API_URL || 'http://192.168.0.118:3000/api',
     timeout: 30000,
   },
 

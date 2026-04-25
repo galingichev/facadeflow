@@ -23,7 +23,7 @@ async function getProject(req, res) {
 async function createProject(req, res) {
   try {
     // For MVP, use a fixed user ID or extract from auth later
-    const createdBy = req.body.created_by || '00000000-0000-0000-0000-000000000000';
+    const createdBy = req.body.created_by || 'f1b66f89-4a07-43a7-aa39-1034f41845ff';
     const project = await projectsService.createProject(req.body, createdBy);
     res.status(201).json({ data: project });
   } catch (err) {

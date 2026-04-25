@@ -120,17 +120,6 @@ If modules exist but are not used:
 
 ---
 
-# 🧠 BEFORE WRITING CODE
-
-You MUST:
-
-1. Identify exact file
-2. Confirm it exists
-3. Explain change briefly
-4. Then apply change
-
----
-
 # ✅ AFTER CHANGES
 
 You MUST:
@@ -160,9 +149,5 @@ You MUST:
 
 ---
 
-# 📌 RESPONSE FORMAT (STRICT)
-
-1. Plan (short)
-2. File(s) to edit
-3. Code changes
-4. Why it works
+# 📌 RESPONSE FORMAT
+Follow SOUL.md. Done/Blocked + what changed + next. Nothing else.

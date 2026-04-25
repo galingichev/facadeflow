@@ -20,7 +20,19 @@ async function createClient(req, res) {
   }
 }
 
+async function deleteClient(req, res) {
+  try {
+    const { id } = req.params;
+    await clientsService.deleteClient(id);
+    res.status(204).send(); // No Content
+  } catch (err) {
+    console.error('Error deleting client:', err);
+    res.status(500).json({ error: 'Failed to delete client' });
+  }
+}
+
 module.exports = {
   listClients,
   createClient,
+  deleteClient,
 };

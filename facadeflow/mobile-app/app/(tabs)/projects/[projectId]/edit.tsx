@@ -83,6 +83,11 @@ export default function EditProjectScreen() {
     );
   }
 
+  if (!currentProject) {
+    router.replace('/projects'); // Redirect if project not found or failed to load
+    return null;
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Project Name</Text>

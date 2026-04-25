@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { config } from '../../src/lib/config';
+import { config, getApiUrl } from '../../src/lib/config/index';
 import { formatCurrency } from '../../src/utils';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -13,14 +13,15 @@ export default function DashboardScreen() {
   const router = useRouter();
 
   const handleFetch = async () => {
+    console.log("API URL being used:", getApiUrl());
     try {
-      const summaryRes = await fetch(`${config.EXPO_PUBLIC_API_URL}/api/dashboard/summary`);
+      const summaryRes = await fetch(`${config.api.baseUrl}/dashboard/summary`);
       if (!summaryRes.ok) throw new Error('Failed to fetch summary');
       const summaryData = await summaryRes.json();
       if (!summaryData.data) throw new Error('Invalid summary response');
       setSummary(summaryData.data);
 
-      const briefRes = await fetch(`${config.EXPO_PUBLIC_API_URL}/api/dashboard/brief`);
+      const briefRes = await fetch(`${config.api.baseUrl}/dashboard/brief`);
       if (!briefRes.ok) throw new Error('Failed to fetch brief');
       const briefData = await briefRes.json();
       if (!briefData.data) throw new Error('Invalid brief response');

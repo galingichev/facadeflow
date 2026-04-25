@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { clientsStore } from '../../../src/stores/clientsStore';
-import { config } from '../../../src/lib/config'};
+import { config } from '../../../src/lib/config';
 
 export default function CreateClientScreen() {
   const router = useRouter();
@@ -14,6 +14,14 @@ export default function CreateClientScreen() {
   const handleSubmit = async () => {
     if (!name.trim()) {
       Alert.alert('Error', 'Client name is required');
+      return;
+    }
+    if (!phone.trim()) {
+      Alert.alert('Error', 'Phone is required');
+      return;
+    }
+    if (!email.trim()) {
+      Alert.alert('Error', 'Email is required');
       return;
     }
     setLoading(true);

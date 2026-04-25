@@ -1,28 +1,46 @@
 import { useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, RefreshControl } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, RefreshControl, Alert } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { config } from '../../src/lib/config';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { useProjectsStore } from '../../src/stores/projectsStore'; // Will have clientsStore later
+import { clientsStore } from '../../src/stores/clientsStore';
 import { formatPhone, initials } from '../../src/utils';
-
-// Mock clients data for now - will be replaced by clientsStore
-const mockClients = [
-  { id: 'c1', name: 'Acme Construction', email: 'john@acme.com', phone: '555-0101', company: 'Acme', projects_count: 5 },
-  { id: 'c2', name: 'Sarah Johnson', email: 'sarah@email.com', phone: '555-0102', company: null, projects_count: 2 },
-  { id: 'c3', name: 'Metro Property Mgmt', email: 'repairs@metro.com', phone: '555-0103', company: 'Metro', projects_count: 12 },
-];
+import { config } from '../../src/lib/config';
 
 export default function ClientsScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const [clients, setClients] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const filteredClients = mockClients.filter(c =>
+  const loadClients = useCallback(async () => {
+    try {
+      const data = await clientsStore.list();
+      setClients(data as any[]);
+    } catch (e) {
+      console.error('Failed to load clients', e);
+    }
+  }, []);
+
+  const handleDeleteClient = useCallback(async (clientId: string) => {
+    try {
+      await clientsStore.remove(clientId);
+      loadClients(); // Refresh the list
+    } catch (e) {
+      console.error('Failed to delete client', e);
+      Alert.alert("Error", "Failed to delete client.");
+    }
+  }, [loadClients]);
+
+  useFocusEffect(useCallback(() => {
+    loadClients();
+  }, [loadClients]));
+
+  const filteredClients = clients.filter(c =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.email.toLowerCase().includes(searchQuery.toLowerCase())
+    c.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -51,7 +69,7 @@ export default function ClientsScreen() {
         data={filteredClients}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        renderItem={({ item }) => <ClientCard client={item} />}
+        renderItem={({ item }) => <ClientCard client={item} onDelete={handleDeleteClient} />}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <MaterialIcons name="people" size={64} color={config.theme.border} />
@@ -60,7 +78,7 @@ export default function ClientsScreen() {
               title="Add Client"
               variant="primary"
               size="medium"
-              onPress={() => router.push('/clients/edit' as any)}
+              onPress={() => router.push('/clients/create' as any)}
               style={styles.emptyButton}
             />
           </View>
@@ -70,7 +88,7 @@ export default function ClientsScreen() {
       {/* Floating Add Button */}
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => router.push('/clients/edit' as any)}
+        onPress={() => router.push('/clients/create' as any)}
       >
         <MaterialIcons name="add" size={28} color="#fff" />
       </TouchableOpacity>
@@ -78,8 +96,20 @@ export default function ClientsScreen() {
   );
 }
 
-function ClientCard({ client }: { client: any }) {
+function ClientCard({ client, onDelete }: { client: any; onDelete: (id: string) => void }) {
   const router = useRouter();
+
+  const handleDelete = () => {
+    Alert.alert(
+      "Delete Client",
+      `Are you sure you want to delete ${client.name}? This cannot be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: () => onDelete(client.id) }
+      ],
+      { cancelable: true }
+    );
+  };
 
   return (
     <Card style={styles.card} onPress={() => router.push(`/clients/${client.id}` as any)}>
@@ -91,11 +121,14 @@ function ClientCard({ client }: { client: any }) {
           <Text style={styles.name}>{client.name}</Text>
           {client.company && <Text style={styles.company}>{client.company}</Text>}
           <Text style={styles.email}>{client.email}</Text>
-          <Text style={styles.phone}>{formatPhone(client.phone)}</Text>
+          {client.phone ? <Text style={styles.phone}>{formatPhone(client.phone)}</Text> : null}
         </View>
       </View>
       <View style={styles.cardFooter}>
         <Text style={styles.projectsCount}>{client.projects_count} project(s)</Text>
+        <TouchableOpacity onPress={handleDelete}>
+          <MaterialIcons name="delete" size={24} color={config.theme.error} style={styles.deleteIcon} />
+        </TouchableOpacity>
         <MaterialIcons name="chevron-right" size={24} color={config.theme.border} />
       </View>
     </Card>
@@ -130,6 +163,9 @@ const styles = StyleSheet.create({
   },
   list: {
     padding: 16,
+  },
+  deleteIcon: {
+    marginRight: 10,
   },
   card: {
     marginBottom: 12,

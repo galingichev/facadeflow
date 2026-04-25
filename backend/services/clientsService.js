@@ -23,7 +23,17 @@ async function createClient(clientData) {
   return data;
 }
 
+async function deleteClient(clientId) {
+  const { error } = await supabase
+    .from('clients')
+    .delete()
+    .eq('id', clientId);
+  if (error) throw error;
+  return true;
+}
+
 module.exports = {
   getClients,
   createClient,
+  deleteClient,
 };
