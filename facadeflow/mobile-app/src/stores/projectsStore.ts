@@ -62,11 +62,11 @@ export const useProjectsStore = create<ProjectsState & ProjectsActions>((set, ge
       const response = await projectsApi.list(mergedParams);
 
       set({
-        projects: response.data,
+        projects: Array.isArray(response) ? response : [],
         pagination: {
           ...pagination,
-          total: response.total,
-          hasMore: response.has_more,
+          total: 0,
+          hasMore: false,
         },
         isLoading: false,
       });

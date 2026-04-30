@@ -86,12 +86,14 @@ export default function ProjectDetailScreen() {
           <Text style={styles.clientName}>{project.client?.name || 'No client'}</Text>
         </View>
 
+        {project.address && (
         <View style={styles.addressRow}>
           <MaterialIcons name="location-on" size={16} color={config.theme.textSecondary} />
           <Text style={styles.address}>
             {project.address.street}, {project.address.city}, {project.address.state} {project.address.zip}
           </Text>
         </View>
+        )}
 
         {project.description && (
           <Text style={styles.description}>{project.description}</Text>
