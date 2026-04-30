@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { clientsStore } from '../../../src/stores/clientsStore';
+import { useClientsStore } from '../../../src/stores/clientsStore';
 import { config } from '../../../src/lib/config';
 
 export default function CreateClientScreen() {
   const router = useRouter();
+  const { createClient, fetchClients, isLoading, error } = useClientsStore();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -16,26 +17,19 @@ export default function CreateClientScreen() {
       Alert.alert('Error', 'Client name is required');
       return;
     }
-    if (!phone.trim()) {
-      Alert.alert('Error', 'Phone is required');
-      return;
-    }
-    if (!email.trim()) {
-      Alert.alert('Error', 'Email is required');
-      return;
-    }
     setLoading(true);
     try {
-      await clientsStore.createClient({
+      await createClient({
         name: name.trim(),
         phone: phone.trim(),
-        email: email.trim()
+        email: email.trim(),
       });
-      setLoading(false);
+      await fetchClients();
       router.back();
-    } catch (error) {
+    } catch (err) {
+      Alert.alert('Error', err.message || error || 'Failed to create client');
+    } finally {
       setLoading(false);
-      Alert.alert('Error', error.message || 'Failed to create client');
     }
   };
 
@@ -49,7 +43,6 @@ export default function CreateClientScreen() {
         placeholder="Enter client name"
         placeholderTextColor={config.theme.textSecondary}
       />
-
       <Text style={styles.label}>Phone</Text>
       <TextInput
         style={styles.input}
@@ -58,7 +51,6 @@ export default function CreateClientScreen() {
         placeholder="Optional"
         placeholderTextColor={config.theme.textSecondary}
       />
-
       <Text style={styles.label}>Email</Text>
       <TextInput
         style={styles.input}
@@ -67,12 +59,11 @@ export default function CreateClientScreen() {
         placeholder="Optional"
         placeholderTextColor={config.theme.textSecondary}
       />
-
       <View style={{ height: 20 }} />
       <Button
-        title={loading ? 'Creating...' : 'Create Client'}
+        title={isLoading || loading ? 'Creating...' : 'Create Client'}
         onPress={handleSubmit}
-        disabled={loading}
+        disabled={isLoading || loading}
         color={config.theme.primary}
       />
     </View>

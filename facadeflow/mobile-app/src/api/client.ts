@@ -22,9 +22,13 @@ class ApiClient {
     // Request interceptor to add auth token
     this.client.interceptors.request.use(
       async (config) => {
-        const token = await SecureStore.getItemAsync('access_token');
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
+        try {
+          const token = await SecureStore.getItemAsync('access_token');
+          if (token) {
+            config.headers.Authorization = 'Bearer ' + token;
+          }
+        } catch (_) {
+          // No token stored yet, proceed unauthenticated
         }
         return config;
       },
