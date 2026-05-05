@@ -4,6 +4,75 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 const supabase = supabaseCreateClient(supabaseUrl, supabaseKey);
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const DEFAULT_PROJECT_ADDRESS = {
+  street: '',
+  city: '',
+  state: '',
+  country: '',
+  zip: '',
+};
+
+const CREATE_PROJECT_FIELDS = [
+  'client_id',
+  'name',
+  'description',
+  'address',
+  'status',
+  'start_date',
+  'end_date',
+  'budget',
+  'estimated_hours',
+  'actual_hours',
+];
+
+class ValidationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'ValidationError';
+    this.statusCode = 400;
+  }
+}
+
+function resolveMvpOwnerId() {
+  return process.env.FACADEFLOW_MVP_OWNER_ID || process.env.MVP_OWNER_ID || process.env.PROJECTS_CREATED_BY;
+}
+
+function normalizeCreateProjectPayload(projectData = {}) {
+  const payload = {};
+
+  for (const field of CREATE_PROJECT_FIELDS) {
+    if (projectData[field] !== undefined) {
+      payload[field] = projectData[field];
+    }
+  }
+
+  if (typeof payload.name === 'string') {
+    payload.name = payload.name.trim();
+  }
+
+  if (!payload.name) {
+    throw new ValidationError('Project name is required');
+  }
+
+  if (!payload.client_id) {
+    throw new ValidationError('Project client_id is required');
+  }
+
+  if (!payload.address) {
+    payload.address = DEFAULT_PROJECT_ADDRESS;
+  }
+
+  const createdBy = resolveMvpOwnerId();
+  if (!createdBy || !UUID_REGEX.test(createdBy)) {
+    throw new ValidationError('Project created_by cannot be resolved. Set FACADEFLOW_MVP_OWNER_ID to a valid user UUID.');
+  }
+
+  payload.created_by = createdBy;
+  return payload;
+}
+
 /**
  * Get all projects with optional filters
  */
@@ -42,15 +111,18 @@ async function getProjectById(id) {
 /**
  * Create a new project
  */
-async function createProject(projectData, createdBy) {
+async function createProject(projectData) {
+  const payload = normalizeCreateProjectPayload(projectData);
+
   const { data, error } = await supabase
     .from('projects')
-    .insert({
-      ...projectData,
-      created_by: createdBy,
-    })
+    .insert(payload)
     .select()
     .single();
+
+  if (error?.code === '23503' && error.message?.includes('created_by')) {
+    throw new ValidationError('Project created_by must reference an existing user');
+  }
 
   if (error) throw error;
   return data;

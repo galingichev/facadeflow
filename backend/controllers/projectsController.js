@@ -22,12 +22,13 @@ async function getProject(req, res) {
 
 async function createProject(req, res) {
   try {
-    // For MVP, use a fixed user ID or extract from auth later
-    const createdBy = req.body.created_by || 'f1b66f89-4a07-43a7-aa39-1034f41845ff';
-    const project = await projectsService.createProject(req.body, createdBy);
+    const project = await projectsService.createProject(req.body);
     res.status(201).json({ data: project });
   } catch (err) {
     console.error('Error creating project:', err);
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
     res.status(500).json({ error: 'Failed to create project' });
   }
 }
