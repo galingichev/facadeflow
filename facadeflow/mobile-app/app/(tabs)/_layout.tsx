@@ -62,6 +62,9 @@ export default function TabsLayout() {
       <Tabs.Screen name="estimates" options={{ href: null }} />
       <Tabs.Screen name="projects/create" options={{ href: null }} />
       <Tabs.Screen name="projects/[projectId]" options={{ href: null }} />
+      <Tabs.Screen name="projects/[projectId]/edit" options={{ href: null }} />
+      <Tabs.Screen name="clients/create" options={{ href: null }} />
+      <Tabs.Screen name="clients/[clientId]/edit" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -31,8 +31,31 @@ async function deleteClient(req, res) {
   }
 }
 
+
+async function getClient(req, res) {
+  try {
+    const client = await clientsService.getClient(req.params.id);
+    if (!client) return res.status(404).json({ error: 'Not found' });
+    res.json({ data: client });
+  } catch (err) {
+    console.error('Error fetching client:', err);
+    res.status(500).json({ error: 'Failed to fetch client' });
+  }
+}
+
+async function updateClient(req, res) {
+  try {
+    const client = await clientsService.updateClient(req.params.id, req.body);
+    res.json({ data: client });
+  } catch (err) {
+    console.error('Error updating client:', err);
+    res.status(500).json({ error: 'Failed to update client' });
+  }
+}
 module.exports = {
   listClients,
+  getClient,
   createClient,
+  updateClient,
   deleteClient,
 };

@@ -112,7 +112,7 @@ function ClientCard({ client, onDelete }: { client: any; onDelete: (id: string) 
   };
 
   return (
-    <Card style={styles.card} onPress={() => router.push(`/clients/${client.id}` as any)}>
+    <Card style={styles.card} onPress={() => { const url = ('/clients/' + client.id + '/edit'); router.push(url as any); }}>
       <View style={styles.avatarContainer}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{initials(client.name)}</Text>
@@ -126,9 +126,6 @@ function ClientCard({ client, onDelete }: { client: any; onDelete: (id: string) 
       </View>
       <View style={styles.cardFooter}>
         <Text style={styles.projectsCount}>{client.projects_count} project(s)</Text>
-        <TouchableOpacity onPress={handleDelete}>
-          <MaterialIcons name="delete" size={24} color={config.theme.error} style={styles.deleteIcon} />
-        </TouchableOpacity>
         <MaterialIcons name="chevron-right" size={24} color={config.theme.border} />
       </View>
     </Card>

@@ -34,7 +34,7 @@ export const useClientsStore = create<ClientState>()((set, get) => ({
     set({ isLoading: true, error: null, currentClient: null });
     try {
       const response = await clientsApi.get(clientId);
-      set({ currentClient: response.data, isLoading: false });
+      set({ currentClient: (response as any) ?? null, isLoading: false });
     } catch (error: any) {
       set({ error: error.message || 'Failed to fetch client', isLoading: false });
     }
@@ -56,9 +56,9 @@ export const useClientsStore = create<ClientState>()((set, get) => ({
     try {
       const response = await clientsApi.update(clientId, data);
       set((state) => ({
-        currentClient: state.currentClient?.id === clientId ? response.data : state.currentClient,
+        currentClient: state.currentClient?.id === clientId ? (response as any) : state.currentClient,
         clients: state.clients.map((client) =>
-          client.id === clientId ? response.data : client
+          client.id === clientId ? (response as any) : client
         ),
         isLoading: false,
       }));

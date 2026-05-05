@@ -32,8 +32,31 @@ async function deleteClient(clientId) {
   return true;
 }
 
+
+async function getClient(clientId) {
+  const { data, error } = await supabase
+    .from('clients')
+    .select('*')
+    .eq('id', clientId)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+async function updateClient(clientId, clientData) {
+  const { data, error } = await supabase
+    .from('clients')
+    .update(clientData)
+    .eq('id', clientId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
 module.exports = {
   getClients,
+  getClient,
   createClient,
+  updateClient,
   deleteClient,
 };

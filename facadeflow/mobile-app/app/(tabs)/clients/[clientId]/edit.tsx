@@ -1,53 +1,47 @@
 import React, { useState, useEffect } from 'react';
+import { MaterialIcons } from '@expo/vector-icons';
 import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-// Assume useClientsStore will be created or clientsStore will be extended
-import { useClientsStore } from '../../../../src/stores/clientsStore'; // Changed to useClientsStore
+import { useClientsStore } from '../../../../src/stores/clientsStore';
 import { config } from '../../../../src/lib/config';
-// Removed ProjectStatus import
 
-export default function EditClientScreen() { // Renamed component
+export default function EditClientScreen() {
   const router = useRouter();
-  const { clientId } = useLocalSearchParams<{ clientId: string }>(); // Changed to clientId
-  // Assuming clientsStore will provide currentClient, fetchClient, updateClient
-  const { currentClient, fetchClient, updateClient, removeClient, isLoading: storeLoading } = useClientsStore(); // Use useClientsStore hook
+  const { clientId } = useLocalSearchParams<{ clientId: string }>();
+  const currentClient = useClientsStore(state => state.currentClient);
+  const fetchClient = useClientsStore(state => state.fetchClient);
+  const updateClient = useClientsStore(state => state.updateClient);
+  const removeClient = useClientsStore(state => state.removeClient);
 
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState(''); // Added phone
-  const [email, setEmail] = useState(''); // Added email
-  const [loading, setLoading] = useState(false); // Local loading state for form submission
-  const [initialLoading, setInitialLoading] = useState(true); // Renamed local loading for initial fetch
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {
     if (clientId) {
-      if (!currentClient || currentClient.id !== clientId) {
-        // Need to ensure fetchClient exists on clientsStore
-        fetchClient(clientId).finally(() => setInitialLoading(false));
-      } else {
-        setInitialLoading(false);
-      }
+    setLoading(false);
+      fetchClient(clientId).finally(() => setInitialLoading(false));
     }
-  }, [clientId, currentClient, fetchClient]); // dependencies updated
+  }, [clientId]);
 
   useEffect(() => {
     if (currentClient) {
-      setName(currentClient.name);
-      setPhone(currentClient.phone || ''); // Set phone
-      setEmail(currentClient.email || ''); // Set email
+      setName(currentClient.name || '');
+      setPhone(currentClient.phone || '');
+      setEmail(currentClient.email || '');
     }
   }, [currentClient]);
 
-  // Removed statusOptions and showStatusPicker as they are project-specific
-
   const handleSubmit = async () => {
-    if (!name.trim()) { // Only name is strictly required per current client create. Phone/email are optional.
+    if (!name.trim()) {
       Alert.alert('Error', 'Client name is required');
       return;
     }
     setLoading(true);
     try {
-      // Need to ensure updateClient exists on clientsStore
-      updateClient(clientId, {
+      await updateClient(clientId, {
         name: name.trim(),
         phone: phone.trim(),
         email: email.trim(),
@@ -60,51 +54,52 @@ export default function EditClientScreen() { // Renamed component
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     Alert.alert(
       'Delete Client',
-      'Are you sure you want to delete this client? This cannot be undone.',
+      'Are you sure? This cannot be undone.',
       [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
+          style: 'destructive',
           onPress: async () => {
             setLoading(true);
             try {
-              // Need to ensure remove (or deleteClient) exists on clientsStore
               await removeClient(clientId);
-              router.replace('/clients'); // Go back to clients list after deletion
+              router.replace('/clients' as any);
             } catch (error: any) {
               Alert.alert('Error', error.message || 'Failed to delete client');
-            } finally {
               setLoading(false);
             }
           },
-          style: 'destructive',
         },
       ]
     );
   };
 
-
   if (initialLoading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={styles.loading}>
         <ActivityIndicator size="large" color={config.theme.primary} />
       </View>
     );
   }
 
-  if (!currentClient) { // Changed currentProject to currentClient
-    router.replace('/clients'); // Redirect if client not found or failed to load
-    return null;
+  if (!currentClient) {
+    return (
+      <View style={styles.loading}>
+        <Text style={{ color: config.theme.text }}>Client not found.</Text>
+      </View>
+    );
   }
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity onPress={() => { console.log("back pressed"); router.navigate("/clients" as any); }} style={styles.backButton} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}>
+        <MaterialIcons name="arrow-back" size={24} color={config.theme.text} />
+        <Text style={styles.backText}>Back</Text>
+      </TouchableOpacity>
       <Text style={styles.label}>Client Name</Text>
       <TextInput
         style={styles.input}
@@ -113,49 +108,56 @@ export default function EditClientScreen() { // Renamed component
         placeholder="Enter client name"
         placeholderTextColor={config.theme.textSecondary}
       />
-
       <Text style={styles.label}>Phone</Text>
       <TextInput
         style={styles.input}
         value={phone}
         onChangeText={setPhone}
-        placeholder="Enter phone number"
+        placeholder="Optional"
         placeholderTextColor={config.theme.textSecondary}
       />
-
       <Text style={styles.label}>Email</Text>
       <TextInput
         style={styles.input}
         value={email}
         onChangeText={setEmail}
-        placeholder="Enter email address"
+        placeholder="Optional"
         placeholderTextColor={config.theme.textSecondary}
       />
-
       <View style={{ height: 20 }} />
       <Button
-        title={loading ? 'Updating...' : 'Update Client'} // Changed button text
+        title={loading ? 'Updating...' : 'Update Client'}
         onPress={handleSubmit}
         disabled={loading}
         color={config.theme.primary}
       />
       <View style={{ height: 10 }} />
       <Button
-        title={loading ? 'Deleting...' : 'Delete Client'} // Added Delete button
+        title={loading ? 'Deleting...' : 'Delete Client'}
         onPress={handleDelete}
         disabled={loading}
-        color={config.theme.danger} // Assuming a danger color for delete
+        color={config.theme.error}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  loadingContainer: {
+  loading: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: config.theme.background,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  backText: {
+    fontSize: 16,
+    color: config.theme.text,
+    marginLeft: 4,
   },
   container: {
     flex: 1,
@@ -175,5 +177,4 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     color: config.theme.text,
   },
-  // Removed trigger and triggerText styles as they are project-specific
 });

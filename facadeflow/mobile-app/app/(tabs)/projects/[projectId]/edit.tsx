@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { MaterialIcons } from '@expo/vector-icons';
 import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useProjectsStore } from '../../../../src/stores/projectsStore';
@@ -9,7 +10,9 @@ import ClientPicker from '../../../../components/ui/ClientPicker';
 export default function EditProjectScreen() {
   const router = useRouter();
   const { projectId } = useLocalSearchParams<{ projectId: string }>();
-  const { currentProject, fetchProject, updateProject } = useProjectsStore();
+  const currentProject = useProjectsStore(state => state.currentProject);
+  const fetchProject = useProjectsStore(state => state.fetchProject);
+  const updateProject = useProjectsStore(state => state.updateProject);
 
   const [name, setName] = useState('');
   const [clientId, setClientId] = useState('');
@@ -90,6 +93,10 @@ export default function EditProjectScreen() {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <MaterialIcons name="arrow-back" size={24} color={config.theme.text} />
+        <Text style={styles.backText}>Back</Text>
+      </TouchableOpacity>
       <Text style={styles.label}>Project Name</Text>
       <TextInput
         style={styles.input}
@@ -124,6 +131,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: config.theme.background,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  backText: {
+    fontSize: 16,
+    color: config.theme.text,
+    marginLeft: 4,
   },
   container: {
     flex: 1,
