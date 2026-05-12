@@ -17,8 +17,11 @@ router.get('/:id', getProject);
 // POST /api/projects
 router.post('/', createProject);
 
-// PUT /api/projects/:id
+// PATCH /api/projects/:id
 router.patch('/:id', updateProject);
+
+// PUT /api/projects/:id
+router.put('/:id', updateProject);
 
 // DELETE /api/projects/:id
 router.delete('/:id', deleteProject);

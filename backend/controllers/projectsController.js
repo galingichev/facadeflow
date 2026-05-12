@@ -13,6 +13,7 @@ async function listProjects(req, res) {
 async function getProject(req, res) {
   try {
     const project = await projectsService.getProjectById(req.params.id);
+    if (!project) return res.status(404).json({ error: 'Not found' });
     res.json({ data: project });
   } catch (err) {
     console.error('Error fetching project:', err);
@@ -36,9 +37,13 @@ async function createProject(req, res) {
 async function updateProject(req, res) {
   try {
     const project = await projectsService.updateProject(req.params.id, req.body);
+    if (!project) return res.status(404).json({ error: 'Not found' });
     res.json({ data: project });
   } catch (err) {
     console.error('Error updating project:', err);
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
     res.status(500).json({ error: 'Failed to update project' });
   }
 }

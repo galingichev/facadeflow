@@ -73,6 +73,34 @@ function normalizeCreateProjectPayload(projectData = {}) {
   return payload;
 }
 
+function normalizeUpdateProjectPayload(projectData = {}) {
+  const payload = {};
+
+  for (const field of CREATE_PROJECT_FIELDS) {
+    if (projectData[field] !== undefined) {
+      payload[field] = projectData[field];
+    }
+  }
+
+  if (typeof payload.name === 'string') {
+    payload.name = payload.name.trim();
+  }
+
+  if (payload.name !== undefined && !payload.name) {
+    throw new ValidationError('Project name cannot be empty');
+  }
+
+  if (payload.client_id !== undefined && !payload.client_id) {
+    throw new ValidationError('Project client_id cannot be empty');
+  }
+
+  if (Object.keys(payload).length === 0) {
+    throw new ValidationError('No valid project fields provided');
+  }
+
+  return payload;
+}
+
 /**
  * Get all projects with optional filters
  */
@@ -104,6 +132,7 @@ async function getProjectById(id) {
     .eq('id', id)
     .single();
 
+  if (error?.code === 'PGRST116') return null;
   if (error) throw error;
   return data;
 }
@@ -132,13 +161,16 @@ async function createProject(projectData) {
  * Update a project
  */
 async function updateProject(id, projectData) {
+  const payload = normalizeUpdateProjectPayload(projectData);
+
   const { data, error } = await supabase
     .from('projects')
-    .update(projectData)
+    .update(payload)
     .eq('id', id)
     .select()
     .single();
 
+  if (error?.code === 'PGRST116') return null;
   if (error) throw error;
   return data;
 }

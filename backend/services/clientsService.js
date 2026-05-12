@@ -39,6 +39,7 @@ async function getClient(clientId) {
     .select('*')
     .eq('id', clientId)
     .single();
+  if (error?.code === 'PGRST116') return null;
   if (error) throw error;
   return data;
 }
