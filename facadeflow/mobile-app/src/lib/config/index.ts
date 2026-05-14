@@ -84,15 +84,20 @@ export const config = {
 
 // Helper to get current environment URL
 export const getApiUrl = () => {
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    return 'http://localhost:3000/api';
+  }
+
   if (__DEV__) {
-    // Use tunnel for local development if using tunnel URL
+    // Use tunnel for local development if a tunnel URL is exposed by updates metadata.
     const updates = Updates as any;
-    const { tunnelUrl } = updates;
-    if (tunnelUrl) {
+    const tunnelUrl = updates?.tunnelUrl || updates?.manifest2?.extra?.expoGo?.developer?.tool;
+    if (typeof tunnelUrl === 'string' && tunnelUrl.length > 0) {
       return tunnelUrl.replace(/\/$/, '') + '/api';
     }
   }
-  return config.api.baseUrl;
+
+  return expoExtra?.API_URL || process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
 };
 
 // Typed config accessors

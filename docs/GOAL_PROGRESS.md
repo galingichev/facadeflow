@@ -489,3 +489,84 @@ Blockers:
 
 Next recommended FacadeFlow task:
 - Commit the backend contract fixes after review, then run the mobile app against the running backend for an interactive Projects + Clients CRUD pass.
+
+## 2026-05-12 Mobile Projects CRUD UI Smoke
+
+Current branch: `fix/project-create-contract`.
+
+Latest relevant commit: `63196e2 fix: harden project and client CRUD contracts`.
+
+Worktree status after this pass:
+- Tracked project files modified.
+- Untracked OpenClaw/config files are still present and intentionally untouched.
+
+Backend and mobile startup used:
+
+```bash
+cd /home/galin/.openclaw/workspace/FacadeFlow/backend
+npm start
+
+cd /home/galin/.openclaw/workspace/FacadeFlow/facadeflow/mobile-app
+EXPO_NO_DOTENV=1 EXPO_PUBLIC_API_URL=http://localhost:3000/api npm run web -- --port 8082 --clear
+```
+
+Mobile Projects create/edit/delete UI smoke results:
+- Create Project screen submitted the existing mobile payload shape: `name`, `client_id`, and `status`.
+- Create request used `POST /api/projects` against `localhost:3000` and returned HTTP `201 Created`.
+- The created project was found in `GET /api/projects` with related client `ABC Ltd`.
+- Edit Project screen submitted `name`, `client_id`, and `status`.
+- Update request used `PATCH /api/projects/:id` against `localhost:3000` and returned HTTP `200 OK`.
+- Delete from the Project detail screen used `DELETE /api/projects/:id` against `localhost:3000` and returned HTTP `204 No Content`.
+
+Temporary mobile UI smoke project:
+
+```text
+dfda42a1-b8f8-47cc-902d-900759f257a9
+```
+
+Follow-up backend verification:
+
+```bash
+curl -i http://localhost:3000/api/projects/dfda42a1-b8f8-47cc-902d-900759f257a9
+```
+
+Result before the backend missing-project fix: HTTP `500 Internal Server Error` with `{ "error": "Failed to fetch project" }`.
+
+Small fixes made:
+- `facadeflow/mobile-app/src/api/client.ts`: local Expo web sessions now use `http://localhost:3000/api` when the browser host is `localhost`, avoiding stale public API URL values without editing `.env`.
+- `facadeflow/mobile-app/app/(tabs)/projects/[projectId].tsx`: Project delete confirmation now uses `window.confirm` on web because React Native Web's `Alert.alert` is a no-op; native platforms still use `Alert.alert`.
+- `backend/services/projectsService.js`: project detail/update queries now use Supabase `.maybeSingle()` so missing rows return `null` and the existing controller returns HTTP `404 Not Found`.
+
+Backend missing-project fix was verified on a temporary backend at port `3001` to avoid stopping the user-running backend on port `3000`:
+
+```bash
+PORT=3001 npm start
+curl -i http://localhost:3001/api/system/health
+curl -i http://localhost:3001/api/projects/dfda42a1-b8f8-47cc-902d-900759f257a9
+```
+
+Result:
+- Health returned HTTP `200 OK`.
+- Deleted project read returned HTTP `404 Not Found` with `{ "error": "Not found" }`.
+
+Checks run:
+
+```bash
+cd /home/galin/.openclaw/workspace/FacadeFlow/backend
+node --check backend/services/projectsService.js
+node --check backend/controllers/projectsController.js
+node --check backend/routes/projects.js
+
+cd /home/galin/.openclaw/workspace/FacadeFlow/facadeflow/mobile-app
+npm run lint
+```
+
+Result:
+- Backend syntax checks passed.
+- Mobile lint still fails on pre-existing unrelated errors in `app/(tabs)/index.tsx`, `components/ui/Input.tsx`, `src/index.ts`, and `src/stores/authStore.ts`. The touched mobile files no longer add lint warnings.
+
+Blockers / follow-up:
+- Home/Dashboard still has a separate API base URL path and can fail after routing back to Home in local web. This should be handled by unifying mobile API base URL handling.
+
+Next recommended FacadeFlow task:
+- Unify mobile API base URL handling so Dashboard/Home and Projects/Clients use the same local/tunnel API resolution.

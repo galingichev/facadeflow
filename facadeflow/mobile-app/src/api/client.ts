@@ -1,7 +1,8 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import { getApiUrl } from '../lib/config';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = getApiUrl();
 
 class ApiClient {
   private client: AxiosInstance;
@@ -27,7 +28,7 @@ class ApiClient {
           if (token) {
             config.headers.Authorization = 'Bearer ' + token;
           }
-        } catch (_) {
+        } catch {
           // No token stored yet, proceed unauthenticated
         }
         return config;

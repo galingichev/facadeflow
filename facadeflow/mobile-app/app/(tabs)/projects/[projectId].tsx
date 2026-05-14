@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { config } from '../../../src/lib/config';
@@ -11,16 +11,16 @@ import { formatDate, getProjectStatusColor } from '../../../src/utils';
 export default function ProjectDetailScreen() {
   const router = useRouter();
   const { projectId } = useLocalSearchParams<{ projectId: string }>();
-  const { currentProject, fetchProject, isLoading, updateProject } = useProjectsStore();
+  const { currentProject, fetchProject, isLoading } = useProjectsStore();
 
   React.useEffect(() => {
     if (projectId) {
       fetchProject(projectId);
     }
-  }, [projectId]);
+  }, [projectId, fetchProject]);
 
-  const project = currentProject;
   const [activeTab, setActiveTab] = React.useState('overview');
+  const project = currentProject;
 
   if (isLoading || !project) {
     return (
@@ -29,6 +29,33 @@ export default function ProjectDetailScreen() {
       </View>
     );
   }
+
+  const deleteProject = async () => {
+    await useProjectsStore.getState().deleteProject(project.id);
+    router.back();
+  };
+
+  const confirmDeleteProject = () => {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Are you sure you want to delete this project?')) {
+        deleteProject();
+      }
+      return;
+    }
+
+    Alert.alert(
+      'Delete Project',
+      'Are you sure you want to delete this project?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: deleteProject,
+        },
+      ]
+    );
+  };
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: 'dashboard' },
@@ -58,23 +85,7 @@ export default function ProjectDetailScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.iconButton}
-              onPress={() => {
-                Alert.alert(
-                  'Delete Project',
-                  'Are you sure you want to delete this project?',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                      text: 'Delete',
-                      style: 'destructive',
-                      onPress: async () => {
-                        await useProjectsStore.getState().deleteProject(project.id);
-                        router.back();
-                      },
-                    },
-                  ]
-                );
-              }}
+              onPress={confirmDeleteProject}
             >
               <MaterialIcons name="delete" size={20} color={config.theme.error} />
             </TouchableOpacity>

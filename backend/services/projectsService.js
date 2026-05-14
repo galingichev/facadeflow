@@ -130,7 +130,7 @@ async function getProjectById(id) {
       client:clients (*)
     `)
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
   if (error?.code === 'PGRST116') return null;
   if (error) throw error;
@@ -168,7 +168,7 @@ async function updateProject(id, projectData) {
     .update(payload)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error?.code === 'PGRST116') return null;
   if (error) throw error;

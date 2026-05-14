@@ -13,15 +13,16 @@ export default function DashboardScreen() {
   const router = useRouter();
 
   const handleFetch = async () => {
-    console.log("API URL being used:", getApiUrl());
+    const apiBaseUrl = getApiUrl();
+    console.log("API URL being used:", apiBaseUrl);
     try {
-      const summaryRes = await fetch(`${config.api.baseUrl}/dashboard/summary`);
+      const summaryRes = await fetch(`${apiBaseUrl}/dashboard/summary`);
       if (!summaryRes.ok) throw new Error('Failed to fetch summary');
       const summaryData = await summaryRes.json();
       if (!summaryData.data) throw new Error('Invalid summary response');
       setSummary(summaryData.data);
 
-      const briefRes = await fetch(`${config.api.baseUrl}/dashboard/brief`);
+      const briefRes = await fetch(`${apiBaseUrl}/dashboard/brief`);
       if (!briefRes.ok) throw new Error('Failed to fetch brief');
       const briefData = await briefRes.json();
       if (!briefData.data) throw new Error('Invalid brief response');
