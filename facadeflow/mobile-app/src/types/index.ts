@@ -49,6 +49,7 @@ export interface Project {
   status: ProjectStatus;
   start_date?: string;
   end_date?: string;
+  contract_value?: number;
   budget?: number;
   estimated_hours?: number;
   actual_hours?: number;
@@ -60,6 +61,42 @@ export interface Project {
   estimates?: Estimate[];
   tasks?: Task[];
   photos?: ProjectPhoto[];
+  expenses?: ProjectExpense[];
+  financials?: ProjectFinancials;
+}
+
+export type ExpenseCategory =
+  | 'materials'
+  | 'labor'
+  | 'subcontractor'
+  | 'equipment'
+  | 'transport'
+  | 'permits'
+  | 'overhead'
+  | 'other';
+
+export interface ProjectExpense {
+  id: string;
+  project_id: string;
+  category: ExpenseCategory;
+  description: string;
+  amount: number;
+  expense_date: string;
+  vendor?: string;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectFinancials {
+  contract_value: number | null;
+  budgeted_cost: number | null;
+  actual_cost: number;
+  planned_profit: number | null;
+  actual_profit: number | null;
+  cost_variance: number | null;
+  actual_margin: number | null;
+  expense_count: number;
 }
 
 export interface EstimateItem {

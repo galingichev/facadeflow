@@ -6,6 +6,10 @@ const {
   createProject,
   updateProject,
   deleteProject,
+  listProjectExpenses,
+  createProjectExpenseHandler,
+  updateProjectExpenseHandler,
+  deleteProjectExpenseHandler,
 } = require('../controllers/projectsController');
 
 // GET /api/projects
@@ -25,5 +29,17 @@ router.put('/:id', updateProject);
 
 // DELETE /api/projects/:id
 router.delete('/:id', deleteProject);
+
+// GET /api/projects/:id/expenses
+router.get('/:id/expenses', listProjectExpenses);
+
+// POST /api/projects/:id/expenses
+router.post('/:id/expenses', createProjectExpenseHandler);
+
+// PATCH /api/projects/:id/expenses/:expenseId
+router.patch('/:id/expenses/:expenseId', updateProjectExpenseHandler);
+
+// DELETE /api/projects/:id/expenses/:expenseId
+router.delete('/:id/expenses/:expenseId', deleteProjectExpenseHandler);
 
 module.exports = router;

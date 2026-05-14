@@ -5,6 +5,7 @@ import type {
   Estimate,
   Task,
   ProjectPhoto,
+  ProjectExpense,
   VoiceNote,
   InventoryItem,
   Supplier,
@@ -87,6 +88,18 @@ export const projectsApi = {
   getEstimates: (projectId: string) => api.get<Estimate[]>(`/projects/${projectId}/estimates`),
 
   getVoiceNotes: (projectId: string) => api.get<VoiceNote[]>(`/projects/${projectId}/voice-notes`),
+
+  getExpenses: (projectId: string) =>
+    api.get<ProjectExpense[]>(`/projects/${projectId}/expenses`),
+
+  createExpense: (projectId: string, data: Partial<ProjectExpense>) =>
+    api.post<ProjectExpense>(`/projects/${projectId}/expenses`, data),
+
+  updateExpense: (projectId: string, expenseId: string, data: Partial<ProjectExpense>) =>
+    api.patch<ProjectExpense>(`/projects/${projectId}/expenses/${expenseId}`, data),
+
+  deleteExpense: (projectId: string, expenseId: string) =>
+    api.delete<void>(`/projects/${projectId}/expenses/${expenseId}`),
 };
 
 // =====================

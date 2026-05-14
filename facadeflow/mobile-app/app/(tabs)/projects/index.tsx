@@ -28,7 +28,7 @@ export default function ProjectsListScreen() {
               <View style={[styles.status, { backgroundColor: getStatusColor(item.status) }]}>
                 <Text style={styles.statusText}>{item.status}</Text>
               </View>
-              <Text style={styles.budget}>${item.budget?.toLocaleString() || '—'}</Text>
+              <Text style={styles.budget}>Budgeted: ${item.budget?.toLocaleString() || '—'}</Text>
             </View>
           </Card>
         )}

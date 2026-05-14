@@ -6,7 +6,7 @@ import { config } from '../../../src/lib/config';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { useProjectsStore } from '../../../src/stores/projectsStore';
-import { formatDate, getProjectStatusColor } from '../../../src/utils';
+import { formatCurrency, formatDate, getProjectStatusColor } from '../../../src/utils';
 
 export default function ProjectDetailScreen() {
   const router = useRouter();
@@ -120,8 +120,8 @@ export default function ProjectDetailScreen() {
             <Text style={styles.metaValue}>{project.end_date || '—'}</Text>
           </View>
           <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>Budget</Text>
-            <Text style={styles.metaValue}>${project.budget?.toLocaleString() || '—'}</Text>
+            <Text style={styles.metaLabel}>Budgeted Cost</Text>
+            <Text style={styles.metaValue}>{project.budget !== undefined && project.budget !== null ? formatCurrency(project.budget) : '—'}</Text>
           </View>
         </View>
       </Card>
@@ -187,8 +187,27 @@ export default function ProjectDetailScreen() {
 }
 
 function OverviewTab({ project }: { project: any }) {
+  const financials = project.financials || {
+    contract_value: project.contract_value ?? null,
+    budgeted_cost: project.budget ?? null,
+    actual_cost: 0,
+    planned_profit: null,
+    actual_profit: null,
+    cost_variance: null,
+    actual_margin: null,
+    expense_count: 0,
+  };
+
   return (
     <View>
+      <Text style={styles.tabContentTitle}>Financial Summary</Text>
+      <View style={styles.financialGrid}>
+        <FinancialMetric label="Contract Value" value={financials.contract_value} />
+        <FinancialMetric label="Budgeted Cost" value={financials.budgeted_cost} />
+        <FinancialMetric label="Actual Cost" value={financials.actual_cost} />
+        <FinancialMetric label="Actual Profit" value={financials.actual_profit} />
+      </View>
+
       <Text style={styles.tabContentTitle}>Project Details</Text>
       <View style={styles.detailRow}>
         <Text style={styles.detailLabel}>Client</Text>
@@ -199,8 +218,16 @@ function OverviewTab({ project }: { project: any }) {
         <Text style={[styles.detailValue, { textTransform: 'capitalize' }]}>{project.status.replace('_', ' ')}</Text>
       </View>
       <View style={styles.detailRow}>
-        <Text style={styles.detailLabel}>Budget</Text>
-        <Text style={styles.detailValue}>${project.budget?.toLocaleString() || '—'}</Text>
+        <Text style={styles.detailLabel}>Contract Value</Text>
+        <Text style={styles.detailValue}>{project.contract_value !== undefined && project.contract_value !== null ? formatCurrency(project.contract_value) : '—'}</Text>
+      </View>
+      <View style={styles.detailRow}>
+        <Text style={styles.detailLabel}>Budgeted Cost</Text>
+        <Text style={styles.detailValue}>{project.budget !== undefined && project.budget !== null ? formatCurrency(project.budget) : '—'}</Text>
+      </View>
+      <View style={styles.detailRow}>
+        <Text style={styles.detailLabel}>Expense Count</Text>
+        <Text style={styles.detailValue}>{financials.expense_count}</Text>
       </View>
       <View style={styles.detailRow}>
         <Text style={styles.detailLabel}>Created</Text>
@@ -216,6 +243,15 @@ function OverviewTab({ project }: { project: any }) {
           <Text style={styles.description}>{project.description}</Text>
         </View>
       )}
+    </View>
+  );
+}
+
+function FinancialMetric({ label, value }: { label: string; value: number | null }) {
+  return (
+    <View style={styles.financialMetric}>
+      <Text style={styles.financialLabel}>{label}</Text>
+      <Text style={styles.financialValue}>{value === null || value === undefined ? '—' : formatCurrency(value)}</Text>
     </View>
   );
 }
@@ -414,6 +450,31 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: config.theme.text,
     marginBottom: 16,
+  },
+  financialGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+  },
+  financialMetric: {
+    width: '48%',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: config.theme.border,
+    borderRadius: 8,
+    marginBottom: 10,
+    backgroundColor: config.theme.surface,
+  },
+  financialLabel: {
+    fontSize: 12,
+    color: config.theme.textSecondary,
+    marginBottom: 6,
+  },
+  financialValue: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: config.theme.text,
   },
   detailRow: {
     flexDirection: 'row',

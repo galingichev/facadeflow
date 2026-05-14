@@ -58,10 +58,62 @@ async function deleteProject(req, res) {
   }
 }
 
+async function listProjectExpenses(req, res) {
+  try {
+    const expenses = await projectsService.getProjectExpenses(req.params.id);
+    res.json({ data: expenses });
+  } catch (err) {
+    console.error('Error fetching project expenses:', err);
+    res.status(500).json({ error: 'Failed to fetch project expenses' });
+  }
+}
+
+async function createProjectExpenseHandler(req, res) {
+  try {
+    const expense = await projectsService.createProjectExpense(req.params.id, req.body);
+    res.status(201).json({ data: expense });
+  } catch (err) {
+    console.error('Error creating project expense:', err);
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    res.status(500).json({ error: 'Failed to create project expense' });
+  }
+}
+
+async function updateProjectExpenseHandler(req, res) {
+  try {
+    const expense = await projectsService.updateProjectExpense(req.params.id, req.params.expenseId, req.body);
+    if (!expense) return res.status(404).json({ error: 'Not found' });
+    res.json({ data: expense });
+  } catch (err) {
+    console.error('Error updating project expense:', err);
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    res.status(500).json({ error: 'Failed to update project expense' });
+  }
+}
+
+async function deleteProjectExpenseHandler(req, res) {
+  try {
+    const expense = await projectsService.deleteProjectExpense(req.params.id, req.params.expenseId);
+    if (!expense) return res.status(404).json({ error: 'Not found' });
+    res.status(204).send();
+  } catch (err) {
+    console.error('Error deleting project expense:', err);
+    res.status(500).json({ error: 'Failed to delete project expense' });
+  }
+}
+
 module.exports = {
   listProjects,
   getProject,
   createProject,
   updateProject,
   deleteProject,
+  listProjectExpenses,
+  createProjectExpenseHandler,
+  updateProjectExpenseHandler,
+  deleteProjectExpenseHandler,
 };

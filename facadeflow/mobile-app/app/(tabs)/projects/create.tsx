@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert, type AlertButton } from 'react-native';
 import { useRouter } from 'expo-router';
 import { createProject } from '../../../src/services/projectService';
 import { useProjectsStore } from '../../../src/stores/projectsStore';
@@ -13,6 +13,8 @@ export default function CreateProjectScreen() {
   const [name, setName] = useState('');
   const [clientId, setClientId] = useState('');
   const [status, setStatus] = useState<ProjectStatus>('draft');
+  const [contractValue, setContractValue] = useState('');
+  const [budget, setBudget] = useState('');
   const [loading, setLoading] = useState(false);
 
   const statusOptions: ProjectStatus[] = [
@@ -27,7 +29,7 @@ export default function CreateProjectScreen() {
   ];
 
   const showStatusPicker = () => {
-    const buttons = statusOptions.map((s) => ({
+    const buttons: AlertButton[] = statusOptions.map((s) => ({
       text: s,
       onPress: () => setStatus(s),
     }));
@@ -40,12 +42,26 @@ export default function CreateProjectScreen() {
       Alert.alert('Error', 'Name and client are required');
       return;
     }
+
+    const parsedContractValue = contractValue.trim() ? Number(contractValue) : undefined;
+    const parsedBudget = budget.trim() ? Number(budget) : undefined;
+
+    if (
+      (parsedContractValue !== undefined && !Number.isFinite(parsedContractValue)) ||
+      (parsedBudget !== undefined && !Number.isFinite(parsedBudget))
+    ) {
+      Alert.alert('Error', 'Contract value and budgeted cost must be valid numbers');
+      return;
+    }
+
     setLoading(true);
     try {
       await createProject({
         name: name.trim(),
         client_id: clientId.trim(),
         status,
+        contract_value: parsedContractValue,
+        budget: parsedBudget,
       });
       await refresh();
       router.back();
@@ -75,6 +91,26 @@ export default function CreateProjectScreen() {
         title={status}
         onPress={showStatusPicker}
         color={config.theme.primary}
+      />
+
+      <Text style={styles.label}>Contract Value</Text>
+      <TextInput
+        style={styles.input}
+        value={contractValue}
+        onChangeText={setContractValue}
+        placeholder="Total payable by client"
+        placeholderTextColor={config.theme.textSecondary}
+        keyboardType="numeric"
+      />
+
+      <Text style={styles.label}>Budgeted Cost</Text>
+      <TextInput
+        style={styles.input}
+        value={budget}
+        onChangeText={setBudget}
+        placeholder="Expected spend to complete"
+        placeholderTextColor={config.theme.textSecondary}
+        keyboardType="numeric"
       />
 
       <View style={{ height: 20 }} />

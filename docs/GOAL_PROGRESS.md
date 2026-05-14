@@ -2,6 +2,49 @@
 
 Date: 2026-05-12
 
+## 2026-05-14 Financial Tracking Handoff
+
+Current branch: `fix/project-create-contract`
+
+Implemented Phase 1 profit-tracking foundation:
+- Added a migration for `projects.contract_value`.
+- Kept existing `projects.budget` and relabeled it in the app as Budgeted Cost.
+- Did not add stored `actual_cost`; actual cost is calculated from project expenses.
+- Added `project_expenses` schema and backend CRUD endpoints under `/api/projects/:id/expenses`.
+- Added backend project financial summary calculation:
+  - contract value
+  - budgeted cost
+  - actual cost
+  - planned profit
+  - actual profit
+  - cost variance
+  - expense count
+- Added mobile project create/edit fields for Contract Value and Budgeted Cost.
+- Added Project Detail financial summary display.
+
+Checks run:
+- `node --check backend/services/projectsService.js` passed.
+- `node --check backend/controllers/projectsController.js` passed.
+- `node --check backend/routes/projects.js` passed.
+- Backend health, `GET /api/projects`, and `GET /api/clients` returned HTTP 200 against the local backend.
+- `npx tsc --noEmit` still fails on pre-existing unresolved config imports in `src/index.ts` and `src/stores/authStore.ts`.
+- `npm run lint` still fails on pre-existing unrelated lint errors in Dashboard/UI/config files.
+
+Important blocker:
+- The new Supabase migration has been created but not applied yet. Until it is applied, entering a non-empty Contract Value or using expense endpoints will fail because the database does not yet have `projects.contract_value` and `project_expenses`.
+
+Next recommended tasks:
+1. Apply the new Supabase migration in the target Supabase project.
+2. Run a full Projects financial CRUD smoke test:
+   - create/update a project with `contract_value` and `budget`
+   - add one project expense
+   - list project expenses
+   - fetch project detail
+   - verify `actual_cost` and `actual_profit`
+3. Add the mobile expense entry and expense list UI inside Project Detail.
+4. Re-run mobile web/device smoke for Projects and Clients after expenses UI is added.
+5. Then clean up the known pre-existing mobile lint/typecheck blockers separately.
+
 ## Repository
 
 - Current branch: `fix/project-create-contract`

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
-import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator, TouchableOpacity, type AlertButton } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useProjectsStore } from '../../../../src/stores/projectsStore';
 import { config } from '../../../../src/lib/config';
@@ -17,6 +17,8 @@ export default function EditProjectScreen() {
   const [name, setName] = useState('');
   const [clientId, setClientId] = useState('');
   const [status, setStatus] = useState<ProjectStatus>('draft');
+  const [contractValue, setContractValue] = useState('');
+  const [budget, setBudget] = useState('');
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
@@ -35,6 +37,8 @@ export default function EditProjectScreen() {
       setName(currentProject.name);
       setClientId(String(currentProject.client_id || ''));
       setStatus(currentProject.status);
+      setContractValue(currentProject.contract_value !== undefined && currentProject.contract_value !== null ? String(currentProject.contract_value) : '');
+      setBudget(currentProject.budget !== undefined && currentProject.budget !== null ? String(currentProject.budget) : '');
     }
   }, [currentProject]);
 
@@ -50,7 +54,7 @@ export default function EditProjectScreen() {
   ];
 
   const showStatusPicker = () => {
-    const buttons = statusOptions.map((s) => ({
+    const buttons: AlertButton[] = statusOptions.map((s) => ({
       text: s,
       onPress: () => setStatus(s),
     }));
@@ -63,12 +67,26 @@ export default function EditProjectScreen() {
       Alert.alert('Error', 'Name and client are required');
       return;
     }
+
+    const parsedContractValue = contractValue.trim() ? Number(contractValue) : undefined;
+    const parsedBudget = budget.trim() ? Number(budget) : undefined;
+
+    if (
+      (parsedContractValue !== undefined && !Number.isFinite(parsedContractValue)) ||
+      (parsedBudget !== undefined && !Number.isFinite(parsedBudget))
+    ) {
+      Alert.alert('Error', 'Contract value and budgeted cost must be valid numbers');
+      return;
+    }
+
     setLoading(true);
     try {
       await updateProject(projectId, {
         name: name.trim(),
         client_id: clientId.trim(),
         status,
+        contract_value: parsedContractValue,
+        budget: parsedBudget,
       });
       router.back();
     } catch (error: any) {
@@ -113,6 +131,26 @@ export default function EditProjectScreen() {
       <TouchableOpacity style={styles.trigger} onPress={showStatusPicker}>
         <Text style={styles.triggerText}>{status}</Text>
       </TouchableOpacity>
+
+      <Text style={styles.label}>Contract Value</Text>
+      <TextInput
+        style={styles.input}
+        value={contractValue}
+        onChangeText={setContractValue}
+        placeholder="Total payable by client"
+        placeholderTextColor={config.theme.textSecondary}
+        keyboardType="numeric"
+      />
+
+      <Text style={styles.label}>Budgeted Cost</Text>
+      <TextInput
+        style={styles.input}
+        value={budget}
+        onChangeText={setBudget}
+        placeholder="Expected spend to complete"
+        placeholderTextColor={config.theme.textSecondary}
+        keyboardType="numeric"
+      />
 
       <View style={{ height: 20 }} />
       <Button
