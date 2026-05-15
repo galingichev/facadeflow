@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
-import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator, TouchableOpacity, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useClientsStore } from '../../../../src/stores/clientsStore';
 import { config } from '../../../../src/lib/config';
@@ -21,10 +21,15 @@ export default function EditClientScreen() {
 
   useEffect(() => {
     if (clientId) {
-    setLoading(false);
-      fetchClient(clientId).finally(() => setInitialLoading(false));
+      setLoading(false);
+      setInitialLoading(true);
+      fetchClient(clientId)
+        .catch(() => {
+          // Store state is already cleared; render the not-found state below.
+        })
+        .finally(() => setInitialLoading(false));
     }
-  }, [clientId]);
+  }, [clientId, fetchClient]);
 
   useEffect(() => {
     if (currentClient) {
@@ -35,6 +40,11 @@ export default function EditClientScreen() {
   }, [currentClient]);
 
   const handleSubmit = async () => {
+    if (!clientId) {
+      Alert.alert('Error', 'Client ID is missing');
+      return;
+    }
+
     if (!name.trim()) {
       Alert.alert('Error', 'Client name is required');
       return;
@@ -54,28 +64,43 @@ export default function EditClientScreen() {
     }
   };
 
+  const deleteClient = async () => {
+    if (!clientId) {
+      Alert.alert('Error', 'Client ID is missing');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await removeClient(clientId);
+      router.replace('/clients' as any);
+    } catch (error: any) {
+      const message = error.response?.data?.error || error.message || 'Failed to delete client';
+      if (Platform.OS === 'web') {
+        window.alert(message);
+      } else {
+        Alert.alert('Error', message);
+      }
+      setLoading(false);
+    }
+  };
+
   const handleDelete = () => {
-    Alert.alert(
-      'Delete Client',
-      'Are you sure? This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setLoading(true);
-            try {
-              await removeClient(clientId);
-              router.replace('/clients' as any);
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to delete client');
-              setLoading(false);
-            }
-          },
-        },
-      ]
-    );
+    if (Platform.OS === 'web') {
+      if (window.confirm('Confirm Client Delete\n\nDelete this client?')) {
+        deleteClient();
+      }
+      return;
+    }
+
+    Alert.alert('Confirm Client Delete', 'Delete this client?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'OK',
+        style: 'destructive',
+        onPress: deleteClient,
+      },
+    ]);
   };
 
   if (initialLoading) {

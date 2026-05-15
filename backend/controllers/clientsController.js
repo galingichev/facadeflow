@@ -27,6 +27,9 @@ async function deleteClient(req, res) {
     res.status(204).send(); // No Content
   } catch (err) {
     console.error('Error deleting client:', err);
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
     res.status(500).json({ error: 'Failed to delete client' });
   }
 }

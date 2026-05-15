@@ -36,7 +36,8 @@ export const useClientsStore = create<ClientState>()((set, get) => ({
       const response = await clientsApi.get(clientId);
       set({ currentClient: (response as any) ?? null, isLoading: false });
     } catch (error: any) {
-      set({ error: error.message || 'Failed to fetch client', isLoading: false });
+      set({ currentClient: null, error: error.message || 'Failed to fetch client', isLoading: false });
+      throw error;
     }
   },
 
@@ -64,6 +65,7 @@ export const useClientsStore = create<ClientState>()((set, get) => ({
       }));
     } catch (error: any) {
       set({ error: error.message || 'Failed to update client', isLoading: false });
+      throw error;
     }
   },
 
@@ -71,10 +73,14 @@ export const useClientsStore = create<ClientState>()((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       await clientsApi.delete(clientId);
-      await get().fetchClients(); // Refresh list after removal
-      set({ isLoading: false });
+      set((state) => ({
+        clients: state.clients.filter((client) => client.id !== clientId),
+        currentClient: state.currentClient?.id === clientId ? null : state.currentClient,
+        isLoading: false,
+      }));
     } catch (error: any) {
       set({ error: error.message || 'Failed to remove client', isLoading: false });
+      throw error;
     }
   },
 }));

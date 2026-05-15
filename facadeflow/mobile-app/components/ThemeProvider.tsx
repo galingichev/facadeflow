@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useColorScheme } from 'react-native';
+import { Platform, useColorScheme } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import { config } from '../src/lib/config';
 
 type ThemeMode = 'light' | 'dark' | 'auto';
 
@@ -56,6 +55,23 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const THEME_MODE_KEY = 'facadeflow_theme_mode';
 
+async function getStoredThemeMode(): Promise<string | null> {
+  if (Platform.OS === 'web') {
+    return window.localStorage.getItem(THEME_MODE_KEY);
+  }
+
+  return SecureStore.getItemAsync(THEME_MODE_KEY);
+}
+
+async function setStoredThemeMode(mode: ThemeMode): Promise<void> {
+  if (Platform.OS === 'web') {
+    window.localStorage.setItem(THEME_MODE_KEY, mode);
+    return;
+  }
+
+  await SecureStore.setItemAsync(THEME_MODE_KEY, mode);
+}
+
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const systemColorScheme = useColorScheme();
   const [mode, setModeState] = useState<ThemeMode>('auto');
@@ -66,7 +82,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const loadThemeMode = async () => {
     try {
-      const saved = await SecureStore.getItemAsync(THEME_MODE_KEY);
+      const saved = await getStoredThemeMode();
       if (saved === 'light' || saved === 'dark' || saved === 'auto' || saved === null) {
         setModeState((saved as any) || 'auto');
       }
@@ -77,7 +93,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const setMode = async (newMode: ThemeMode) => {
     try {
-      await SecureStore.setItemAsync(THEME_MODE_KEY, newMode);
+      await setStoredThemeMode(newMode);
       setModeState(newMode);
     } catch (error) {
       console.error('Failed to save theme mode:', error);

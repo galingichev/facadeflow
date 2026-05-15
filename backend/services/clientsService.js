@@ -4,6 +4,14 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 const supabase = supabaseCreateClient(supabaseUrl, supabaseKey);
 
+class ConflictError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'ConflictError';
+    this.statusCode = 409;
+  }
+}
+
 async function getClients() {
   const { data, error } = await supabase
     .from('clients')
@@ -24,6 +32,17 @@ async function createClient(clientData) {
 }
 
 async function deleteClient(clientId) {
+  const { count, error: countError } = await supabase
+    .from('projects')
+    .select('id', { count: 'exact', head: true })
+    .eq('client_id', clientId);
+
+  if (countError) throw countError;
+
+  if ((count || 0) > 0) {
+    throw new ConflictError('This client has projects and cannot be deleted. Move or delete the projects first.');
+  }
+
   const { error } = await supabase
     .from('clients')
     .delete()

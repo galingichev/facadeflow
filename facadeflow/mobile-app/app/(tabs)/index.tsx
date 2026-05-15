@@ -143,7 +143,7 @@ export default function DashboardScreen() {
 
       {/* Today's Schedule */}
       <Card style={styles.section} padding="medium">
-        <Text style={styles.sectionTitle}>Today's Schedule</Text>
+        <Text style={styles.sectionTitle}>{"Today's Schedule"}</Text>
         {brief?.items && brief.items.length > 0 ? (
           brief.items.map((item: DailyBrief['items'][number], idx) => (
             <View key={idx} style={styles.scheduleItem}>

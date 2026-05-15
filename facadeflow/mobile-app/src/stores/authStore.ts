@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import * as SecureStore from 'expo-secure-store';
 import type { User } from '../types';
 import { authApi } from '../api/endpoints';
-import { getApiUrl } from '../config';
+import { getApiUrl } from '../lib/config';
 
 interface AuthState {
   user: User | null;

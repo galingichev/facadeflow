@@ -79,12 +79,17 @@ export const useProjectsStore = create<ProjectsState & ProjectsActions>((set, ge
   },
 
   fetchProject: async (projectId: string) => {
-    set({ isLoading: true, error: null });
+    set((state) => ({
+      currentProject: state.currentProject?.id === projectId ? state.currentProject : null,
+      isLoading: true,
+      error: null,
+    }));
     try {
       const project = await projectsApi.get(projectId);
       set({ currentProject: project, isLoading: false });
     } catch (error: any) {
       set({
+        currentProject: null,
         error: error.response?.data?.message || 'Failed to fetch project',
         isLoading: false,
       });

@@ -1,11 +1,23 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, type AlertButton } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { createProject } from '../../../src/services/projectService';
 import { useProjectsStore } from '../../../src/stores/projectsStore';
 import { config } from '../../../src/lib/config';
 import type { ProjectStatus } from '../../../src/types';
 import ClientPicker from '../../../components/ui/ClientPicker';
+import { Select } from '../../../components/ui/Select';
+
+const STATUS_OPTIONS: { label: string; value: ProjectStatus }[] = [
+  { label: 'Draft', value: 'draft' },
+  { label: 'Inquired', value: 'inquired' },
+  { label: 'Quoted', value: 'quoted' },
+  { label: 'Approved', value: 'approved' },
+  { label: 'In Progress', value: 'in_progress' },
+  { label: 'On Hold', value: 'on_hold' },
+  { label: 'Completed', value: 'completed' },
+  { label: 'Cancelled', value: 'cancelled' },
+];
 
 export default function CreateProjectScreen() {
   const router = useRouter();
@@ -16,26 +28,6 @@ export default function CreateProjectScreen() {
   const [contractValue, setContractValue] = useState('');
   const [budget, setBudget] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const statusOptions: ProjectStatus[] = [
-    'draft',
-    'inquired',
-    'quoted',
-    'approved',
-    'in_progress',
-    'on_hold',
-    'completed',
-    'cancelled',
-  ];
-
-  const showStatusPicker = () => {
-    const buttons: AlertButton[] = statusOptions.map((s) => ({
-      text: s,
-      onPress: () => setStatus(s),
-    }));
-    buttons.push({ text: 'Cancel', style: 'cancel' as const });
-    Alert.alert('Select Status', '', buttons);
-  };
 
   const handleSubmit = async () => {
     if (!name.trim() || !clientId.trim()) {
@@ -87,10 +79,12 @@ export default function CreateProjectScreen() {
       <ClientPicker value={clientId} onChange={setClientId} />
 
       <Text style={styles.label}>Status</Text>
-      <Button
-        title={status}
-        onPress={showStatusPicker}
-        color={config.theme.primary}
+      <Select
+        options={STATUS_OPTIONS}
+        value={status}
+        onValueChange={(value) => setStatus(value as ProjectStatus)}
+        placeholder="Select status"
+        style={styles.selectField}
       />
 
       <Text style={styles.label}>Contract Value</Text>
@@ -142,5 +136,8 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
     color: config.theme.text,
+  },
+  selectField: {
+    marginBottom: 16,
   },
 });

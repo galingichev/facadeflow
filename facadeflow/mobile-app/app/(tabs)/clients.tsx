@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, RefreshControl, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, RefreshControl, Alert, Platform } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Card } from '../../components/ui/Card';
@@ -28,8 +28,12 @@ export default function ClientsScreen() {
       await clientsStore.remove(clientId);
       loadClients(); // Refresh the list
     } catch (e) {
-      console.error('Failed to delete client', e);
-      Alert.alert("Error", "Failed to delete client.");
+      const message = (e as any).response?.data?.error || (e as any).message || 'Failed to delete client.';
+      if (Platform.OS === 'web') {
+        window.alert(message);
+      } else {
+        Alert.alert('Error', message);
+      }
     }
   }, [loadClients]);
 
@@ -100,33 +104,59 @@ function ClientCard({ client, onDelete }: { client: any; onDelete: (id: string) 
   const router = useRouter();
 
   const handleDelete = () => {
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Confirm Client Delete\n\nDelete ${client.name}?`)) {
+        onDelete(client.id);
+      }
+      return;
+    }
+
     Alert.alert(
-      "Delete Client",
-      `Are you sure you want to delete ${client.name}? This cannot be undone.`,
+      "Confirm Client Delete",
+      `Delete ${client.name}?`,
       [
         { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: () => onDelete(client.id) }
+        { text: "OK", style: "destructive", onPress: () => onDelete(client.id) }
       ],
       { cancelable: true }
     );
   };
 
   return (
-    <Card style={styles.card} onPress={() => { const url = ('/clients/' + client.id + '/edit'); router.push(url as any); }}>
-      <View style={styles.avatarContainer}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials(client.name)}</Text>
+    <Card style={styles.card}>
+      <TouchableOpacity
+        onPress={() => {
+          const url = ('/clients/' + client.id + '/edit');
+          router.push(url as any);
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={`Open ${client.name}`}
+      >
+        <View style={styles.avatarContainer}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initials(client.name)}</Text>
+          </View>
+          <View style={styles.info}>
+            <Text style={styles.name}>{client.name}</Text>
+            {client.company && <Text style={styles.company}>{client.company}</Text>}
+            <Text style={styles.email}>{client.email}</Text>
+            {client.phone ? <Text style={styles.phone}>{formatPhone(client.phone)}</Text> : null}
+          </View>
         </View>
-        <View style={styles.info}>
-          <Text style={styles.name}>{client.name}</Text>
-          {client.company && <Text style={styles.company}>{client.company}</Text>}
-          <Text style={styles.email}>{client.email}</Text>
-          {client.phone ? <Text style={styles.phone}>{formatPhone(client.phone)}</Text> : null}
-        </View>
-      </View>
+      </TouchableOpacity>
       <View style={styles.cardFooter}>
         <Text style={styles.projectsCount}>{client.projects_count} project(s)</Text>
-        <MaterialIcons name="chevron-right" size={24} color={config.theme.border} />
+        <View style={styles.cardActions}>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={handleDelete}
+            accessibilityRole="button"
+            accessibilityLabel={`Delete ${client.name}`}
+          >
+            <MaterialIcons name="delete-outline" size={22} color={config.theme.error} />
+          </TouchableOpacity>
+          <MaterialIcons name="chevron-right" size={24} color={config.theme.border} />
+        </View>
       </View>
     </Card>
   );
@@ -220,6 +250,14 @@ const styles = StyleSheet.create({
   projectsCount: {
     fontSize: 12,
     color: config.theme.textSecondary,
+  },
+  cardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  deleteButton: {
+    padding: 6,
+    marginRight: 4,
   },
   emptyContainer: {
     alignItems: 'center',

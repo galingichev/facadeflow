@@ -1,11 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
-import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator, TouchableOpacity, type AlertButton } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useProjectsStore } from '../../../../src/stores/projectsStore';
 import { config } from '../../../../src/lib/config';
 import type { ProjectStatus } from '../../../../src/types';
 import ClientPicker from '../../../../components/ui/ClientPicker';
+import { Select } from '../../../../components/ui/Select';
+
+const STATUS_OPTIONS: { label: string; value: ProjectStatus }[] = [
+  { label: 'Draft', value: 'draft' },
+  { label: 'Inquired', value: 'inquired' },
+  { label: 'Quoted', value: 'quoted' },
+  { label: 'Approved', value: 'approved' },
+  { label: 'In Progress', value: 'in_progress' },
+  { label: 'On Hold', value: 'on_hold' },
+  { label: 'Completed', value: 'completed' },
+  { label: 'Cancelled', value: 'cancelled' },
+];
 
 export default function EditProjectScreen() {
   const router = useRouter();
@@ -41,26 +53,6 @@ export default function EditProjectScreen() {
       setBudget(currentProject.budget !== undefined && currentProject.budget !== null ? String(currentProject.budget) : '');
     }
   }, [currentProject]);
-
-  const statusOptions: ProjectStatus[] = [
-    'draft',
-    'inquired',
-    'quoted',
-    'approved',
-    'in_progress',
-    'on_hold',
-    'completed',
-    'cancelled',
-  ];
-
-  const showStatusPicker = () => {
-    const buttons: AlertButton[] = statusOptions.map((s) => ({
-      text: s,
-      onPress: () => setStatus(s),
-    }));
-    buttons.push({ text: 'Cancel', style: 'cancel' as const });
-    Alert.alert('Select Status', '', buttons);
-  };
 
   const handleSubmit = async () => {
     if (!name.trim() || !clientId.trim()) {
@@ -128,9 +120,13 @@ export default function EditProjectScreen() {
       <ClientPicker value={clientId} onChange={setClientId} />
 
       <Text style={styles.label}>Status</Text>
-      <TouchableOpacity style={styles.trigger} onPress={showStatusPicker}>
-        <Text style={styles.triggerText}>{status}</Text>
-      </TouchableOpacity>
+      <Select
+        options={STATUS_OPTIONS}
+        value={status}
+        onValueChange={(value) => setStatus(value as ProjectStatus)}
+        placeholder="Select status"
+        style={styles.selectField}
+      />
 
       <Text style={styles.label}>Contract Value</Text>
       <TextInput
@@ -198,15 +194,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     color: config.theme.text,
   },
-  trigger: {
-    borderWidth: 1,
-    borderColor: config.theme.border,
-    borderRadius: 8,
-    padding: 12,
+  selectField: {
     marginBottom: 16,
-    backgroundColor: config.theme.background,
-  },
-  triggerText: {
-    color: config.theme.text,
   },
 });

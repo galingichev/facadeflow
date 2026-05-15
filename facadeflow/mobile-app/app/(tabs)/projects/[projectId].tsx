@@ -5,8 +5,23 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { config } from '../../../src/lib/config';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
+import { Input } from '../../../components/ui/Input';
+import { Select } from '../../../components/ui/Select';
 import { useProjectsStore } from '../../../src/stores/projectsStore';
+import { projectsApi } from '../../../src/api/endpoints';
+import type { ExpenseCategory, Project, ProjectExpense, ProjectFinancials } from '../../../src/types';
 import { formatCurrency, formatDate, getProjectStatusColor } from '../../../src/utils';
+
+const EXPENSE_CATEGORY_OPTIONS: { label: string; value: ExpenseCategory }[] = [
+  { label: 'Materials', value: 'materials' },
+  { label: 'Labor', value: 'labor' },
+  { label: 'Subcontractor', value: 'subcontractor' },
+  { label: 'Equipment', value: 'equipment' },
+  { label: 'Transport', value: 'transport' },
+  { label: 'Permits', value: 'permits' },
+  { label: 'Overhead', value: 'overhead' },
+  { label: 'Other', value: 'other' },
+];
 
 export default function ProjectDetailScreen() {
   const router = useRouter();
@@ -20,9 +35,13 @@ export default function ProjectDetailScreen() {
   }, [projectId, fetchProject]);
 
   const [activeTab, setActiveTab] = React.useState('overview');
+  React.useEffect(() => {
+    setActiveTab('overview');
+  }, [projectId]);
+
   const project = currentProject;
 
-  if (isLoading || !project) {
+  if (isLoading || !project || project.id !== projectId) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={config.theme.primary} />
@@ -59,6 +78,7 @@ export default function ProjectDetailScreen() {
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: 'dashboard' },
+    { id: 'expenses', label: 'Expenses', icon: 'receipt-long' },
     { id: 'photos', label: 'Photos', icon: 'photo-library' },
     { id: 'tasks', label: 'Tasks', icon: 'checklist' },
     { id: 'estimates', label: 'Estimates', icon: 'description' },
@@ -149,6 +169,7 @@ export default function ProjectDetailScreen() {
       {/* Tab Content */}
       <Card style={styles.contentCard} padding="medium">
         {activeTab === 'overview' && <OverviewTab project={project} />}
+        {activeTab === 'expenses' && <ExpensesTab project={project} />}
         {activeTab === 'photos' && <PhotosTab projectId={project.id} />}
         {activeTab === 'tasks' && <TasksTab projectId={project.id} />}
         {activeTab === 'estimates' && <EstimatesTab projectId={project.id} />}
@@ -186,7 +207,7 @@ export default function ProjectDetailScreen() {
   );
 }
 
-function OverviewTab({ project }: { project: any }) {
+function OverviewTab({ project }: { project: Project }) {
   const financials = project.financials || {
     contract_value: project.contract_value ?? null,
     budgeted_cost: project.budget ?? null,
@@ -247,6 +268,198 @@ function OverviewTab({ project }: { project: any }) {
   );
 }
 
+function ExpensesTab({ project }: { project: Project }) {
+  const fetchProject = useProjectsStore((state) => state.fetchProject);
+  const [expenses, setExpenses] = React.useState<ProjectExpense[]>(project.expenses || []);
+  const [category, setCategory] = React.useState<ExpenseCategory>('materials');
+  const [description, setDescription] = React.useState('');
+  const [amount, setAmount] = React.useState('');
+  const [vendor, setVendor] = React.useState('');
+  const [expenseDate, setExpenseDate] = React.useState(new Date().toISOString().slice(0, 10));
+  const [isLoadingExpenses, setIsLoadingExpenses] = React.useState(false);
+  const [isSavingExpense, setIsSavingExpense] = React.useState(false);
+
+  const financials = getProjectFinancials(project);
+
+  const loadExpenses = React.useCallback(async () => {
+    setIsLoadingExpenses(true);
+    try {
+      const nextExpenses = await projectsApi.getExpenses(project.id);
+      setExpenses(nextExpenses);
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.error || 'Failed to fetch project expenses');
+    } finally {
+      setIsLoadingExpenses(false);
+    }
+  }, [project.id]);
+
+  React.useEffect(() => {
+    if (project.expenses) {
+      setExpenses(project.expenses);
+      return;
+    }
+
+    loadExpenses();
+  }, [loadExpenses, project.expenses]);
+
+  const resetForm = () => {
+    setCategory('materials');
+    setDescription('');
+    setAmount('');
+    setVendor('');
+    setExpenseDate(new Date().toISOString().slice(0, 10));
+  };
+
+  const createExpense = async () => {
+    const parsedAmount = Number(amount);
+
+    if (!description.trim()) {
+      Alert.alert('Error', 'Expense description is required');
+      return;
+    }
+
+    if (!Number.isFinite(parsedAmount) || parsedAmount < 0) {
+      Alert.alert('Error', 'Expense amount must be a non-negative number');
+      return;
+    }
+
+    if (!expenseDate.trim()) {
+      Alert.alert('Error', 'Expense date is required');
+      return;
+    }
+
+    setIsSavingExpense(true);
+    try {
+      await projectsApi.createExpense(project.id, {
+        category,
+        description: description.trim(),
+        amount: parsedAmount,
+        expense_date: expenseDate.trim(),
+        vendor: vendor.trim() || undefined,
+      });
+      resetForm();
+      await Promise.all([loadExpenses(), fetchProject(project.id)]);
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.error || 'Failed to create project expense');
+    } finally {
+      setIsSavingExpense(false);
+    }
+  };
+
+  const deleteExpense = async (expense: ProjectExpense) => {
+    const removeExpense = async () => {
+      try {
+        await projectsApi.deleteExpense(project.id, expense.id);
+        await Promise.all([loadExpenses(), fetchProject(project.id)]);
+      } catch (error: any) {
+        Alert.alert('Error', error.response?.data?.error || 'Failed to delete project expense');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm('Delete this expense?')) {
+        await removeExpense();
+      }
+      return;
+    }
+
+    Alert.alert('Delete Expense', 'Delete this expense?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: removeExpense },
+    ]);
+  };
+
+  return (
+    <View>
+      <Text style={styles.tabContentTitle}>Expenses</Text>
+
+      <View style={styles.expenseSummary}>
+        <FinancialMetric label="Actual Cost" value={financials.actual_cost} />
+        <FinancialMetric label="Actual Profit" value={financials.actual_profit} />
+      </View>
+
+      <View style={styles.expenseForm}>
+        <Select
+          label="Category"
+          options={EXPENSE_CATEGORY_OPTIONS}
+          value={category}
+          onValueChange={(value) => setCategory(value as ExpenseCategory)}
+          style={styles.expenseField}
+        />
+        <Input
+          label="Description"
+          value={description}
+          onChangeText={setDescription}
+          placeholder="e.g. Aluminium profiles"
+        />
+        <Input
+          label="Amount"
+          value={amount}
+          onChangeText={setAmount}
+          keyboardType="decimal-pad"
+          placeholder="0.00"
+        />
+        <Input
+          label="Vendor"
+          value={vendor}
+          onChangeText={setVendor}
+          placeholder="Optional"
+        />
+        <Input
+          label="Expense Date"
+          value={expenseDate}
+          onChangeText={setExpenseDate}
+          placeholder="YYYY-MM-DD"
+        />
+        <Button
+          title="Add Expense"
+          variant="primary"
+          loading={isSavingExpense}
+          onPress={createExpense}
+          fullWidth
+        />
+      </View>
+
+      <View style={styles.expenseListHeader}>
+        <Text style={styles.expenseListTitle}>Recorded Expenses</Text>
+        <Text style={styles.expenseListCount}>{expenses.length}</Text>
+      </View>
+
+      {isLoadingExpenses ? (
+        <ActivityIndicator size="small" color={config.theme.primary} />
+      ) : expenses.length === 0 ? (
+        <View style={styles.placeholder}>
+          <MaterialIcons name="receipt-long" size={48} color={config.theme.border} />
+          <Text style={styles.placeholderText}>No expenses yet</Text>
+        </View>
+      ) : (
+        expenses.map((expense) => (
+          <View key={expense.id} style={styles.expenseRow}>
+            <View style={styles.expenseInfo}>
+              <Text style={styles.expenseDescription}>{expense.description}</Text>
+              <Text style={styles.expenseMeta}>
+                {formatExpenseCategory(expense.category)} • {formatDate(expense.expense_date, 'short')}
+                {expense.vendor ? ` • ${expense.vendor}` : ''}
+              </Text>
+            </View>
+            <View style={styles.expenseAmountBlock}>
+              <Text style={styles.expenseAmount}>{formatCurrency(expense.amount)}</Text>
+              <TouchableOpacity
+                style={styles.expenseDeleteButton}
+                onPress={() => deleteExpense(expense)}
+                accessibilityRole="button"
+                accessibilityLabel={`Delete expense ${expense.description}`}
+              >
+                <MaterialIcons name="delete-outline" size={20} color={config.theme.error} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))
+      )}
+    </View>
+  );
+}
+
 function FinancialMetric({ label, value }: { label: string; value: number | null }) {
   return (
     <View style={styles.financialMetric}>
@@ -254,6 +467,23 @@ function FinancialMetric({ label, value }: { label: string; value: number | null
       <Text style={styles.financialValue}>{value === null || value === undefined ? '—' : formatCurrency(value)}</Text>
     </View>
   );
+}
+
+function getProjectFinancials(project: Project): ProjectFinancials {
+  return project.financials || {
+    contract_value: project.contract_value ?? null,
+    budgeted_cost: project.budget ?? null,
+    actual_cost: 0,
+    planned_profit: null,
+    actual_profit: null,
+    cost_variance: null,
+    actual_margin: null,
+    expense_count: 0,
+  };
+}
+
+function formatExpenseCategory(category: ExpenseCategory) {
+  return category.replace('_', ' ');
 }
 
 function PhotosTab({ projectId }: { projectId: string }) {
@@ -475,6 +705,71 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: config.theme.text,
+  },
+  expenseSummary: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  expenseForm: {
+    paddingBottom: 20,
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: config.theme.border,
+  },
+  expenseField: {
+    marginBottom: 16,
+  },
+  expenseListHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  expenseListTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: config.theme.text,
+  },
+  expenseListCount: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: config.theme.textSecondary,
+  },
+  expenseRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: config.theme.border,
+  },
+  expenseInfo: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  expenseDescription: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: config.theme.text,
+    marginBottom: 4,
+  },
+  expenseMeta: {
+    fontSize: 12,
+    color: config.theme.textSecondary,
+    textTransform: 'capitalize',
+  },
+  expenseAmountBlock: {
+    alignItems: 'flex-end',
+  },
+  expenseAmount: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: config.theme.text,
+    marginBottom: 6,
+  },
+  expenseDeleteButton: {
+    padding: 4,
   },
   detailRow: {
     flexDirection: 'row',
