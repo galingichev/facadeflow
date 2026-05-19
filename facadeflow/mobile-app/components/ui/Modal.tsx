@@ -16,11 +16,11 @@ interface ModalProps {
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
-  actions?: Array<{
+  actions?: {
     label: string;
     onPress: () => void;
     variant?: 'primary' | 'secondary' | 'danger';
-  }>;
+  }[];
   style?: ViewStyle;
 }
 

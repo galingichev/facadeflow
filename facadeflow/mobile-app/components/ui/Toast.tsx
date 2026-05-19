@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, Animated, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { config } from '../../src/lib/config';
 
@@ -179,7 +179,6 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
 // Hook for using toast
 export const useToast = () => React.useContext(ToastContext);
 
-const { width } = Dimensions.get('window');
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',

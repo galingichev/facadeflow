@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableWithoutFeedback, PanResponder, Image, ImageSourcePropType } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, Dimensions, TouchableWithoutFeedback, PanResponder, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Svg, Circle, Line, Text as SvgText, Rect, G } from 'react-native-svg';
 import { config } from '../../src/lib/config';
@@ -31,7 +31,6 @@ export const PhotoAnnotator: React.FC<PhotoAnnotatorProps> = ({
     setSelectedTool,
     setSelectedColor,
     addAnnotation,
-    deleteAnnotation,
   } = usePhotoAnnotation();
 
   const [currentDrawing, setCurrentDrawing] = useState<Annotation | null>(null);
@@ -75,13 +74,6 @@ export const PhotoAnnotator: React.FC<PhotoAnnotatorProps> = ({
       },
     })
   ).current;
-
-  const handleAnnotationPress = (id: string) => {
-    if (selectedTool === 'pan') {
-      // Could show menu to edit/delete
-      deleteAnnotation(id);
-    }
-  };
 
   const renderAnnotation = (annotation: Annotation) => {
     const baseProps = {

@@ -9,6 +9,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "smoke:web:mvp": "node scripts/smoke-web-mvp.js",
     "prepare": "husky"
   },
   "dependencies": {

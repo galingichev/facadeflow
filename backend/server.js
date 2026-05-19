@@ -5,6 +5,7 @@ const cors = require('cors');
 // Route imports
 const projectsRouter = require('./routes/projects');
 const clientsRouter = require('./routes/clients');
+const projectsService = require('./services/projectsService');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,65 +23,63 @@ app.get(`${API_PREFIX}/system/health`, (req, res) => {
 // Dashboard summary (live data)
 app.get(`${API_PREFIX}/dashboard/summary`, async (req, res) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const projects = await projectsService.getProjects();
+    const financialProjects = projects.filter((project) => {
+      const financials = project.financials || {};
+      return (
+        (financials.contract_value !== null && financials.contract_value !== undefined) ||
+        (financials.budgeted_cost !== null && financials.budgeted_cost !== undefined) ||
+        financials.expense_count > 0
+      );
+    });
 
-    // Start of week (Monday)
-    const now = new Date();
-    const day = now.getDay(); // 0 (Sun) - 6 (Sat)
-    const diff = day === 0 ? 6 : day - 1;
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - diff);
-    startOfWeek.setHours(0, 0, 0, 0);
-    const weekStartISO = startOfWeek.toISOString();
+    const totals = projects.reduce((summary, project) => {
+      const financials = project.financials || {};
 
-    const { createClient } = require('@supabase/supabase-js');
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+      summary.contractValue += financials.contract_value || 0;
+      summary.budgetedCost += financials.budgeted_cost || 0;
+      summary.actualCost += financials.actual_cost || 0;
+      summary.expenseCount += financials.expense_count || 0;
 
-    // Active projects: counts projects with status 'in_progress'
-    const { count: activeProjects } = await supabase
-      .from('projects')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'in_progress');
+      if (financials.actual_profit !== null && financials.actual_profit !== undefined) {
+        summary.actualProfit += financials.actual_profit;
+        if (financials.actual_profit < 0) summary.lossProjects += 1;
+        if (financials.actual_profit > 0) summary.profitableProjects += 1;
+      }
 
-    // Overdue tasks: due_date < today and status not 'done'
-    const { count: overdueTasks } = await supabase
-      .from('tasks')
-      .select('*', { count: 'exact', head: true })
-      .lt('due_date', today)
-      .neq('status', 'done');
+      return summary;
+    }, {
+      contractValue: 0,
+      budgetedCost: 0,
+      actualCost: 0,
+      actualProfit: 0,
+      expenseCount: 0,
+      profitableProjects: 0,
+      lossProjects: 0,
+    });
 
-    // Today's appointments: tasks due today
-    const { count: todayAppointments } = await supabase
-      .from('tasks')
-      .select('*', { count: 'exact', head: true })
-      .eq('due_date', today);
-
-    // Estimates sent this week: status 'sent' and sent_at >= week start
-    const { count: estimatesSentWeek } = await supabase
-      .from('estimates')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'sent')
-      .gte('sent_at', weekStartISO);
-
-    // Revenue pipeline: sum total of accepted estimates
-    const { data: acceptedEstimates } = await supabase
-      .from('estimates')
-      .select('total')
-      .eq('status', 'accepted');
-    let revenuePipeline = 0;
-    if (acceptedEstimates) {
-      revenuePipeline = acceptedEstimates.reduce((sum, est) => sum + (est.total || 0), 0);
-    }
+    const activeProjects = projects.filter((project) => project.status === 'in_progress').length;
+    const actualMargin = totals.contractValue > 0
+      ? totals.actualProfit / totals.contractValue
+      : null;
 
     res.json({
       data: {
-        active_projects: activeProjects || 0,
-        overdue_tasks: overdueTasks || 0,
-        today_appointments: todayAppointments || 0,
-        estimates_sent_this_week: estimatesSentWeek || 0,
-        revenue_pipeline: revenuePipeline
+        active_projects: activeProjects,
+        total_projects: projects.length,
+        projects_with_financials: financialProjects.length,
+        total_contract_value: totals.contractValue,
+        total_budgeted_cost: totals.budgetedCost,
+        total_actual_cost: totals.actualCost,
+        total_actual_profit: totals.actualProfit,
+        actual_margin: actualMargin,
+        total_expenses: totals.expenseCount,
+        profitable_projects: totals.profitableProjects,
+        loss_projects: totals.lossProjects,
+        revenue_pipeline: totals.contractValue,
+        overdue_tasks: 0,
+        today_appointments: 0,
+        estimates_sent_this_week: 0,
       }
     });
   } catch (err) {

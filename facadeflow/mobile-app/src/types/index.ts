@@ -99,6 +99,24 @@ export interface ProjectFinancials {
   expense_count: number;
 }
 
+export interface DashboardSummary {
+  active_projects: number;
+  total_projects: number;
+  projects_with_financials: number;
+  total_contract_value: number;
+  total_budgeted_cost: number;
+  total_actual_cost: number;
+  total_actual_profit: number;
+  actual_margin: number | null;
+  total_expenses: number;
+  profitable_projects: number;
+  loss_projects: number;
+  revenue_pipeline: number;
+  overdue_tasks: number;
+  today_appointments: number;
+  estimates_sent_this_week: number;
+}
+
 export interface EstimateItem {
   id: string;
   description: string;

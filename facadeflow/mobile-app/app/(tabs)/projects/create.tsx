@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { createProject } from '../../../src/services/projectService';
 import { useProjectsStore } from '../../../src/stores/projectsStore';
@@ -27,6 +27,8 @@ export default function CreateProjectScreen() {
   const [status, setStatus] = useState<ProjectStatus>('draft');
   const [contractValue, setContractValue] = useState('');
   const [budget, setBudget] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
@@ -37,12 +39,19 @@ export default function CreateProjectScreen() {
 
     const parsedContractValue = contractValue.trim() ? Number(contractValue) : undefined;
     const parsedBudget = budget.trim() ? Number(budget) : undefined;
+    const normalizedStartDate = startDate.trim();
+    const normalizedEndDate = endDate.trim();
 
     if (
       (parsedContractValue !== undefined && !Number.isFinite(parsedContractValue)) ||
       (parsedBudget !== undefined && !Number.isFinite(parsedBudget))
     ) {
       Alert.alert('Error', 'Contract value and budgeted cost must be valid numbers');
+      return;
+    }
+
+    if (!isValidDateInput(normalizedStartDate) || !isValidDateInput(normalizedEndDate)) {
+      Alert.alert('Error', 'Start date and end date must use YYYY-MM-DD format');
       return;
     }
 
@@ -54,6 +63,8 @@ export default function CreateProjectScreen() {
         status,
         contract_value: parsedContractValue,
         budget: parsedBudget,
+        start_date: normalizedStartDate || undefined,
+        end_date: normalizedEndDate || undefined,
       });
       await refresh();
       router.back();
@@ -65,7 +76,7 @@ export default function CreateProjectScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Text style={styles.label}>Project Name</Text>
       <TextInput
         style={styles.input}
@@ -85,6 +96,26 @@ export default function CreateProjectScreen() {
         onValueChange={(value) => setStatus(value as ProjectStatus)}
         placeholder="Select status"
         style={styles.selectField}
+      />
+
+      <Text style={styles.label}>Start Date</Text>
+      <TextInput
+        style={styles.input}
+        value={startDate}
+        onChangeText={setStartDate}
+        placeholder="YYYY-MM-DD"
+        placeholderTextColor={config.theme.textSecondary}
+        inputMode="numeric"
+      />
+
+      <Text style={styles.label}>End Date</Text>
+      <TextInput
+        style={styles.input}
+        value={endDate}
+        onChangeText={setEndDate}
+        placeholder="YYYY-MM-DD"
+        placeholderTextColor={config.theme.textSecondary}
+        inputMode="numeric"
       />
 
       <Text style={styles.label}>Contract Value</Text>
@@ -114,15 +145,25 @@ export default function CreateProjectScreen() {
         disabled={loading}
         color={config.theme.primary}
       />
-    </View>
+    </ScrollView>
   );
+}
+
+function isValidDateInput(date: string): boolean {
+  if (!date) return true;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+  const parsed = new Date(`${date}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date;
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: config.theme.background,
+  },
+  content: {
+    padding: 16,
+    paddingBottom: 32,
   },
   label: {
     fontSize: 16,

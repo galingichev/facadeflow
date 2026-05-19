@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ViewStyle, StyleSheet, TouchableOpacity, AccessibilityRole } from 'react-native';
+import { View, ViewStyle, StyleSheet, TouchableOpacity } from 'react-native';
 import { config } from '../../src/lib/config';
 
 interface CardProps {

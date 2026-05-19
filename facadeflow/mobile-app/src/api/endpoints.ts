@@ -1,4 +1,4 @@
-import api from './client';
+import { api } from './client';
 import type {
   Client,
   Project,
@@ -11,11 +11,10 @@ import type {
   Supplier,
   User,
   DailyBrief,
+  DashboardSummary,
   PaginatedResponse,
   PaginationParams,
-  ApiResponse,
   ProjectStatus,
-  EstimateStatus,
   TaskStatus,
   EstimateItem,
   PhotoAnnotation,
@@ -247,13 +246,7 @@ export const usersApi = {
 // =====================
 export const dashboardApi = {
   getSummary: () =>
-    api.get<{
-      active_projects: number;
-      overdue_tasks: number;
-      today_appointments: number;
-      estimates_sent_this_week: number;
-      revenue_pipeline: number;
-    }>('/dashboard/summary'),
+    api.get<DashboardSummary>('/dashboard/summary'),
 
   getDailyBrief: () => api.get<DailyBrief>('/dashboard/daily-brief'),
 };

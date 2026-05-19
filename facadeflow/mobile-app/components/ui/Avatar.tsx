@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, ViewStyle, TextStyle } from 'react-native';
-import { config } from '../../src/lib/config';
 
 interface AvatarProps {
   name: string;

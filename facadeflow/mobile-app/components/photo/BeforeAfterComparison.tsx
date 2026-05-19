@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
 import { config } from '../../src/lib/config';
 import { Button } from '../ui/Button';
 

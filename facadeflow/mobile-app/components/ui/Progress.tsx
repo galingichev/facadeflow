@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
 import { config } from '../../src/lib/config';
 
 interface ProgressBarProps {

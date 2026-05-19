@@ -165,7 +165,7 @@ export const useProjectsStore = create<ProjectsState & ProjectsActions>((set, ge
   },
 
   loadMore: async () => {
-    const { pagination, projects, filters } = get();
+    const { pagination, filters } = get();
     if (!pagination.hasMore || pagination.page >= pagination.total / pagination.limit) {
       return;
     }

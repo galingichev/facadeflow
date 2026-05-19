@@ -7,7 +7,7 @@ import { formatCurrency } from '../../src/utils';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 
-import type { DailyBrief } from '../../src/types';
+import type { DashboardSummary } from '../../src/types';
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -21,12 +21,6 @@ export default function DashboardScreen() {
       const summaryData = await summaryRes.json();
       if (!summaryData.data) throw new Error('Invalid summary response');
       setSummary(summaryData.data);
-
-      const briefRes = await fetch(`${apiBaseUrl}/dashboard/brief`);
-      if (!briefRes.ok) throw new Error('Failed to fetch brief');
-      const briefData = await briefRes.json();
-      if (!briefData.data) throw new Error('Invalid brief response');
-      setBrief(briefData.data);
 
       setError(null);
     } catch (err: any) {
@@ -47,14 +41,7 @@ export default function DashboardScreen() {
     handleFetch();
   };
 
-  const [summary, setSummary] = useState<{
-    active_projects: number;
-    overdue_tasks: number;
-    today_appointments: number;
-    estimates_sent_this_week: number;
-    revenue_pipeline: number;
-  } | null>(null);
-  const [brief, setBrief] = useState<DailyBrief | null>(null);
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -75,11 +62,13 @@ export default function DashboardScreen() {
     );
   }
 
+  const actualProfit = summary?.total_actual_profit ?? 0;
+  const actualProfitColor = actualProfit < 0 ? config.theme.error : config.theme.success;
   const quickStats = [
     { label: 'Active Projects', value: summary?.active_projects ?? 0, icon: 'business' as const, color: config.theme.primary },
-    { label: 'Overdue Tasks', value: summary?.overdue_tasks ?? 0, icon: 'warning' as const, color: config.theme.error },
-    { label: 'Today Appointments', value: summary?.today_appointments ?? 0, icon: 'event' as const, color: config.theme.secondary },
-    { label: 'Revenue Pipeline', value: summary?.revenue_pipeline ?? 0, icon: 'trending-up' as const, color: config.theme.success, format: 'currency' },
+    { label: 'Contract Value', value: summary?.total_contract_value ?? 0, icon: 'request-quote' as const, color: config.theme.primary, format: 'currency' },
+    { label: 'Actual Cost', value: summary?.total_actual_cost ?? 0, icon: 'receipt-long' as const, color: config.theme.secondary, format: 'currency' },
+    { label: 'Actual Profit', value: actualProfit, icon: 'trending-up' as const, color: actualProfitColor, format: 'currency' },
   ];
 
   return (
@@ -95,7 +84,7 @@ export default function DashboardScreen() {
           <Card key={index} style={styles.statCard} padding="small">
             <View style={styles.statHeader}>
               <MaterialIcons name={stat.icon as any} size={24} color={stat.color} />
-              <Text style={styles.statValue}>
+              <Text style={[styles.statValue, { color: stat.color }]} numberOfLines={1} adjustsFontSizeToFit>
                 {stat.format === 'currency' ? formatCurrency(stat.value) : stat.value}
               </Text>
             </View>
@@ -103,6 +92,18 @@ export default function DashboardScreen() {
           </Card>
         ))}
       </View>
+
+      <Card style={styles.section} padding="medium">
+        <Text style={styles.sectionTitle}>Profit Snapshot</Text>
+        <View style={styles.financeRows}>
+          <FinanceRow label="Budgeted Cost" value={formatCurrency(summary?.total_budgeted_cost ?? 0)} />
+          <FinanceRow label="Actual Margin" value={formatMargin(summary?.actual_margin)} />
+          <FinanceRow label="Projects with Financials" value={`${summary?.projects_with_financials ?? 0} of ${summary?.total_projects ?? 0}`} />
+          <FinanceRow label="Expense Entries" value={`${summary?.total_expenses ?? 0}`} />
+          <FinanceRow label="Profitable Projects" value={`${summary?.profitable_projects ?? 0}`} />
+          <FinanceRow label="Loss Projects" value={`${summary?.loss_projects ?? 0}`} valueColor={summary?.loss_projects ? config.theme.error : config.theme.text} />
+        </View>
+      </Card>
 
       {/* Quick Actions */}
       <Card style={styles.section} padding="medium">
@@ -116,57 +117,28 @@ export default function DashboardScreen() {
           <QuickAction
             icon="person-add"
             label="Add Client"
-            onPress={() => router.push('/clients/edit' as any)}
-          />
-          <QuickAction
-            icon="description"
-            label="Create Estimate"
-            onPress={() => router.push('/estimates/create' as any)}
-          />
-          <QuickAction
-            icon="camera-alt"
-            label="Take Photo"
-            onPress={() => router.push('/field' as any)}
-          />
-          <QuickAction
-            icon="mic"
-            label="Voice Note"
-            onPress={() => router.push('/field/voice' as any)}
-          />
-          <QuickAction
-            icon="calendar-today"
-            label="Schedule"
-            onPress={() => {}}
+            onPress={() => router.push('/clients/create' as any)}
           />
         </View>
       </Card>
-
-      {/* Today's Schedule */}
-      <Card style={styles.section} padding="medium">
-        <Text style={styles.sectionTitle}>{"Today's Schedule"}</Text>
-        {brief?.items && brief.items.length > 0 ? (
-          brief.items.map((item: DailyBrief['items'][number], idx) => (
-            <View key={idx} style={styles.scheduleItem}>
-              <MaterialIcons name={getItemIcon(item.type) as any} size={20} color={config.theme.textSecondary} />
-              <View style={styles.scheduleContent}>
-                <Text style={styles.scheduleTitle}>{item.title}</Text>
-                {item.due_date && (
-                  <Text style={styles.scheduleTime}>
-                    {new Date(item.due_date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                  </Text>
-                )}
-              </View>
-            </View>
-          ))
-        ) : (
-          <View style={styles.scheduleItem}>
-            <MaterialIcons name="access-time" size={20} color={config.theme.textSecondary} />
-            <Text style={styles.scheduleText}>No appointments scheduled</Text>
-          </View>
-        )}
-      </Card>
     </ScrollView>
   );
+}
+
+function FinanceRow({ label, value, valueColor = config.theme.text }: { label: string; value: string; valueColor?: string }) {
+  return (
+    <View style={styles.financeRow}>
+      <Text style={styles.financeLabel}>{label}</Text>
+      <Text style={[styles.financeValue, { color: valueColor }]} numberOfLines={1} adjustsFontSizeToFit>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function formatMargin(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '—';
+  return `${Math.round(value * 1000) / 10}%`;
 }
 
 function QuickAction({ icon, label, onPress }: { icon: string; label: string; onPress: () => void }) {
@@ -178,23 +150,6 @@ function QuickAction({ icon, label, onPress }: { icon: string; label: string; on
       <Text style={styles.quickActionLabel}>{label}</Text>
     </TouchableOpacity>
   );
-}
-
-function getItemIcon(type: DailyBrief['items'][0]['type']): string {
-  switch (type) {
-    case 'project':
-      return 'business';
-    case 'task':
-      return 'assignment';
-    case 'estimate':
-      return 'description';
-    case 'client':
-      return 'person';
-    case 'appointment':
-      return 'event';
-    default:
-      return 'circle';
-  }
 }
 
 const styles = StyleSheet.create({
@@ -239,11 +194,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+    gap: 8,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
-    color: config.theme.text,
+    flexShrink: 1,
   },
   statLabel: {
     fontSize: 12,
@@ -257,6 +213,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: config.theme.text,
     marginBottom: 12,
+  },
+  financeRows: {
+    gap: 10,
+  },
+  financeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  financeLabel: {
+    flex: 1,
+    fontSize: 14,
+    color: config.theme.textSecondary,
+  },
+  financeValue: {
+    maxWidth: '48%',
+    fontSize: 15,
+    fontWeight: '600',
+    textAlign: 'right',
   },
   actionsGrid: {
     flexDirection: 'row',
@@ -283,27 +259,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: config.theme.text,
     textAlign: 'center',
-  },
-  scheduleItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  scheduleContent: {
-    marginLeft: 12,
-  },
-  scheduleTitle: {
-    fontSize: 14,
-    color: config.theme.text,
-    fontWeight: '500',
-  },
-  scheduleTime: {
-    fontSize: 12,
-    color: config.theme.textSecondary,
-  },
-  scheduleText: {
-    marginLeft: 12,
-    color: config.theme.textSecondary,
   },
   loading: {
     textAlign: 'center',

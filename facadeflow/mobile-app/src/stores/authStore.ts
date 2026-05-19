@@ -114,7 +114,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           const { access_token } = await response.json();
           set({ accessToken: access_token, isLoading: false });
           return true;
-        } catch (error) {
+        } catch {
           await useAuthStore.getState().clearTokens();
           set({ isLoading: false });
           return false;

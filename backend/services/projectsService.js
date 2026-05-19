@@ -299,6 +299,7 @@ async function getProjectById(id) {
 
   if (error?.code === 'PGRST116') return null;
   if (error) throw error;
+  if (!data) return null;
 
   const expenses = await getProjectExpenses(id);
   return attachProjectFinancials(data, expenses);

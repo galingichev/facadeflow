@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, RefreshControl, Alert, Platform } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert, Platform } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Card } from '../../components/ui/Card';
@@ -12,7 +12,6 @@ export default function ClientsScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [clients, setClients] = useState<any[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
 
   const loadClients = useCallback(async () => {
     try {

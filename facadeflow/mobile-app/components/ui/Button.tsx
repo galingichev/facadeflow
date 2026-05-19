@@ -9,6 +9,7 @@ import {
   TextStyle,
   TouchableOpacityProps,
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { config } from '../../src/lib/config';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
@@ -34,6 +35,7 @@ export const Button: React.FC<ButtonProps> = ({
   loading = false,
   leftIcon,
   rightIcon,
+  icon,
   fullWidth = false,
   style,
   textStyle,
@@ -126,6 +128,11 @@ export const Button: React.FC<ButtonProps> = ({
         <ActivityIndicator color={getTextColor()} size="small" />
       ) : (
         <>
+          {icon && (
+            <View style={[styles.iconWrapper, { marginRight: 8 }]}>
+              <MaterialIcons name={icon as any} size={18} color={getTextColor()} />
+            </View>
+          )}
           {leftIcon && <View style={[styles.iconWrapper, { marginRight: 8 }]}>{leftIcon}</View>}
           <Text style={[styles.text, { color: getTextColor() }, sizeStyles.text, textStyle]}>
             {title}

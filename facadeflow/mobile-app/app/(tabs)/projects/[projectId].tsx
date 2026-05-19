@@ -41,7 +41,7 @@ export default function ProjectDetailScreen() {
 
   const project = currentProject;
 
-  if (isLoading || !project || project.id !== projectId) {
+  if (isLoading || (project && project.id !== projectId)) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={config.theme.primary} />
@@ -49,9 +49,25 @@ export default function ProjectDetailScreen() {
     );
   }
 
+  if (!project) {
+    return (
+      <View style={styles.notFoundContainer}>
+        <MaterialIcons name="error-outline" size={48} color={config.theme.textSecondary} />
+        <Text style={styles.notFoundTitle}>Project not found</Text>
+        <Text style={styles.notFoundText}>This project may have been deleted or is no longer available.</Text>
+        <Button title="Back to Projects" onPress={() => router.replace('/projects' as any)} />
+      </View>
+    );
+  }
+
   const deleteProject = async () => {
-    await useProjectsStore.getState().deleteProject(project.id);
-    router.back();
+    const deleted = await useProjectsStore.getState().deleteProject(project.id);
+    if (deleted) {
+      router.replace('/projects' as any);
+      return;
+    }
+
+    Alert.alert('Error', 'Failed to delete project');
   };
 
   const confirmDeleteProject = () => {
@@ -79,10 +95,6 @@ export default function ProjectDetailScreen() {
   const tabs = [
     { id: 'overview', label: 'Overview', icon: 'dashboard' },
     { id: 'expenses', label: 'Expenses', icon: 'receipt-long' },
-    { id: 'photos', label: 'Photos', icon: 'photo-library' },
-    { id: 'tasks', label: 'Tasks', icon: 'checklist' },
-    { id: 'estimates', label: 'Estimates', icon: 'description' },
-    { id: 'notes', label: 'Notes', icon: 'notes' },
   ];
 
   return (
@@ -100,12 +112,16 @@ export default function ProjectDetailScreen() {
             <TouchableOpacity
               style={styles.iconButton}
               onPress={() => router.push(`/projects/${project.id}/edit` as any)}
+              accessibilityRole="button"
+              accessibilityLabel={`Edit ${project.name}`}
             >
               <MaterialIcons name="edit" size={20} color={config.theme.primary} />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.iconButton}
               onPress={confirmDeleteProject}
+              accessibilityRole="button"
+              accessibilityLabel={`Delete ${project.name}`}
             >
               <MaterialIcons name="delete" size={20} color={config.theme.error} />
             </TouchableOpacity>
@@ -170,39 +186,8 @@ export default function ProjectDetailScreen() {
       <Card style={styles.contentCard} padding="medium">
         {activeTab === 'overview' && <OverviewTab project={project} />}
         {activeTab === 'expenses' && <ExpensesTab project={project} />}
-        {activeTab === 'photos' && <PhotosTab projectId={project.id} />}
-        {activeTab === 'tasks' && <TasksTab projectId={project.id} />}
-        {activeTab === 'estimates' && <EstimatesTab projectId={project.id} />}
-        {activeTab === 'notes' && <NotesTab projectId={project.id} />}
       </Card>
 
-      {/* Quick Actions */}
-      <View style={styles.quickActions}>
-        <Button
-          title="Add Photo"
-          icon="camera-alt"
-          variant="outline"
-          size="small"
-          style={styles.quickActionButton}
-          onPress={() => router.push(`/projects/photo?projectId=${project.id}` as any)}
-        />
-        <Button
-          title="Voice Note"
-          icon="mic"
-          variant="outline"
-          size="small"
-          style={styles.quickActionButton}
-          onPress={() => router.push('/field/voice' as any)}
-        />
-        <Button
-          title="Estimate"
-          icon="description"
-          variant="outline"
-          size="small"
-          style={styles.quickActionButton}
-          onPress={() => router.push(`/projects/estimate/new?projectId=${project.id}` as any)}
-        />
-      </View>
     </ScrollView>
   );
 }
@@ -438,8 +423,9 @@ function ExpensesTab({ project }: { project: Project }) {
             <View style={styles.expenseInfo}>
               <Text style={styles.expenseDescription}>{expense.description}</Text>
               <Text style={styles.expenseMeta}>
-                {formatExpenseCategory(expense.category)} • {formatDate(expense.expense_date, 'short')}
-                {expense.vendor ? ` • ${expense.vendor}` : ''}
+                {[formatExpenseCategory(expense.category), formatDate(expense.expense_date, 'short'), expense.vendor]
+                  .filter(Boolean)
+                  .join(' - ')}
               </Text>
             </View>
             <View style={styles.expenseAmountBlock}>
@@ -486,74 +472,32 @@ function formatExpenseCategory(category: ExpenseCategory) {
   return category.replace('_', ' ');
 }
 
-function PhotosTab({ projectId }: { projectId: string }) {
-  return (
-    <View>
-      <Text style={styles.tabContentTitle}>Project Photos</Text>
-      <View style={styles.placeholder}>
-        <MaterialIcons name="photo-library" size={48} color={config.theme.border} />
-        <Text style={styles.placeholderText}>No photos yet</Text>
-        <Button
-          title="Take Photo"
-          variant="primary"
-          size="small"
-          onPress={() => {}}
-          style={{ marginTop: 12 }}
-        />
-      </View>
-    </View>
-  );
-}
-
-function TasksTab({ projectId }: { projectId: string }) {
-  return (
-    <View>
-      <Text style={styles.tabContentTitle}>Tasks</Text>
-      <View style={styles.placeholder}>
-        <MaterialIcons name="checklist" size={48} color={config.theme.border} />
-        <Text style={styles.placeholderText}>No tasks yet</Text>
-      </View>
-    </View>
-  );
-}
-
-function EstimatesTab({ projectId }: { projectId: string }) {
-  return (
-    <View>
-      <Text style={styles.tabContentTitle}>Estimates</Text>
-      <View style={styles.placeholder}>
-        <MaterialIcons name="description" size={48} color={config.theme.border} />
-        <Text style={styles.placeholderText}>No estimates yet</Text>
-        <Button
-          title="Create Estimate"
-          variant="primary"
-          size="small"
-          onPress={() => {}}
-          style={{ marginTop: 12 }}
-        />
-      </View>
-    </View>
-  );
-}
-
-function NotesTab({ projectId }: { projectId: string }) {
-  return (
-    <View>
-      <Text style={styles.tabContentTitle}>Notes & Activity</Text>
-      <View style={styles.placeholder}>
-        <MaterialIcons name="notes" size={48} color={config.theme.border} />
-        <Text style={styles.placeholderText}>No notes yet</Text>
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: config.theme.background,
+  },
+  notFoundContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: config.theme.background,
+  },
+  notFoundTitle: {
+    marginTop: 12,
+    fontSize: 20,
+    fontWeight: '700',
+    color: config.theme.text,
+  },
+  notFoundText: {
+    marginTop: 8,
+    marginBottom: 20,
+    fontSize: 14,
+    color: config.theme.textSecondary,
+    textAlign: 'center',
   },
   container: {
     flex: 1,
@@ -799,17 +743,5 @@ const styles = StyleSheet.create({
   placeholderText: {
     marginTop: 12,
     color: config.theme.textSecondary,
-  },
-  quickActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: config.theme.border,
-    backgroundColor: config.theme.surface,
-  },
-  quickActionButton: {
-    flex: 1,
-    marginHorizontal: 4,
   },
 });
