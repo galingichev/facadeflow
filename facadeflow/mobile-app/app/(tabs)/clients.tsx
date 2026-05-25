@@ -92,6 +92,8 @@ export default function ClientsScreen() {
       <TouchableOpacity
         style={styles.fab}
         onPress={() => router.push('/clients/create' as any)}
+        accessibilityRole="button"
+        accessibilityLabel="Add Client"
       >
         <MaterialIcons name="add" size={28} color="#fff" />
       </TouchableOpacity>

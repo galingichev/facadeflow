@@ -20,8 +20,7 @@ app.get(`${API_PREFIX}/system/health`, (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Dashboard summary (live data)
-app.get(`${API_PREFIX}/dashboard/summary`, async (req, res) => {
+const sendDashboardSummary = async (req, res) => {
   try {
     const projects = await projectsService.getProjects();
     const financialProjects = projects.filter((project) => {
@@ -86,7 +85,11 @@ app.get(`${API_PREFIX}/dashboard/summary`, async (req, res) => {
     console.error('Dashboard summary error:', err);
     res.status(500).json({ error: 'Failed to load dashboard summary' });
   }
-});
+};
+
+// Dashboard summary (live data)
+app.get(`${API_PREFIX}/dashboard/summary`, sendDashboardSummary);
+app.get(`${API_PREFIX}/summary`, sendDashboardSummary);
 
 // Dashboard brief
 app.get(`${API_PREFIX}/dashboard/brief`, async (req, res) => {

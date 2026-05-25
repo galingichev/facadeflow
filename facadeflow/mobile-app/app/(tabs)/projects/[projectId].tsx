@@ -97,6 +97,12 @@ export default function ProjectDetailScreen() {
     { id: 'expenses', label: 'Expenses', icon: 'receipt-long' },
   ];
 
+  const formattedAddress = project.address
+    ? [project.address.street, project.address.city, project.address.state, project.address.zip]
+        .filter((part) => Boolean(part && String(part).trim()))
+        .join(', ')
+    : '';
+
   return (
     <ScrollView style={styles.container}>
       {/* Project Header */}
@@ -133,14 +139,12 @@ export default function ProjectDetailScreen() {
           <Text style={styles.clientName}>{project.client?.name || 'No client'}</Text>
         </View>
 
-        {project.address && (
-        <View style={styles.addressRow}>
-          <MaterialIcons name="location-on" size={16} color={config.theme.textSecondary} />
-          <Text style={styles.address}>
-            {project.address.street}, {project.address.city}, {project.address.state} {project.address.zip}
-          </Text>
-        </View>
-        )}
+        {formattedAddress ? (
+          <View style={styles.addressRow}>
+            <MaterialIcons name="location-on" size={16} color={config.theme.textSecondary} />
+            <Text style={styles.address}>{formattedAddress}</Text>
+          </View>
+        ) : null}
 
         {project.description && (
           <Text style={styles.description}>{project.description}</Text>

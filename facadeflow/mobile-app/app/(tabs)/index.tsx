@@ -143,7 +143,12 @@ function formatMargin(value: number | null | undefined): string {
 
 function QuickAction({ icon, label, onPress }: { icon: string; label: string; onPress: () => void }) {
   return (
-    <TouchableOpacity style={styles.quickAction} onPress={onPress}>
+    <TouchableOpacity
+      style={styles.quickAction}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
       <View style={styles.quickActionIcon}>
         <MaterialIcons name={icon as any} size={28} color={config.theme.primary} />
       </View>

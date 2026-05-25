@@ -84,8 +84,14 @@ export const config = {
 
 // Helper to get current environment URL
 export const getApiUrl = () => {
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return 'http://localhost:3000/api';
+  if (typeof window !== 'undefined') {
+    const { origin, hostname } = window.location;
+
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return `${origin}/api`;
+    }
+
+    return `${origin.replace(/\/$/, '')}/api`;
   }
 
   if (__DEV__) {
