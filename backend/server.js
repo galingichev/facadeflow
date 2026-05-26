@@ -129,7 +129,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Backend running on http://localhost:${PORT}${API_PREFIX}`);
-});
+// Start server only when this file is run directly. Export app for tests.
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Backend running on http://localhost:${PORT}${API_PREFIX}`);
+  });
+}
+
+module.exports = app;

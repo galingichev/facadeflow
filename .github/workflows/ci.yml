@@ -40,6 +40,10 @@ jobs:
       - name: Backend syntax check
         run: node --check backend/server.js
 
+      - name: Backend API tests
+        working-directory: backend
+        run: npm test -- --runInBand
+
       - name: Validate package manifests
         run: |
           node -e "JSON.parse(require(\"fs\").readFileSync(\"package.json\", \"utf8\"))"
@@ -49,3 +53,7 @@ jobs:
       - name: Mobile app lint
         working-directory: facadeflow/mobile-app
         run: npm run lint
+
+      - name: Mobile dashboard/client/project smoke checks
+        working-directory: facadeflow/mobile-app
+        run: npm run smoke:mobile-flows
