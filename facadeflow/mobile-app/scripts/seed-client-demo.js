@@ -1,5 +1,5 @@
 const API_BASE_URL = process.env.API_BASE_URL || 'http://127.0.0.1:3000/api';
-const PREFIX = process.env.CLIO_DEMO_PREFIX || 'Clio Demo:';
+const PREFIX = process.env.CLIENT_DEMO_PREFIX || 'Client Demo:';
 
 async function api(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -83,7 +83,7 @@ async function main() {
   }
   const summary = (await api('/dashboard/summary')).body.data;
   console.log();
-  console.log('Clio demo dataset ready. Dashboard summary:');
+  console.log('Client demo dataset ready. Dashboard summary:');
   console.log(JSON.stringify({
     active_projects: summary.active_projects,
     total_contract_value: summary.total_contract_value,

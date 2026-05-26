@@ -1,4 +1,4 @@
-# FacadeFlow Clio Demo Checklist
+# FacadeFlow Client Demo Checklist
 
 ## Startup
 
@@ -19,7 +19,7 @@ Open from Windows/Everest: http://100.66.191.125:8081/
 
 ```bash
 cd /home/galin/.openclaw/workspace/FacadeFlow/facadeflow/mobile-app
-API_BASE_URL=http://127.0.0.1:3000/api npm run seed:clio-demo
+API_BASE_URL=http://127.0.0.1:3000/api npm run seed:client-demo
 ```
 
 ## Demo URL
@@ -28,7 +28,7 @@ API_BASE_URL=http://127.0.0.1:3000/api npm run seed:clio-demo
 http://100.66.191.125:8081/
 ```
 
-## 3-minute Clio talk track
+## 3-minute Client talk track
 
 1. "This is FacadeFlow — a lightweight operations dashboard for facade contractors."
 2. "The dashboard gives a quick view of active projects, contract value, costs, profit, and expense entries."
@@ -42,14 +42,14 @@ http://100.66.191.125:8081/
 1. Open Dashboard.
 2. Show Profit Snapshot and Quick Actions.
 3. Open Clients.
-4. Show the three Clio Demo clients.
+4. Show the three Client Demo clients.
 5. Open Projects.
-6. Open `Clio Demo: Plovdiv Hotel Rainscreen`.
+6. Open `Client Demo: Plovdiv Hotel Rainscreen`.
 7. Show Overview financials.
 8. Open Expenses.
 9. Add one small demo expense:
    - Category: Materials
-   - Description: Clio live demo sealant
+   - Description: Client live demo sealant
    - Amount: 320
    - Vendor: Demo Supplier
 10. Confirm Actual Cost / Actual Profit changes.
@@ -74,7 +74,7 @@ If data looks wrong:
 
 ```bash
 cd /home/galin/.openclaw/workspace/FacadeFlow/facadeflow/mobile-app
-API_BASE_URL=http://127.0.0.1:3000/api npm run seed:clio-demo
+API_BASE_URL=http://127.0.0.1:3000/api npm run seed:client-demo
 ```
 
 If everything fails, show screenshots from the latest browser test and explain the product flow.
