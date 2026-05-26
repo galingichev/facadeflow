@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate FacadeFlow
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+            facadeflow/mobile-app/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Install mobile app dependencies
+        working-directory: facadeflow/mobile-app
+        run: npm ci
+
+      - name: Backend syntax check
+        run: node --check backend/server.js
+
+      - name: Validate package manifests
+        run: |
+          node -e "JSON.parse(require(\"fs\").readFileSync(\"package.json\", \"utf8\"))"
+          node -e "JSON.parse(require(\"fs\").readFileSync(\"backend/package.json\", \"utf8\"))"
+          node -e "JSON.parse(require(\"fs\").readFileSync(\"facadeflow/mobile-app/package.json\", \"utf8\"))"
+
+      - name: Mobile app lint
+        working-directory: facadeflow/mobile-app
+        run: npm run lint
