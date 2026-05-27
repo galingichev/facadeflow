@@ -1,7 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet, useWindowDimensions, Platform, ViewStyle } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
 import { config } from '../../src/lib/config';
+
+export function FacadeFlowMark({ size = 34 }: { size?: number }) {
+  const radius = Math.round(size * 0.31);
+  return (
+    <View style={[styles.mark, { width: size, height: size, borderRadius: radius }]}>
+      <View style={styles.markPaneLeft} />
+      <View style={styles.markPaneRight} />
+      <View style={styles.markBase} />
+    </View>
+  );
+}
 
 export function DemoPage({
   eyebrow = 'FacadeFlow Demo', title, subtitle, children, rightSlot, style,
@@ -11,11 +21,12 @@ export function DemoPage({
   return (
     <View style={[styles.screen, isWide && styles.wideScreen, style]}>
       <View style={styles.heroGlow} />
+      <View style={styles.heroGlowSecondary} />
       <View style={[styles.header, isWide && styles.headerWide]}>
         <View style={styles.brandRow}>
-          <View style={styles.logo}><MaterialIcons name="domain" size={20} color="#fff" /></View>
+          <FacadeFlowMark />
           <Text style={styles.brand}>FacadeFlow</Text>
-          <View style={styles.demoPill}><Text style={styles.demoPillText}>Demo Mode</Text></View>
+          <View style={styles.demoPill}><Text style={styles.demoPillText}>Client Demo</Text></View>
         </View>
         <View style={styles.headerText}>
           <Text style={styles.eyebrow}>{eyebrow}</Text>
@@ -45,19 +56,23 @@ export function MoneyText({ value, color }: { value: string; color?: string }) {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: config.theme.background, position: 'relative' },
   wideScreen: { alignItems: 'center' },
-  heroGlow: { position: 'absolute', top: -160, right: -80, width: 320, height: 320, borderRadius: 160, backgroundColor: 'rgba(94,106,210,0.20)', opacity: Platform.OS === 'web' ? 1 : 0.7 },
+  heroGlow: { position: 'absolute', top: -170, right: -70, width: 340, height: 340, borderRadius: 170, backgroundColor: 'rgba(94,106,210,0.20)', opacity: Platform.OS === 'web' ? 1 : 0.75 },
+  heroGlowSecondary: { position: 'absolute', top: 130, left: -130, width: 260, height: 260, borderRadius: 130, backgroundColor: 'rgba(16,185,129,0.08)' },
   header: { paddingHorizontal: 18, paddingTop: 20, paddingBottom: 10, gap: 18 },
   headerWide: { width: '100%', maxWidth: 1180, paddingTop: 34, paddingHorizontal: 24 },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
-  logo: { width: 34, height: 34, borderRadius: 10, backgroundColor: config.theme.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)' },
+  mark: { backgroundColor: config.theme.primary, borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', overflow: 'hidden', position: 'relative' },
+  markPaneLeft: { position: 'absolute', left: 7, top: 7, width: 8, height: 17, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.95)' },
+  markPaneRight: { position: 'absolute', left: 18, top: 7, width: 8, height: 17, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.70)' },
+  markBase: { position: 'absolute', left: 7, right: 7, bottom: 7, height: 4, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.86)' },
   brand: { color: config.theme.text, fontSize: 17, fontWeight: '800', letterSpacing: -0.2 },
   demoPill: { borderWidth: 1, borderColor: config.theme.border, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
   demoPillText: { color: config.theme.textSecondary, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 },
   headerText: { gap: 7 },
   eyebrow: { color: config.theme.primaryHover, fontSize: 12, fontWeight: '800', letterSpacing: 1.1, textTransform: 'uppercase' },
   title: { color: config.theme.text, fontSize: 34, lineHeight: 38, fontWeight: '800', letterSpacing: -1.05 },
-  titleWide: { fontSize: 48, lineHeight: 52, maxWidth: 820 },
-  subtitle: { color: config.theme.textSecondary, fontSize: 15, lineHeight: 23, maxWidth: 720 },
+  titleWide: { fontSize: 48, lineHeight: 52, maxWidth: 860 },
+  subtitle: { color: config.theme.textSecondary, fontSize: 15, lineHeight: 23, maxWidth: 760 },
   body: { paddingHorizontal: 18, paddingBottom: 28, gap: 16 },
   bodyWide: { width: '100%', maxWidth: 1180, paddingHorizontal: 24 },
   sectionTitleWrap: { gap: 4, marginTop: 4, marginBottom: 2 },

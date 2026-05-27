@@ -3,11 +3,14 @@ import { View, Text, ScrollView, StyleSheet, useWindowDimensions } from 'react-n
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { config, getApiUrl } from '../../src/lib/config/index';
-import { formatCurrency, getProjectStatusLabel } from '../../src/utils';
+import { formatCurrency, formatDate, getProjectStatusLabel } from '../../src/utils';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { DemoPage, MoneyText, SectionTitle, StatusPill } from '../../components/ui/DemoShell';
-import type { DashboardSummary, Project } from '../../src/types';
+import { DemoPage, FacadeFlowMark, MoneyText, SectionTitle, StatusPill } from '../../components/ui/DemoShell';
+import type { DashboardSummary, Project, ProjectExpense } from '../../src/types';
+
+type RiskProject = { project: Project; reason: string; tone: 'warning' | 'danger' };
+type RecentExpense = ProjectExpense & { projectName: string; clientName?: string };
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -29,8 +32,21 @@ export default function DashboardScreen() {
       if (!projectsRes.ok) throw new Error('Failed to fetch projects');
       const summaryData = await summaryRes.json();
       const projectsData = await projectsRes.json();
+      const listedProjects = projectsData.data || [];
+      const detailedProjects = await Promise.all(
+        listedProjects.map(async (project: Project) => {
+          try {
+            const detailRes = await fetch(`${apiBaseUrl}/projects/${project.id}`);
+            if (!detailRes.ok) return project;
+            const detailData = await detailRes.json();
+            return detailData.data || project;
+          } catch {
+            return project;
+          }
+        })
+      );
       setSummary(summaryData.data);
-      setProjects(projectsData.data || []);
+      setProjects(detailedProjects);
       setError(null);
     } catch (err: any) {
       setError(err.message ?? 'Unknown error');
@@ -44,6 +60,8 @@ export default function DashboardScreen() {
   const actualProfit = summary?.total_actual_profit ?? 0;
   const margin = summary?.actual_margin;
   const topProjects = useMemo(() => projects.slice(0, 4), [projects]);
+  const atRiskProjects = useMemo(() => getAtRiskProjects(projects), [projects]);
+  const recentExpenses = useMemo(() => getRecentExpenses(projects), [projects]);
   const quickStats = [
     { label: 'Contract value', value: formatCurrency(summary?.total_contract_value ?? 0), icon: 'payments', tone: config.theme.primaryHover },
     { label: 'Budgeted cost', value: formatCurrency(summary?.total_budgeted_cost ?? 0), icon: 'account-balance-wallet', tone: '#60a5fa' },
@@ -62,10 +80,19 @@ export default function DashboardScreen() {
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
       <DemoPage
-        title="Profit control for facade, window and door contractors."
-        subtitle="A client-facing MVP dashboard that connects projects, clients, budgets, expenses and live profit in one simple operating view."
+        title="Run facade, window and door jobs with profit visible from day one."
+        subtitle="FacadeFlow turns scattered client notes, budgets and expenses into a clean operating dashboard for contractors who need every project to stay on margin."
         rightSlot={<View style={styles.headerActions}><Button title="New Project" icon="add" onPress={() => router.push('/projects/create' as any)} /><Button title="View Projects" variant="outline" icon="business-center" onPress={() => router.push('/projects' as any)} /></View>}
       >
+        <Card style={styles.introPanel} padding="large">
+          <View style={styles.introLogo}><FacadeFlowMark size={46} /><View><Text style={styles.introTitle}>Client demo storyline</Text><Text style={styles.muted}>Show the owner how a job moves from quote to expenses to profit report.</Text></View></View>
+          <View style={styles.storySteps}>
+            {['Client and project created', 'Budget and contract recorded', 'Expenses tracked by category', 'At-risk jobs highlighted', 'One-page profit report preview'].map((item, index) => (
+              <View key={item} style={styles.storyStep}><Text style={styles.storyNumber}>{index + 1}</Text><Text style={styles.storyText}>{item}</Text></View>
+            ))}
+          </View>
+        </Card>
+
         <View style={[styles.statsGrid, isWide && styles.statsGridWide]}>
           {quickStats.map((stat) => (
             <Card key={stat.label} style={[styles.metricCard, isWide && styles.metricCardWide]} padding="medium">
@@ -77,7 +104,7 @@ export default function DashboardScreen() {
 
         <View style={[styles.mainGrid, isWide && styles.mainGridWide]}>
           <Card style={styles.snapshotCard} padding="large">
-            <SectionTitle title="Profit Snapshot" subtitle="Financial health across the current demo portfolio." />
+            <SectionTitle title="Profit Snapshot" subtitle="Dashboard summary: the client can understand portfolio health in under one minute." />
             <View style={styles.snapshotHero}>
               <Text style={styles.snapshotLabel}>Portfolio margin</Text>
               <Text style={styles.marginValue}>{formatMargin(margin)}</Text>
@@ -91,10 +118,38 @@ export default function DashboardScreen() {
           </Card>
 
           <Card style={styles.workflowCard} padding="large">
-            <SectionTitle title="Demo workflow" subtitle="The first client story should stay focused and easy." />
-            {['Create a client', 'Add a facade project', 'Enter contract value and budget', 'Record expenses', 'See profit update live'].map((item, index) => (
-              <View key={item} style={styles.workflowStep}><View style={styles.stepNumber}><Text style={styles.stepNumberText}>{index + 1}</Text></View><Text style={styles.workflowText}>{item}</Text></View>
+            <SectionTitle title="At-risk projects" subtitle="Highlights jobs that need a quick owner decision." />
+            {atRiskProjects.length === 0 ? <View style={styles.safeState}><MaterialIcons name="verified" size={24} color={config.theme.success} /><Text style={styles.muted}>No major margin or status risk in the current demo data.</Text></View> : atRiskProjects.map(({ project, reason, tone }) => (
+              <View key={project.id} style={styles.riskRow}>
+                <StatusPill label={tone === 'danger' ? 'High risk' : 'Watch'} tone={tone} />
+                <Text style={styles.riskName}>{project.name}</Text>
+                <Text style={styles.riskReason}>{reason}</Text>
+              </View>
             ))}
+          </Card>
+        </View>
+
+        <View style={[styles.mainGrid, isWide && styles.mainGridWide]}>
+          <Card style={styles.snapshotCard} padding="large">
+            <SectionTitle title="Recent expenses" subtitle="The live feed that explains why profit changed." />
+            {recentExpenses.length === 0 ? <Text style={styles.muted}>No expenses recorded yet.</Text> : recentExpenses.map((expense) => (
+              <View key={expense.id} style={styles.expenseRow}>
+                <View style={styles.expenseIcon}><MaterialIcons name="receipt-long" size={18} color={config.theme.warning} /></View>
+                <View style={styles.expenseText}><Text style={styles.expenseTitle}>{expense.description}</Text><Text style={styles.expenseMeta}>{expense.projectName} • {formatDate(expense.expense_date, 'short')}</Text></View>
+                <Text style={styles.expenseAmount}>{formatCurrency(expense.amount)}</Text>
+              </View>
+            ))}
+          </Card>
+
+          <Card style={styles.workflowCard} padding="large">
+            <SectionTitle title="Report preview" subtitle="A printable owner-ready snapshot." />
+            <View style={styles.reportPreview}>
+              <View style={styles.reportHeader}><FacadeFlowMark size={30} /><View><Text style={styles.reportTitle}>Profit Report</Text><Text style={styles.reportSub}>Demo portfolio</Text></View></View>
+              <FinanceRow label="Contract value" value={formatCurrency(summary?.total_contract_value ?? 0)} />
+              <FinanceRow label="Actual cost" value={formatCurrency(summary?.total_actual_cost ?? 0)} />
+              <FinanceRow label="Actual profit" value={formatCurrency(summary?.total_actual_profit ?? 0)} />
+              <View style={styles.reportFooter}><Text style={styles.reportFooterText}>Prepared for client review • FacadeFlow</Text></View>
+            </View>
           </Card>
         </View>
 
@@ -104,7 +159,7 @@ export default function DashboardScreen() {
         </View>
 
         <Card style={styles.actionPanel} padding="large">
-          <View style={styles.actionText}><Text style={styles.actionTitle}>Ready for a client walkthrough</Text><Text style={styles.muted}>Use the demo data only. Show dashboard → projects → expenses → profit change.</Text></View>
+          <View style={styles.actionText}><Text style={styles.actionTitle}>Ready for a client walkthrough</Text><Text style={styles.muted}>Use the demo data only. Show dashboard → at-risk project → expenses → report preview.</Text></View>
           <View style={styles.actionButtons}><Button title="New Project" icon="add" onPress={() => router.push('/projects/create' as any)} /><Button title="Add Client" variant="secondary" icon="person-add" onPress={() => router.push('/clients/create' as any)} /></View>
         </Card>
       </DemoPage>
@@ -129,12 +184,33 @@ function ProjectPreview({ project, onPress }: { project: Project; onPress: () =>
 function FinanceRow({ label, value }: { label: string; value: string }) { return <View style={styles.financeRow}><Text style={styles.financeLabel}>{label}</Text><Text style={styles.financeValue}>{value}</Text></View>; }
 function formatMargin(value: number | null | undefined) { if (value == null) return '—'; return `${Math.round(value * 1000) / 10}%`; }
 function statusTone(status: string): 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'purple' { if (status === 'completed') return 'success'; if (status === 'quoted' || status === 'inquired') return 'warning'; if (status === 'on_hold' || status === 'cancelled') return 'danger'; if (status === 'in_progress') return 'info'; if (status === 'approved') return 'purple'; return 'neutral'; }
+function getAtRiskProjects(projects: Project[]): RiskProject[] {
+  return projects.map((project) => {
+    const f = project.financials;
+    const variance = f?.cost_variance ?? null;
+    const margin = f?.actual_margin ?? null;
+    if (project.status === 'on_hold' || project.status === 'cancelled') return { project, reason: 'Paused or cancelled status needs attention.', tone: 'danger' as const };
+    if (variance != null && variance < 0) return { project, reason: `${formatCurrency(Math.abs(variance))} over budget.`, tone: 'danger' as const };
+    if (margin != null && margin < 0.18) return { project, reason: `Margin at ${formatMargin(margin)}; review pricing or expenses.`, tone: 'warning' as const };
+    return null;
+  }).filter(Boolean).slice(0, 3) as RiskProject[];
+}
+function getRecentExpenses(projects: Project[]): RecentExpense[] {
+  return projects.flatMap((project) => (project.expenses || []).map((expense) => ({ ...expense, projectName: project.name, clientName: project.client?.name }))).sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime()).slice(0, 5);
+}
 
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: config.theme.background },
   scrollContent: { paddingBottom: 118 },
   centerCard: { minHeight: 220, alignItems: 'center', justifyContent: 'center' },
   headerActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  introPanel: { gap: 18, backgroundColor: 'rgba(94,106,210,0.11)' },
+  introLogo: { flexDirection: 'row', alignItems: 'center', gap: 14, flexWrap: 'wrap' },
+  introTitle: { color: config.theme.text, fontSize: 20, fontWeight: '800' },
+  storySteps: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  storyStep: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: config.theme.border, backgroundColor: 'rgba(255,255,255,0.035)', borderRadius: 999, paddingVertical: 8, paddingHorizontal: 11 },
+  storyNumber: { color: '#fff', backgroundColor: config.theme.primary, borderRadius: 999, width: 22, height: 22, textAlign: 'center', lineHeight: 22, fontWeight: '800', fontSize: 12 },
+  storyText: { color: config.theme.textSecondary, fontSize: 13, fontWeight: '700' },
   statsGrid: { gap: 12 },
   statsGridWide: { flexDirection: 'row' },
   metricCard: { gap: 12 },
@@ -153,10 +229,22 @@ const styles = StyleSheet.create({
   financeRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 16, borderBottomWidth: 1, borderBottomColor: config.theme.borderSubtle, paddingBottom: 10 },
   financeLabel: { color: config.theme.textSecondary, fontSize: 14 },
   financeValue: { color: config.theme.text, fontSize: 14, fontWeight: '800' },
-  workflowStep: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  stepNumber: { width: 28, height: 28, borderRadius: 9, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: config.theme.border },
-  stepNumberText: { color: config.theme.text, fontSize: 12, fontWeight: '800' },
-  workflowText: { color: config.theme.textSecondary, fontSize: 14, flex: 1 },
+  safeState: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 14, backgroundColor: 'rgba(16,185,129,0.09)', borderWidth: 1, borderColor: 'rgba(16,185,129,0.25)' },
+  riskRow: { gap: 8, borderWidth: 1, borderColor: config.theme.borderSubtle, borderRadius: 16, padding: 13, backgroundColor: 'rgba(255,255,255,0.025)' },
+  riskName: { color: config.theme.text, fontSize: 15, fontWeight: '800' },
+  riskReason: { color: config.theme.textSecondary, fontSize: 13, lineHeight: 18 },
+  expenseRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: config.theme.borderSubtle },
+  expenseIcon: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(245,158,11,0.12)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.25)' },
+  expenseText: { flex: 1, gap: 2 },
+  expenseTitle: { color: config.theme.text, fontSize: 14, fontWeight: '800' },
+  expenseMeta: { color: config.theme.textMuted, fontSize: 12 },
+  expenseAmount: { color: config.theme.warning, fontSize: 14, fontWeight: '800' },
+  reportPreview: { gap: 12, padding: 16, backgroundColor: '#f8fafc', borderRadius: 16 },
+  reportHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
+  reportTitle: { color: '#111827', fontSize: 17, fontWeight: '900' },
+  reportSub: { color: '#64748b', fontSize: 12, fontWeight: '700' },
+  reportFooter: { marginTop: 4, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#e5e7eb' },
+  reportFooterText: { color: '#64748b', fontSize: 11, fontWeight: '700' },
   projectGrid: { gap: 12 },
   projectGridWide: { flexDirection: 'row', flexWrap: 'wrap' },
   projectPreview: { gap: 12, flexBasis: '23.5%', minWidth: 230, flexGrow: 1 },
