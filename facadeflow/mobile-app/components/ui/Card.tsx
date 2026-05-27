@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ViewStyle, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, ViewStyle, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { config } from '../../src/lib/config';
 
 interface CardProps {
@@ -16,35 +16,24 @@ export const Card: React.FC<CardProps> = ({
   style,
   padding = 'medium',
   elevation = true,
-  border = false,
+  border = true,
   onPress,
 }) => {
-  const paddingMap = {
-    none: 0,
-    small: 12,
-    medium: 16,
-    large: 24,
-  };
-
+  const paddingMap = { none: 0, small: 14, medium: 18, large: 24 };
   const cardStyle = [
     styles.card,
     {
       padding: paddingMap[padding],
-      backgroundColor: config.theme.surface,
-      ...(elevation && styles.elevation),
+      backgroundColor: config.theme.surfaceSoft,
       ...(border && { borderWidth: 1, borderColor: config.theme.border }),
+      ...(elevation && styles.elevation),
     },
     style,
   ];
 
   if (onPress) {
     return (
-      <TouchableOpacity
-        style={cardStyle}
-        onPress={onPress}
-        accessibilityRole="button"
-        activeOpacity={0.8}
-      >
+      <TouchableOpacity style={cardStyle} onPress={onPress} accessibilityRole="button" activeOpacity={0.86}>
         {children}
       </TouchableOpacity>
     );
@@ -55,13 +44,14 @@ export const Card: React.FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 12,
+    borderRadius: 18,
+    overflow: 'hidden',
   },
   elevation: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: Platform.OS === 'web' ? 0.18 : 0.32,
+    shadowRadius: 36,
+    elevation: 6,
   },
 });

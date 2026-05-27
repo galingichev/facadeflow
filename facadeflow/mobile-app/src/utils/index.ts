@@ -217,13 +217,13 @@ export const uniqueBy = <T, K extends keyof any>(array: T[], key: (item: T) => K
 // =====================
 export const getProjectStatusLabel = (status: string): string => {
   const labels: Record<string, string> = {
-    draft: 'Draft',
-    inquired: 'Inquired',
-    quoted: 'Quoted',
-    approved: 'Approved',
-    in_progress: 'In Progress',
-    on_hold: 'On Hold',
-    completed: 'Completed',
+    draft: 'Lead / Inquiry',
+    inquired: 'Survey / Measurement',
+    quoted: 'Quote Sent',
+    approved: 'Approved / Ordered',
+    in_progress: 'Fabrication / Installation',
+    on_hold: 'Waiting / On Hold',
+    completed: 'Handover Complete',
     cancelled: 'Cancelled',
   };
   return labels[status] || status;
