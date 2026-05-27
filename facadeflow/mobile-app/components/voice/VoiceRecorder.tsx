@@ -82,7 +82,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     if (result) {
       showToast('success', 'Recording saved');
       onRecordingComplete?.(result.uri, result.duration);
-      // TODO: Upload to server / trigger transcription via OpenClaw skill
+      // TODO: Upload to server / trigger transcription service
     }
   };
 
@@ -199,7 +199,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
             variant="outline"
             size="small"
             onPress={() => {
-              // Send to OpenClaw for transcription
+              // Send for transcription
               showToast('info', 'Transcription queued...');
             }}
             style={{ marginTop: 8 }}

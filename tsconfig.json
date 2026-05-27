@@ -2,7 +2,9 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "commonjs",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "jsx": "react-native",
     "strict": true,
     "moduleResolution": "node",
@@ -17,10 +19,17 @@
     "rootDir": ".",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@/components/*": ["components/*"]
+      "@/*": [
+        "src/*"
+      ],
+      "@/components/*": [
+        "components/*"
+      ]
     },
-    "types": ["node", "jest"],
+    "types": [
+      "node",
+      "jest"
+    ],
     "noEmit": false,
     "allowJs": false
   },
@@ -28,8 +37,7 @@
     "src/**/*",
     "components/**/*",
     "scripts/**/*",
-    "skills/**/*",
-    "cron-jobs/**/*"
+    "skills/**/*"
   ],
   "exclude": [
     "node_modules",

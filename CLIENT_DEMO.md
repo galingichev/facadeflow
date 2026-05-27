@@ -2,39 +2,40 @@
 
 ## Startup
 
-1. SSH to the Ubuntu laptop or ask Canyon to run:
+From the repository root:
 
 ```bash
-bash /home/galin/start-facadeflow-demo.sh
+bash scripts/start-demo.sh
 ```
 
-2. Confirm it prints:
+The script prints the local demo URL when the backend, web app, and proxy are ready.
+
+Default local URL:
 
 ```text
-FacadeFlow demo is ready.
-Open from Windows/Everest: http://100.66.191.125:8081/
+http://127.0.0.1:8081/
 ```
 
-3. If demo data is missing or messy, reseed:
+To expose the demo through another host or tunnel, set:
 
 ```bash
-cd /home/galin/.openclaw/workspace/FacadeFlow/facadeflow/mobile-app
+FACADEFLOW_DEMO_URL=http://your-demo-host:8081 bash scripts/start-demo.sh
+```
+
+If demo data is missing or messy, reseed from the mobile app folder:
+
+```bash
+cd facadeflow/mobile-app
 API_BASE_URL=http://127.0.0.1:3000/api npm run seed:client-demo
 ```
 
-## Demo URL
+## 3-minute client talk track
 
-```text
-http://100.66.191.125:8081/
-```
-
-## 3-minute Client talk track
-
-1. "This is FacadeFlow — a lightweight operations dashboard for facade contractors."
-2. "The dashboard gives a quick view of active projects, contract value, costs, profit, and expense entries."
-3. "Clients are tracked separately, so every project is connected to the customer or partner."
-4. "Projects track status, contract value, budgeted cost, actual expenses, and profit."
-5. "When we add an expense, project financials update immediately."
+1. "FacadeFlow is a lightweight operating dashboard for facade, windows, and doors contractors."
+2. "The dashboard shows active projects, contract value, budgeted cost, actual cost, expenses, and profit."
+3. "Clients are tracked separately, so every project stays connected to the customer or partner."
+4. "Projects track status, contract value, budget, actual expenses, and profit/loss."
+5. "When an expense is added, project financials update immediately."
 6. "The goal is to replace spreadsheet chaos with one operational view for facade work."
 
 ## Happy-path flow
@@ -42,7 +43,7 @@ http://100.66.191.125:8081/
 1. Open Dashboard.
 2. Show Profit Snapshot and Quick Actions.
 3. Open Clients.
-4. Show the three Client Demo clients.
+4. Show demo clients.
 5. Open Projects.
 6. Open `Client Demo: Plovdiv Hotel Rainscreen`.
 7. Show Overview financials.
@@ -57,32 +58,23 @@ http://100.66.191.125:8081/
 
 ## Backup plan
 
-If the app freezes:
+Restart the local demo stack:
 
 ```bash
-bash /home/galin/start-facadeflow-demo.sh
+bash scripts/stop-demo.sh
+bash scripts/start-demo.sh
 ```
 
-If the browser does not open:
+Check local health:
 
 ```bash
-curl http://100.66.191.125:8081/api/system/health
-curl http://100.66.191.125:8081/
+curl http://127.0.0.1:8081/api/system/health
+curl http://127.0.0.1:8081/
 ```
 
-If data looks wrong:
+Run smoke verification:
 
 ```bash
-cd /home/galin/.openclaw/workspace/FacadeFlow/facadeflow/mobile-app
-API_BASE_URL=http://127.0.0.1:3000/api npm run seed:client-demo
-```
-
-If everything fails, show screenshots from the latest browser test and explain the product flow.
-
-## Verification commands
-
-```bash
-cd /home/galin/.openclaw/workspace/FacadeFlow/facadeflow/mobile-app
-npx tsc --noEmit --pretty false
+cd facadeflow/mobile-app
 WEB_BASE_URL=http://127.0.0.1:8081 API_BASE_URL=http://127.0.0.1:3000/api npm run smoke:web:mvp
 ```

@@ -5,13 +5,13 @@
 -- Make sure RLS is DISABLED during seeding, or use admin privileges
 
 -- ============================================
--- SAMPLE USERS (Password: password123)
+-- SAMPLE USERS (local/demo only; replace with your own auth users)
 -- Note: These users must exist in auth.users first (via Supabase UI or signup)
 -- The IDs here are placeholders - replace with actual auth.user IDs
 -- ============================================
 
 INSERT INTO users (id, name, email, role) VALUES
-  ('f1b66f89-4a07-43a7-aa39-1034f41845ff', 'Galin Test', 'test@example.com', 'admin')
+  ('f1b66f89-4a07-43a7-aa39-1034f41845ff', 'Demo Admin', 'demo.admin@example.com', 'admin')
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   role = EXCLUDED.role;
