@@ -1,15 +1,14 @@
 {
-  "name": "facadeflow-canyon-enhancements",
+  "name": "facadeflow",
   "version": "1.0.0",
-  "description": "Proactive enhancements for FacadeFlow mobile app - scaffolds, components, AgentSkills, and proposals",
+  "description": "Vertical SaaS MVP for facade, windows, and doors contractors to track projects, expenses, and profit.",
   "private": true,
   "scripts": {
-    "setup-db": "ts-node scripts/setup-db.ts",
-    "generate-types": "ts-node scripts/generate-types.ts",
     "web:proxy": "node scripts/web-dev-proxy.js",
-    "test": "jest",
-    "lint": "eslint src --ext .ts,.tsx",
-    "build": "tsc"
+    "setup-db": "ts-node scripts/setup-db.ts",
+    "test": "npm test --prefix backend -- --runInBand",
+    "lint": "npm run lint --prefix facadeflow/mobile-app",
+    "smoke:mobile-flows": "npm run smoke:mobile-flows --prefix facadeflow/mobile-app"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
