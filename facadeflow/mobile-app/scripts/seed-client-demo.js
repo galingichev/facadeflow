@@ -23,10 +23,10 @@ const clients = [
 
 const projects = [
   { name: `${PREFIX} Boyana Villa Curtain Wall`, clientKey: 'homeowner', status: 'inquired', contract_value: 28000, budget: 18400, start_date: '2026-06-03', end_date: '2026-07-18' },
-  { name: `${PREFIX} Vitosha Office Entrance Facade`, clientKey: 'commercial', status: 'quoted', contract_value: 74000, budget: 51200, start_date: '2026-06-10', end_date: '2026-08-12' },
-  { name: `${PREFIX} Sofia Retail Aluminium Louvers`, clientKey: 'architect', status: 'approved', contract_value: 42000, budget: 27600, start_date: '2026-06-17', end_date: '2026-07-30' },
+  { name: `${PREFIX} Sofia Office Curtain Wall`, clientKey: 'commercial', status: 'quoted', contract_value: 74000, budget: 51200, start_date: '2026-06-10', end_date: '2026-08-12' },
+  { name: `${PREFIX} Varna Residential Windows`, clientKey: 'homeowner', status: 'approved', contract_value: 42000, budget: 27600, start_date: '2026-06-17', end_date: '2026-07-30' },
   { name: `${PREFIX} Plovdiv Hotel Rainscreen`, clientKey: 'commercial', status: 'in_progress', contract_value: 118000, budget: 83500, start_date: '2026-05-20', end_date: '2026-09-05' },
-  { name: `${PREFIX} Bankya Passive House Windows`, clientKey: 'homeowner', status: 'completed', contract_value: 36500, budget: 24100, start_date: '2026-04-02', end_date: '2026-05-16' },
+  { name: `${PREFIX} Burgas Aluminium Door Package`, clientKey: 'architect', status: 'completed', contract_value: 36500, budget: 24100, start_date: '2026-04-02', end_date: '2026-05-16' },
 ];
 
 const expenses = {
@@ -35,12 +35,13 @@ const expenses = {
     { category: 'labor', description: 'Installation crew week 1', amount: 9200, expense_date: '2026-05-29', vendor: 'Facade Team 2' },
     { category: 'transport', description: 'Scaffold and panel delivery', amount: 1450, expense_date: '2026-05-30', vendor: 'TransBuild Logistics' },
   ],
-  'Bankya Passive House Windows': [
+  'Burgas Aluminium Door Package': [
     { category: 'materials', description: 'Triple-glazed window package', amount: 15100, expense_date: '2026-04-09', vendor: 'ThermoGlass' },
     { category: 'labor', description: 'Final installation and sealing', amount: 5800, expense_date: '2026-05-03', vendor: 'Facade Team 1' },
   ],
-  'Sofia Retail Aluminium Louvers': [
-    { category: 'materials', description: 'Powder-coated louver batch', amount: 7400, expense_date: '2026-06-20', vendor: 'MetalColor Sofia' },
+  'Varna Residential Windows': [
+    { category: 'materials', description: 'Low-E glass units deposit', amount: 7400, expense_date: '2026-06-20', vendor: 'Black Sea Glass' },
+    { category: 'equipment', description: 'Lift rental for second-floor installation', amount: 1250, expense_date: '2026-06-21', vendor: 'Varna Lift Hire' },
   ],
 };
 
