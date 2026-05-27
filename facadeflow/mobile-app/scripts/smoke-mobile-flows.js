@@ -13,7 +13,10 @@ const includesAll = (label, content, expected) => {
 const dashboard = read('app/(tabs)/index.tsx');
 includesAll('dashboard flow', dashboard, [
   '/dashboard/summary',
-  'Profit Snapshot',
+  'Owner briefing',
+  'Job Health',
+  'Budget vs actual',
+  'Ready for progress claim',
   'New Project',
   '/projects/create',
   'Add Client',
@@ -51,6 +54,9 @@ includesAll('project flow', projectFlow, [
   'projectsApi.deleteExpense',
   'Create Project',
   'Expenses',
+  'Job Health',
+  'Budget vs actual',
+  'Last expense',
 ]);
 
 const apiEndpoints = read('src/api/endpoints.ts');

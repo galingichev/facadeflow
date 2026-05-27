@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { config, getApiUrl } from '../../src/lib/config/index';
 import { formatCurrency, formatDate, getProjectStatusLabel } from '../../src/utils';
+import { formatMarginPercent, getBudgetActualPercent, getJobHealth, getLastExpense, getPaymentReadiness } from '../../src/utils/projectInsights';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { DemoPage, FacadeFlowMark, MoneyText, SectionTitle, StatusPill } from '../../components/ui/DemoShell';
@@ -62,6 +63,8 @@ export default function DashboardScreen() {
   const topProjects = useMemo(() => projects.slice(0, 4), [projects]);
   const atRiskProjects = useMemo(() => getAtRiskProjects(projects), [projects]);
   const recentExpenses = useMemo(() => getRecentExpenses(projects), [projects]);
+  const ownerBriefing = useMemo(() => getOwnerBriefing(projects, summary), [projects, summary]);
+  const primaryReportProject = useMemo(() => projects.find((project) => project.status === 'in_progress') || projects[0], [projects]);
   const quickStats = [
     { label: 'Contract value', value: formatCurrency(summary?.total_contract_value ?? 0), icon: 'payments', tone: config.theme.primaryHover },
     { label: 'Budgeted cost', value: formatCurrency(summary?.total_budgeted_cost ?? 0), icon: 'account-balance-wallet', tone: '#60a5fa' },
@@ -101,6 +104,18 @@ export default function DashboardScreen() {
             </Card>
           ))}
         </View>
+
+        <Card style={styles.ownerBriefingCard} padding="large">
+          <SectionTitle title="Owner briefing" subtitle="What needs attention before the next site or client call." />
+          <View style={[styles.briefingGrid, isWide && styles.briefingGridWide]}>
+            {ownerBriefing.map((item) => (
+              <View key={item.title} style={styles.briefingItem}>
+                <View style={[styles.briefingIcon, { backgroundColor: `${item.color}22`, borderColor: `${item.color}55` }]}><MaterialIcons name={item.icon as any} size={19} color={item.color} /></View>
+                <View style={styles.briefingText}><Text style={styles.briefingTitle}>{item.title}</Text><Text style={styles.briefingCopy}>{item.copy}</Text></View>
+              </View>
+            ))}
+          </View>
+        </Card>
 
         <View style={[styles.mainGrid, isWide && styles.mainGridWide]}>
           <Card style={styles.snapshotCard} padding="large">
@@ -142,13 +157,15 @@ export default function DashboardScreen() {
           </Card>
 
           <Card style={styles.workflowCard} padding="large">
-            <SectionTitle title="Report preview" subtitle="A printable owner-ready snapshot." />
+            <SectionTitle title="Report preview" subtitle="Client-facing snapshot with the next financial action." />
             <View style={styles.reportPreview}>
-              <View style={styles.reportHeader}><FacadeFlowMark size={30} /><View><Text style={styles.reportTitle}>Profit Report</Text><Text style={styles.reportSub}>Demo portfolio</Text></View></View>
-              <FinanceRow label="Contract value" value={formatCurrency(summary?.total_contract_value ?? 0)} />
-              <FinanceRow label="Actual cost" value={formatCurrency(summary?.total_actual_cost ?? 0)} />
-              <FinanceRow label="Actual profit" value={formatCurrency(summary?.total_actual_profit ?? 0)} />
-              <View style={styles.reportFooter}><Text style={styles.reportFooterText}>Prepared for client review • FacadeFlow</Text></View>
+              <View style={styles.reportHeader}><FacadeFlowMark size={30} /><View><Text style={styles.reportTitle}>FacadeFlow Project Report</Text><Text style={styles.reportSub}>{primaryReportProject?.name || 'Demo portfolio'} • {primaryReportProject?.client?.name || 'Demo client'}</Text></View></View>
+              <FinanceRow label="Contract value" value={formatCurrency(primaryReportProject?.financials?.contract_value ?? primaryReportProject?.contract_value ?? summary?.total_contract_value ?? 0)} />
+              <FinanceRow label="Budgeted cost" value={formatCurrency(primaryReportProject?.financials?.budgeted_cost ?? primaryReportProject?.budget ?? summary?.total_budgeted_cost ?? 0)} />
+              <FinanceRow label="Actual cost" value={formatCurrency(primaryReportProject?.financials?.actual_cost ?? summary?.total_actual_cost ?? 0)} />
+              <FinanceRow label="Profit / margin" value={`${formatCurrency(primaryReportProject?.financials?.actual_profit ?? summary?.total_actual_profit ?? 0)} • ${formatMarginPercent(primaryReportProject?.financials?.actual_margin ?? summary?.actual_margin)}`} />
+              {primaryReportProject ? <StatusPill label={getPaymentReadiness(primaryReportProject).label} tone={getPaymentReadiness(primaryReportProject).tone} /> : null}
+              <View style={styles.reportFooter}><Text style={styles.reportFooterText}>Notes / next action: verify latest site costs, then send the owner-ready progress claim.</Text></View>
             </View>
           </Card>
         </View>
@@ -169,21 +186,46 @@ export default function DashboardScreen() {
 
 function ProjectPreview({ project, onPress }: { project: Project; onPress: () => void }) {
   const financials = project.financials;
+  const contract = financials?.contract_value ?? project.contract_value ?? null;
+  const budget = financials?.budgeted_cost ?? project.budget ?? null;
+  const actualCost = financials?.actual_cost ?? 0;
   const profit = financials?.actual_profit ?? null;
+  const margin = financials?.actual_margin ?? null;
+  const health = getJobHealth(project);
+  const readiness = getPaymentReadiness(project);
+  const lastExpense = getLastExpense(project);
+  const budgetPercent = getBudgetActualPercent(project);
   return (
     <Card style={styles.projectPreview} onPress={onPress} padding="medium">
-      <StatusPill label={getProjectStatusLabel(project.status)} tone={statusTone(project.status)} />
+      <View style={styles.projectPillRow}><StatusPill label={getProjectStatusLabel(project.status)} tone={statusTone(project.status)} /><StatusPill label={health.label} tone={health.tone} /></View>
       <Text style={styles.projectName}>{project.name}</Text>
       <Text style={styles.projectClient}>{project.client?.name || 'No client'}</Text>
-      <View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>Contract</Text><Text style={styles.smallValue}>{project.contract_value != null ? formatCurrency(project.contract_value) : '—'}</Text></View>
-      <View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>Profit</Text><Text style={[styles.smallValue, { color: profit != null && profit < 0 ? config.theme.error : config.theme.success }]}>{profit == null ? '—' : formatCurrency(profit)}</Text></View>
+      <View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>Contract</Text><Text style={styles.smallValue}>{contract != null ? formatCurrency(contract) : '—'}</Text></View>
+      <View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>Actual cost</Text><Text style={styles.smallValue}>{formatCurrency(actualCost)}</Text></View>
+      <View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>Profit / margin</Text><Text style={[styles.smallValue, { color: profit != null && profit < 0 ? config.theme.error : config.theme.success }]}>{profit == null ? '—' : `${formatCurrency(profit)} • ${formatMarginPercent(margin)}`}</Text></View>
+      <View style={styles.budgetBlock}><View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>Budget vs actual</Text><Text style={styles.smallValue}>{budget == null ? '—' : `${budgetPercent}%`}</Text></View><View style={styles.progressTrack}><View style={[styles.budgetFill, { width: `${budgetPercent}%`, backgroundColor: budgetPercent > 100 ? config.theme.error : config.theme.primaryHover }]} /></View></View>
+      <Text style={styles.lastExpense}>Last expense: {lastExpense ? `${lastExpense.description} • ${formatCurrency(lastExpense.amount)}` : 'No expenses yet'}</Text>
+      <StatusPill label={readiness.label} tone={readiness.tone} />
     </Card>
   );
 }
 
 function FinanceRow({ label, value }: { label: string; value: string }) { return <View style={styles.financeRow}><Text style={styles.financeLabel}>{label}</Text><Text style={styles.financeValue}>{value}</Text></View>; }
-function formatMargin(value: number | null | undefined) { if (value == null) return '—'; return `${Math.round(value * 1000) / 10}%`; }
+function formatMargin(value: number | null | undefined) { return formatMarginPercent(value); }
 function statusTone(status: string): 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'purple' { if (status === 'completed') return 'success'; if (status === 'quoted' || status === 'inquired') return 'warning'; if (status === 'on_hold' || status === 'cancelled') return 'danger'; if (status === 'in_progress') return 'info'; if (status === 'approved') return 'purple'; return 'neutral'; }
+function getOwnerBriefing(projects: Project[], summary: DashboardSummary | null) {
+  const healthRows = projects.map((project) => ({ project, health: getJobHealth(project) }));
+  const riskCount = healthRows.filter(({ health }) => health.tone === 'danger' || health.label === 'Low margin').length;
+  const claimReady = projects.filter((project) => getPaymentReadiness(project).label === 'Ready for progress claim').length;
+  const recentTotal = getRecentExpenses(projects).reduce((sum, expense) => sum + expense.amount, 0);
+  const nextRisk = healthRows.find(({ health }) => health.tone === 'danger' || health.label === 'Low margin');
+  return [
+    { title: 'Job Health', copy: riskCount > 0 ? `${riskCount} project${riskCount === 1 ? '' : 's'} need owner review.` : 'All active demo jobs look controlled.', icon: riskCount > 0 ? 'warning' : 'verified', color: riskCount > 0 ? config.theme.warning : config.theme.success },
+    { title: 'Payment readiness', copy: claimReady > 0 ? `${claimReady} job${claimReady === 1 ? '' : 's'} ready for progress claim.` : 'No progress claim is ready yet.', icon: 'request-quote', color: claimReady > 0 ? config.theme.success : config.theme.textMuted },
+    { title: 'Recent cost movement', copy: `${formatCurrency(recentTotal)} in latest recorded facade expenses.`, icon: 'receipt-long', color: config.theme.warning },
+    { title: 'Next owner decision', copy: nextRisk ? `${nextRisk.project.name}: ${nextRisk.health.reason}` : `${summary?.active_projects ?? 0} active projects can continue as planned.`, icon: 'assignment-late', color: nextRisk ? config.theme.error : config.theme.primaryHover },
+  ];
+}
 function getAtRiskProjects(projects: Project[]): RiskProject[] {
   return projects.map((project) => {
     const f = project.financials;
@@ -218,6 +260,14 @@ const styles = StyleSheet.create({
   metricIconRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   metricIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   metricLabel: { color: config.theme.textSecondary, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  ownerBriefingCard: { gap: 16, borderColor: 'rgba(94,106,210,0.28)' },
+  briefingGrid: { gap: 12 },
+  briefingGridWide: { flexDirection: 'row', flexWrap: 'wrap' },
+  briefingItem: { flex: 1, minWidth: 210, flexDirection: 'row', gap: 12, borderWidth: 1, borderColor: config.theme.borderSubtle, backgroundColor: 'rgba(255,255,255,0.025)', borderRadius: 16, padding: 13 },
+  briefingIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  briefingText: { flex: 1, gap: 3 },
+  briefingTitle: { color: config.theme.text, fontSize: 14, fontWeight: '900' },
+  briefingCopy: { color: config.theme.textSecondary, fontSize: 13, lineHeight: 18 },
   mainGrid: { gap: 14 },
   mainGridWide: { flexDirection: 'row' },
   snapshotCard: { gap: 18, flex: 1.35 },
@@ -248,9 +298,14 @@ const styles = StyleSheet.create({
   projectGrid: { gap: 12 },
   projectGridWide: { flexDirection: 'row', flexWrap: 'wrap' },
   projectPreview: { gap: 12, flexBasis: '23.5%', minWidth: 230, flexGrow: 1 },
+  projectPillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   projectName: { color: config.theme.text, fontSize: 16, fontWeight: '800', letterSpacing: -0.3, lineHeight: 21 },
   projectClient: { color: config.theme.textMuted, fontSize: 13, lineHeight: 18 },
   projectMoneyRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
+  budgetBlock: { gap: 7 },
+  progressTrack: { height: 8, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.07)', overflow: 'hidden' },
+  budgetFill: { height: 8, borderRadius: 999 },
+  lastExpense: { color: config.theme.textMuted, fontSize: 12, lineHeight: 17 },
   smallLabel: { color: config.theme.textMuted, fontSize: 12 },
   smallValue: { color: config.theme.text, fontSize: 13, fontWeight: '800' },
   actionPanel: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 16, alignItems: 'center', backgroundColor: 'rgba(94,106,210,0.12)' },
