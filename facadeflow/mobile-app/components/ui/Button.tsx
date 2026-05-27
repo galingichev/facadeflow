@@ -1,14 +1,5 @@
 import React from 'react';
-import {
-  TouchableOpacity,
-  Text,
-  View,
-  StyleSheet,
-  ActivityIndicator,
-  ViewStyle,
-  TextStyle,
-  TouchableOpacityProps,
-} from 'react-native';
+import { TouchableOpacity, Text, View, StyleSheet, ActivityIndicator, ViewStyle, TextStyle, TouchableOpacityProps } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { config } from '../../src/lib/config';
 
@@ -22,146 +13,78 @@ export interface ButtonProps extends TouchableOpacityProps {
   loading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
-  icon?: string; // MaterialIcons name
+  icon?: string;
   fullWidth?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
 }
 
 export const Button: React.FC<ButtonProps> = ({
-  title,
-  variant = 'primary',
-  size = 'medium',
-  loading = false,
-  leftIcon,
-  rightIcon,
-  icon,
-  fullWidth = false,
-  style,
-  textStyle,
-  disabled,
-  accessibilityLabel,
-  ...rest
+  title, variant = 'primary', size = 'medium', loading = false, leftIcon, rightIcon, icon,
+  fullWidth = false, style, textStyle, disabled, accessibilityLabel, ...rest
 }) => {
-  const getBackgroundColor = () => {
-    if (disabled) return config.theme.border;
-    switch (variant) {
-      case 'primary':
-        return config.theme.primary;
-      case 'secondary':
-        return config.theme.secondary;
-      case 'outline':
-      case 'ghost':
-        return 'transparent';
-      case 'danger':
-        return config.theme.error;
-      default:
-        return config.theme.primary;
-    }
-  };
-
-  const getTextColor = () => {
-    if (disabled) return config.theme.textSecondary;
-    switch (variant) {
-      case 'primary':
-      case 'secondary':
-      case 'danger':
-        return '#ffffff';
-      case 'outline':
-      case 'ghost':
-        return config.theme.primary;
-      default:
-        return '#ffffff';
-    }
-  };
-
-  const getBorderColor = () => {
-    if (disabled) return config.theme.border;
-    if (variant === 'outline') return config.theme.primary;
-    return 'transparent';
-  };
-
-  const getSizeStyles = (): { button: ViewStyle; text: TextStyle } => {
-    switch (size) {
-      case 'small':
-        return {
-          button: { paddingVertical: 8, paddingHorizontal: 12, height: 36 },
-          text: { fontSize: 14 },
-        };
-      case 'medium':
-        return {
-          button: { paddingVertical: 12, paddingHorizontal: 16, height: 44 },
-          text: { fontSize: 16 },
-        };
-      case 'large':
-        return {
-          button: { paddingVertical: 16, paddingHorizontal: 24, height: 52 },
-          text: { fontSize: 18 },
-        };
-    }
-  };
-
-  const sizeStyles = getSizeStyles();
-  const a11yLabel = accessibilityLabel || title;
+  const background = disabled ? config.theme.secondary : getBackgroundColor(variant);
+  const textColor = disabled ? config.theme.textMuted : getTextColor(variant);
+  const sizeStyles = getSizeStyles(size);
 
   return (
     <TouchableOpacity
       style={[
         styles.button,
-        {
-          backgroundColor: getBackgroundColor(),
-          borderColor: getBorderColor(),
-          borderWidth: variant === 'outline' ? 1 : 0,
-        },
+        { backgroundColor: background, borderColor: getBorderColor(variant), borderWidth: variant === 'ghost' ? 0 : 1 },
         sizeStyles.button,
         fullWidth && styles.fullWidth,
         style,
       ]}
       disabled={disabled || loading}
-      activeOpacity={0.8}
-      accessibilityLabel={a11yLabel}
+      activeOpacity={0.84}
+      accessibilityLabel={accessibilityLabel || title}
       accessibilityRole="button"
       accessibilityState={{ disabled: disabled || loading }}
       {...rest}
     >
-      {loading ? (
-        <ActivityIndicator color={getTextColor()} size="small" />
-      ) : (
-        <>
-          {icon && (
-            <View style={[styles.iconWrapper, { marginRight: 8 }]}>
-              <MaterialIcons name={icon as any} size={18} color={getTextColor()} />
-            </View>
-          )}
-          {leftIcon && <View style={[styles.iconWrapper, { marginRight: 8 }]}>{leftIcon}</View>}
-          <Text style={[styles.text, { color: getTextColor() }, sizeStyles.text, textStyle]}>
-            {title}
-          </Text>
-          {rightIcon && <View style={[styles.iconWrapper, { marginLeft: 8 }]}>{rightIcon}</View>}
-        </>
-      )}
+      {loading ? <ActivityIndicator color={textColor} size="small" /> : <>
+        {icon && <View style={[styles.iconWrapper, { marginRight: 8 }]}><MaterialIcons name={icon as any} size={18} color={textColor} /></View>}
+        {leftIcon && <View style={[styles.iconWrapper, { marginRight: 8 }]}>{leftIcon}</View>}
+        <Text style={[styles.text, { color: textColor }, sizeStyles.text, textStyle]}>{title}</Text>
+        {rightIcon && <View style={[styles.iconWrapper, { marginLeft: 8 }]}>{rightIcon}</View>}
+      </>}
     </TouchableOpacity>
   );
 };
 
+function getBackgroundColor(variant: ButtonVariant) {
+  switch (variant) {
+    case 'primary': return config.theme.primary;
+    case 'secondary': return 'rgba(255,255,255,0.06)';
+    case 'outline': return 'rgba(255,255,255,0.02)';
+    case 'ghost': return 'transparent';
+    case 'danger': return 'rgba(239,68,68,0.18)';
+  }
+}
+function getTextColor(variant: ButtonVariant) {
+  switch (variant) {
+    case 'primary': return '#ffffff';
+    case 'danger': return '#fca5a5';
+    default: return config.theme.text;
+  }
+}
+function getBorderColor(variant: ButtonVariant) {
+  if (variant === 'primary') return 'rgba(255,255,255,0.14)';
+  if (variant === 'danger') return 'rgba(239,68,68,0.35)';
+  return config.theme.border;
+}
+function getSizeStyles(size: ButtonSize): { button: ViewStyle; text: TextStyle } {
+  switch (size) {
+    case 'small': return { button: { paddingVertical: 8, paddingHorizontal: 12, minHeight: 36 }, text: { fontSize: 13 } };
+    case 'large': return { button: { paddingVertical: 15, paddingHorizontal: 22, minHeight: 52 }, text: { fontSize: 16 } };
+    default: return { button: { paddingVertical: 11, paddingHorizontal: 16, minHeight: 44 }, text: { fontSize: 14 } };
+  }
+}
+
 const styles = StyleSheet.create({
-  button: {
-    borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  text: {
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  fullWidth: {
-    width: '100%',
-  },
-  iconWrapper: {
-    // Wrapper to provide margin around icons
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  button: { borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  text: { fontWeight: '700', textAlign: 'center', letterSpacing: 0.1 },
+  fullWidth: { width: '100%' },
+  iconWrapper: { justifyContent: 'center', alignItems: 'center' },
 });

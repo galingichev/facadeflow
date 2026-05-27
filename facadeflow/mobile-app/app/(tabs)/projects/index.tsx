@@ -1,129 +1,84 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { config } from '../../../src/lib/config';
 import { Card } from '../../../components/ui/Card';
+import { DemoPage, SectionTitle, StatusPill } from '../../../components/ui/DemoShell';
 import { useProjectsStore } from '../../../src/stores/projectsStore';
 import { useEffect } from 'react';
+import { formatCurrency, getProjectStatusLabel } from '../../../src/utils';
+import type { Project } from '../../../src/types';
 
 export default function ProjectsListScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isWide = width >= 900;
   const { projects, isLoading, refresh } = useProjectsStore();
   useEffect(() => { refresh(); }, [refresh]);
 
   return (
-    <View style={styles.container}>
+    <DemoPage title="Projects that show profit, cost and progress." subtitle="Every facade job stays connected to its client, budget, expenses and live profitability.">
+      <SectionTitle title="Project pipeline" subtitle={`${projects.length} demo projects loaded`} />
       <FlatList
         data={projects}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={refresh} />
-        }
-        renderItem={({ item }) => (
-          <Card style={styles.card} onPress={() => router.push(`/projects/${item.id}` as any)}>
-            <Text style={styles.name}>{item.name}</Text>
-            <Text style={styles.client}>{item.client?.name || 'No client'}</Text>
-            <View style={styles.footer}>
-              <View style={[styles.status, { backgroundColor: getStatusColor(item.status) }]}>
-                <Text style={styles.statusText}>{item.status}</Text>
-              </View>
-              <Text style={styles.budget}>Budgeted: ${item.budget?.toLocaleString() || '—'}</Text>
-            </View>
-          </Card>
-        )}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <MaterialIcons name="business" size={64} color={config.theme.border} />
-            <Text style={styles.emptyText}>No projects yet</Text>
-          </View>
-        }
+        contentContainerStyle={[styles.list, isWide && styles.listWide]}
+        numColumns={isWide ? 2 : 1}
+        key={isWide ? 'wide' : 'narrow'}
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refresh} tintColor={config.theme.primaryHover} />}
+        renderItem={({ item }) => <ProjectCard project={item} onPress={() => router.push(`/projects/${item.id}` as any)} isWide={isWide} />}
+        ListEmptyComponent={<View style={styles.empty}><MaterialIcons name="business-center" size={64} color={config.theme.textMuted} /><Text style={styles.emptyText}>No projects yet</Text></View>}
       />
-      <TouchableOpacity style={styles.fab} onPress={() => router.push('/projects/create')}>
-        <MaterialIcons name='add' size={24} color='white' />
+      <TouchableOpacity style={styles.fab} onPress={() => router.push('/projects/create')} accessibilityRole="button" accessibilityLabel="New Project">
+        <MaterialIcons name="add" size={24} color="white" />
       </TouchableOpacity>
-    </View>
+    </DemoPage>
   );
 }
 
-function getStatusColor(status: string): string {
-  const colors: Record<string, string> = {
-    draft: '#94a3b8',
-    inquired: '#3b82f6',
-    quoted: '#f59e0b',
-    approved: '#8b5cf6',
-    in_progress: '#2563eb',
-    on_hold: '#ef4444',
-    completed: '#10b981',
-    cancelled: '#64748b',
-  };
-  return colors[status] || '#94a3b8';
+function ProjectCard({ project, onPress, isWide }: { project: Project; onPress: () => void; isWide: boolean }) {
+  const financials = project.financials;
+  const contract = financials?.contract_value ?? project.contract_value ?? null;
+  const budget = financials?.budgeted_cost ?? project.budget ?? null;
+  const actualCost = financials?.actual_cost ?? 0;
+  const profit = financials?.actual_profit ?? (contract == null ? null : contract - actualCost);
+  const progress = getProgress(project.status);
+  return (
+    <Card style={[styles.card, isWide && styles.cardWide]} onPress={onPress} padding="large">
+      <View style={styles.cardTop}><StatusPill label={getProjectStatusLabel(project.status)} tone={statusTone(project.status)} /><MaterialIcons name="chevron-right" size={22} color={config.theme.textMuted} /></View>
+      <Text style={styles.name}>{project.name}</Text>
+      <Text style={styles.client}>{project.client?.name || 'No client'}</Text>
+      <View style={styles.progressWrap}><View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${progress}%` }]} /></View><Text style={styles.progressText}>{progress}% progress</Text></View>
+      <View style={styles.moneyGrid}>
+        <MoneyCell label="Contract" value={contract == null ? '—' : formatCurrency(contract)} />
+        <MoneyCell label="Budget" value={budget == null ? '—' : formatCurrency(budget)} />
+        <MoneyCell label="Actual cost" value={formatCurrency(actualCost)} />
+        <MoneyCell label="Profit" value={profit == null ? '—' : formatCurrency(profit)} color={profit != null && profit < 0 ? config.theme.error : config.theme.success} />
+      </View>
+    </Card>
+  );
 }
+function MoneyCell({ label, value, color = config.theme.text }: { label: string; value: string; color?: string }) { return <View style={styles.moneyCell}><Text style={styles.moneyLabel}>{label}</Text><Text style={[styles.moneyValue, { color }]}>{value}</Text></View>; }
+function getProgress(status: string) { return { draft: 8, inquired: 12, quoted: 24, approved: 38, in_progress: 62, on_hold: 44, completed: 100, cancelled: 0 }[status] || 15; }
+function statusTone(status: string): 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'purple' { if (status === 'completed') return 'success'; if (status === 'quoted' || status === 'inquired') return 'warning'; if (status === 'on_hold' || status === 'cancelled') return 'danger'; if (status === 'in_progress') return 'info'; if (status === 'approved') return 'purple'; return 'neutral'; }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: config.theme.background,
-  },
-  list: {
-    padding: 16,
-  },
-  card: {
-    marginBottom: 12,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: config.theme.text,
-    marginBottom: 4,
-  },
-  client: {
-    fontSize: 14,
-    color: config.theme.textSecondary,
-    marginBottom: 8,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  status: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#fff',
-    textTransform: 'capitalize',
-  },
-  budget: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: config.theme.text,
-  },
-  empty: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 100,
-  },
-  emptyText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: config.theme.textSecondary,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 16,
-    right: 16,
-    backgroundColor: '#2563eb',
-    borderRadius: 28,
-    padding: 12,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-  },
+  list: { gap: 14, paddingBottom: 110 },
+  listWide: { gap: 16 },
+  card: { marginBottom: 14, gap: 12 },
+  cardWide: { flex: 1, marginHorizontal: 7 },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  name: { fontSize: 19, fontWeight: '800', color: config.theme.text, letterSpacing: -0.4, lineHeight: 24 },
+  client: { fontSize: 14, color: config.theme.textSecondary, marginTop: -4 },
+  progressWrap: { gap: 8 },
+  progressTrack: { height: 8, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.07)', overflow: 'hidden' },
+  progressFill: { height: 8, borderRadius: 999, backgroundColor: config.theme.primaryHover },
+  progressText: { color: config.theme.textMuted, fontSize: 12, fontWeight: '700' },
+  moneyGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  moneyCell: { width: '47%', borderWidth: 1, borderColor: config.theme.borderSubtle, backgroundColor: 'rgba(255,255,255,0.025)', borderRadius: 14, padding: 12, gap: 4 },
+  moneyLabel: { color: config.theme.textMuted, fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+  moneyValue: { color: config.theme.text, fontSize: 15, fontWeight: '800' },
+  empty: { alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
+  emptyText: { marginTop: 16, fontSize: 16, color: config.theme.textSecondary },
+  fab: { position: 'absolute', bottom: 20, right: 20, backgroundColor: config.theme.primary, borderRadius: 999, padding: 15, elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.35, shadowRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)' },
 });
