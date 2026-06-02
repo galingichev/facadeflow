@@ -2,6 +2,8 @@
 
 ## Startup
 
+Runbook: [`docs/CLIENT_DEMO_RUNBOOK.md`](docs/CLIENT_DEMO_RUNBOOK.md)
+
 From the repository root:
 
 ```bash
