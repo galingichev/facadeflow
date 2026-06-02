@@ -1,6 +1,7 @@
 import type { TaskStatus, TaskPriority } from '../types';
 import { Platform, Dimensions } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { translateInstant } from '../i18n';
 
 // =====================
 // Date Utilities
@@ -226,7 +227,7 @@ export const getProjectStatusLabel = (status: string): string => {
     completed: 'Handover Complete',
     cancelled: 'Cancelled',
   };
-  return labels[status] || status;
+  return translateInstant(labels[status] || status);
 };
 
 export const getTaskStatusLabel = (status: TaskStatus): string => {

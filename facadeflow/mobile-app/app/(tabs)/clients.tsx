@@ -9,9 +9,11 @@ import { clientsStore } from '../../src/stores/clientsStore';
 import { projectsApi } from '../../src/api/endpoints';
 import { formatPhone, initials } from '../../src/utils';
 import { config } from '../../src/lib/config';
+import { useI18n } from '../../src/i18n';
 
 export default function ClientsScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,9 +38,9 @@ export default function ClientsScreen() {
     try { await clientsStore.remove(clientId); loadClients(); }
     catch (e) {
       const message = (e as any).response?.data?.error || (e as any).message || 'Failed to delete client.';
-      if (Platform.OS === 'web') window.alert(message); else Alert.alert('Error', message);
+      if (Platform.OS === 'web') window.alert(message); else Alert.alert(t('Error'), message);
     }
-  }, [loadClients]);
+  }, [loadClients, t]);
 
   useFocusEffect(useCallback(() => { loadClients(); }, [loadClients]));
   const filteredClients = clients.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.company?.toLowerCase().includes(searchQuery.toLowerCase()) || c.email?.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -47,8 +49,8 @@ export default function ClientsScreen() {
   return (
     <DemoPage title="Clients, companies and project relationships in one place." subtitle="A cleaner client list helps the demo story start with the customer, then move into projects, expenses and profit." eyebrow="Client CRM">
       <Card style={styles.summaryCard} padding="large">
-        <View style={styles.summaryItem}><Text style={styles.summaryValue}>{clients.length}</Text><Text style={styles.summaryLabel}>Clients</Text></View>
-        <View style={styles.summaryItem}><Text style={styles.summaryValue}>{projectCount}</Text><Text style={styles.summaryLabel}>Linked projects</Text></View>
+        <View style={styles.summaryItem}><Text style={styles.summaryValue}>{clients.length}</Text><Text style={styles.summaryLabel}>{t('Clients')}</Text></View>
+        <View style={styles.summaryItem}><Text style={styles.summaryValue}>{projectCount}</Text><Text style={styles.summaryLabel}>{t('Linked projects')}</Text></View>
         <View style={styles.summaryAction}><Button title="Add Client" icon="person-add" onPress={() => router.push('/clients/create' as any)} /></View>
       </Card>
 
@@ -56,7 +58,7 @@ export default function ClientsScreen() {
       <View style={styles.searchContainer}>
         <View style={styles.searchInputWrapper}>
           <MaterialIcons name="search" size={20} color={config.theme.textSecondary} />
-          <TextInput style={styles.searchInput} placeholder="Search clients..." value={searchQuery} onChangeText={setSearchQuery} placeholderTextColor={config.theme.textMuted} />
+          <TextInput style={styles.searchInput} placeholder={t('Search clients...')} value={searchQuery} onChangeText={setSearchQuery} placeholderTextColor={config.theme.textMuted} />
           {searchQuery.length > 0 && <TouchableOpacity onPress={() => setSearchQuery('')}><MaterialIcons name="close" size={20} color={config.theme.textSecondary} /></TouchableOpacity>}
         </View>
       </View>
@@ -68,7 +70,7 @@ export default function ClientsScreen() {
         numColumns={isWide ? 2 : 1}
         key={isWide ? 'wide' : 'narrow'}
         renderItem={({ item }) => <ClientCard client={item} projectCount={projectCounts[item.id] || 0} onDelete={handleDeleteClient} isWide={isWide} />}
-        ListEmptyComponent={<View style={styles.emptyContainer}><MaterialIcons name="people" size={64} color={config.theme.textMuted} /><Text style={styles.emptyText}>No clients found</Text><Button title="Add Client" variant="primary" size="medium" onPress={() => router.push('/clients/create' as any)} style={styles.emptyButton} /></View>}
+        ListEmptyComponent={<View style={styles.emptyContainer}><MaterialIcons name="people" size={64} color={config.theme.textMuted} /><Text style={styles.emptyText}>{t('No clients found')}</Text><Button title="Add Client" variant="primary" size="medium" onPress={() => router.push('/clients/create' as any)} style={styles.emptyButton} /></View>}
       />
 
       <TouchableOpacity style={styles.fab} onPress={() => router.push('/clients/create' as any)} accessibilityRole="button" accessibilityLabel="Add Client"><MaterialIcons name="add" size={28} color="#fff" /></TouchableOpacity>
@@ -78,21 +80,22 @@ export default function ClientsScreen() {
 
 function ClientCard({ client, projectCount, onDelete, isWide }: { client: any; projectCount: number; onDelete: (id: string) => void; isWide: boolean }) {
   const router = useRouter();
+  const { t } = useI18n();
   const handleDelete = () => {
-    if (Platform.OS === 'web') { if (window.confirm(`Confirm Client Delete\n\nDelete ${client.name}?`)) onDelete(client.id); return; }
-    Alert.alert('Confirm Client Delete', `Delete ${client.name}?`, [{ text: 'Cancel', style: 'cancel' }, { text: 'OK', style: 'destructive', onPress: () => onDelete(client.id) }], { cancelable: true });
+    if (Platform.OS === 'web') { if (window.confirm(`${t('Confirm Client Delete')}\n\n${t('Delete')} ${client.name}?`)) onDelete(client.id); return; }
+    Alert.alert(t('Confirm Client Delete'), `${t('Delete')} ${client.name}?`, [{ text: t('Cancel'), style: 'cancel' }, { text: t('OK'), style: 'destructive', onPress: () => onDelete(client.id) }], { cancelable: true });
   };
   return (
     <Card style={[styles.card, isWide && styles.cardWide]}>
       <TouchableOpacity onPress={() => router.push(('/clients/' + client.id + '/edit') as any)} accessibilityRole="button" accessibilityLabel={`Open ${client.name}`}>
         <View style={styles.avatarContainer}>
           <View style={styles.avatar}><Text style={styles.avatarText}>{initials(client.name)}</Text></View>
-          <View style={styles.info}><Text style={styles.name}>{client.name}</Text>{client.company ? <Text style={styles.company}>{client.company}</Text> : null}<Text style={styles.email}>{client.email || 'No email'}</Text>{client.phone ? <Text style={styles.phone}>{formatPhone(client.phone)}</Text> : null}</View>
+          <View style={styles.info}><Text style={styles.name}>{client.name}</Text>{client.company ? <Text style={styles.company}>{client.company}</Text> : null}<Text style={styles.email}>{client.email || t('No email')}</Text>{client.phone ? <Text style={styles.phone}>{formatPhone(client.phone)}</Text> : null}</View>
         </View>
       </TouchableOpacity>
-      <View style={styles.clientStory}><MaterialIcons name="business-center" size={18} color={config.theme.primaryHover} /><Text style={styles.clientStoryText}>{projectCount} project(s) connected to this client</Text></View>
+      <View style={styles.clientStory}><MaterialIcons name="business-center" size={18} color={config.theme.primaryHover} /><Text style={styles.clientStoryText}>{projectCount} {t('project(s) connected to this client')}</Text></View>
       <View style={styles.cardFooter}>
-        <Text style={styles.projectsCount}>Ready for project follow-up</Text>
+        <Text style={styles.projectsCount}>{t('Ready for project follow-up')}</Text>
         <View style={styles.cardActions}><TouchableOpacity style={styles.deleteButton} onPress={handleDelete} accessibilityRole="button" accessibilityLabel={`Delete ${client.name}`}><MaterialIcons name="delete-outline" size={22} color={config.theme.error} /></TouchableOpacity><MaterialIcons name="chevron-right" size={24} color={config.theme.textMuted} /></View>
       </View>
     </Card>

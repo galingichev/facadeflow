@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -7,7 +7,9 @@ import { formatCurrency, formatDate, getProjectStatusLabel } from '../../src/uti
 import { formatMarginPercent, getBudgetActualPercent, getJobHealth, getLastExpense, getPaymentReadiness } from '../../src/utils/projectInsights';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
+import { LanguageSelector } from '../../components/LanguageSelector';
 import { DemoPage, FacadeFlowMark, MoneyText, SectionTitle, StatusPill } from '../../components/ui/DemoShell';
+import { useI18n } from '../../src/i18n';
 import type { DashboardSummary, Project, ProjectExpense } from '../../src/types';
 
 type RiskProject = { project: Project; reason: string; tone: 'warning' | 'danger' };
@@ -15,6 +17,7 @@ type RecentExpense = ProjectExpense & { projectName: string; clientName?: string
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -22,15 +25,15 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const handleFetch = async () => {
+  const handleFetch = useCallback(async () => {
     const apiBaseUrl = getApiUrl();
     try {
       const [summaryRes, projectsRes] = await Promise.all([
         fetch(`${apiBaseUrl}/dashboard/summary`),
         fetch(`${apiBaseUrl}/projects`),
       ]);
-      if (!summaryRes.ok) throw new Error('Failed to fetch summary');
-      if (!projectsRes.ok) throw new Error('Failed to fetch projects');
+      if (!summaryRes.ok) throw new Error(t('Failed to fetch summary'));
+      if (!projectsRes.ok) throw new Error(t('Failed to fetch projects'));
       const summaryData = await summaryRes.json();
       const projectsData = await projectsRes.json();
       const listedProjects = projectsData.data || [];
@@ -50,13 +53,13 @@ export default function DashboardScreen() {
       setProjects(detailedProjects);
       setError(null);
     } catch (err: any) {
-      setError(err.message ?? 'Unknown error');
+      setError(err.message ?? t('Unknown error'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
-  useEffect(() => { setLoading(true); handleFetch(); }, []);
+  useEffect(() => { setLoading(true); handleFetch(); }, [handleFetch]);
 
   const actualProfit = summary?.total_actual_profit ?? 0;
   const margin = summary?.actual_margin;
@@ -66,14 +69,14 @@ export default function DashboardScreen() {
   const ownerBriefing = useMemo(() => getOwnerBriefing(projects, summary), [projects, summary]);
   const primaryReportProject = useMemo(() => projects.find((project) => project.status === 'in_progress') || projects[0], [projects]);
   const quickStats = [
-    { label: 'Contract value', value: formatCurrency(summary?.total_contract_value ?? 0), icon: 'payments', tone: config.theme.primaryHover },
-    { label: 'Budgeted cost', value: formatCurrency(summary?.total_budgeted_cost ?? 0), icon: 'account-balance-wallet', tone: '#60a5fa' },
-    { label: 'Actual cost', value: formatCurrency(summary?.total_actual_cost ?? 0), icon: 'receipt-long', tone: config.theme.warning },
-    { label: 'Actual profit', value: formatCurrency(actualProfit), icon: 'trending-up', tone: actualProfit < 0 ? config.theme.error : config.theme.success },
+    { label: t('Contract value'), value: formatCurrency(summary?.total_contract_value ?? 0), icon: 'payments', tone: config.theme.primaryHover },
+    { label: t('Budgeted cost'), value: formatCurrency(summary?.total_budgeted_cost ?? 0), icon: 'account-balance-wallet', tone: '#60a5fa' },
+    { label: t('Actual cost'), value: formatCurrency(summary?.total_actual_cost ?? 0), icon: 'receipt-long', tone: config.theme.warning },
+    { label: t('Actual profit'), value: formatCurrency(actualProfit), icon: 'trending-up', tone: actualProfit < 0 ? config.theme.error : config.theme.success },
   ];
 
   if (loading) {
-    return <DemoPage title="Loading dashboard" subtitle="Preparing the FacadeFlow client demo workspace."><View style={styles.centerCard}><Text style={styles.muted}>Loading dashboard...</Text></View></DemoPage>;
+    return <DemoPage title="Loading dashboard" subtitle="Preparing the FacadeFlow client demo workspace."><View style={styles.centerCard}><Text style={styles.muted}>{t('Loading dashboard...')}</Text></View></DemoPage>;
   }
 
   if (error) {
@@ -85,13 +88,13 @@ export default function DashboardScreen() {
       <DemoPage
         title="Run facade, window and door jobs with profit visible from day one."
         subtitle="FacadeFlow turns scattered client notes, budgets and expenses into a clean operating dashboard for contractors who need every project to stay on margin."
-        rightSlot={<View style={styles.headerActions}><Button title="New Project" icon="add" onPress={() => router.push('/projects/create' as any)} /><Button title="View Projects" variant="outline" icon="business-center" onPress={() => router.push('/projects' as any)} /></View>}
+        rightSlot={<View style={styles.headerActions}><LanguageSelector /><Button title="New Project" icon="add" onPress={() => router.push('/projects/create' as any)} /><Button title="View Projects" variant="outline" icon="business-center" onPress={() => router.push('/projects' as any)} /></View>}
       >
         <Card style={styles.introPanel} padding="large">
-          <View style={styles.introLogo}><FacadeFlowMark size={46} /><View><Text style={styles.introTitle}>Client demo storyline</Text><Text style={styles.muted}>Show the owner how a job moves from quote to expenses to profit report.</Text></View></View>
+          <View style={styles.introLogo}><FacadeFlowMark size={46} /><View><Text style={styles.introTitle}>{t('Client demo storyline')}</Text><Text style={styles.muted}>{t('Show the owner how a job moves from quote to expenses to profit report.')}</Text></View></View>
           <View style={styles.storySteps}>
             {['Client and project created', 'Budget and contract recorded', 'Expenses tracked by category', 'At-risk jobs highlighted', 'One-page profit report preview'].map((item, index) => (
-              <View key={item} style={styles.storyStep}><Text style={styles.storyNumber}>{index + 1}</Text><Text style={styles.storyText}>{item}</Text></View>
+              <View key={item} style={styles.storyStep}><Text style={styles.storyNumber}>{index + 1}</Text><Text style={styles.storyText}>{t(item)}</Text></View>
             ))}
           </View>
         </Card>
@@ -111,7 +114,7 @@ export default function DashboardScreen() {
             {ownerBriefing.map((item) => (
               <View key={item.title} style={styles.briefingItem}>
                 <View style={[styles.briefingIcon, { backgroundColor: `${item.color}22`, borderColor: `${item.color}55` }]}><MaterialIcons name={item.icon as any} size={19} color={item.color} /></View>
-                <View style={styles.briefingText}><Text style={styles.briefingTitle}>{item.title}</Text><Text style={styles.briefingCopy}>{item.copy}</Text></View>
+                <View style={styles.briefingText}><Text style={styles.briefingTitle}>{t(item.title)}</Text><Text style={styles.briefingCopy}>{t(item.copy)}</Text></View>
               </View>
             ))}
           </View>
@@ -121,24 +124,24 @@ export default function DashboardScreen() {
           <Card style={styles.snapshotCard} padding="large">
             <SectionTitle title="Profit Snapshot" subtitle="Dashboard summary: the client can understand portfolio health in under one minute." />
             <View style={styles.snapshotHero}>
-              <Text style={styles.snapshotLabel}>Portfolio margin</Text>
+              <Text style={styles.snapshotLabel}>{t('Portfolio margin')}</Text>
               <Text style={styles.marginValue}>{formatMargin(margin)}</Text>
-              <Text style={styles.muted}>{summary?.profitable_projects ?? 0} profitable projects • {summary?.loss_projects ?? 0} loss projects • {summary?.total_expenses ?? 0} expenses</Text>
+              <Text style={styles.muted}>{summary?.profitable_projects ?? 0} {t('profitable projects')} • {summary?.loss_projects ?? 0} {t('loss projects')} • {summary?.total_expenses ?? 0} {t('expenses')}</Text>
             </View>
             <View style={styles.financeRows}>
-              <FinanceRow label="Projects with financials" value={`${summary?.projects_with_financials ?? 0} of ${summary?.total_projects ?? 0}`} />
-              <FinanceRow label="Active projects" value={`${summary?.active_projects ?? 0}`} />
-              <FinanceRow label="Revenue pipeline" value={formatCurrency(summary?.revenue_pipeline ?? 0)} />
+              <FinanceRow label={t('Projects with financials')} value={`${summary?.projects_with_financials ?? 0} ${t('of')} ${summary?.total_projects ?? 0}`} />
+              <FinanceRow label={t('Active projects')} value={`${summary?.active_projects ?? 0}`} />
+              <FinanceRow label={t('Revenue pipeline')} value={formatCurrency(summary?.revenue_pipeline ?? 0)} />
             </View>
           </Card>
 
           <Card style={styles.workflowCard} padding="large">
             <SectionTitle title="At-risk projects" subtitle="Highlights jobs that need a quick owner decision." />
-            {atRiskProjects.length === 0 ? <View style={styles.safeState}><MaterialIcons name="verified" size={24} color={config.theme.success} /><Text style={styles.muted}>No major margin or status risk in the current demo data.</Text></View> : atRiskProjects.map(({ project, reason, tone }) => (
+            {atRiskProjects.length === 0 ? <View style={styles.safeState}><MaterialIcons name="verified" size={24} color={config.theme.success} /><Text style={styles.muted}>{t('No major margin or status risk in the current demo data.')}</Text></View> : atRiskProjects.map(({ project, reason, tone }) => (
               <View key={project.id} style={styles.riskRow}>
                 <StatusPill label={tone === 'danger' ? 'High risk' : 'Watch'} tone={tone} />
                 <Text style={styles.riskName}>{project.name}</Text>
-                <Text style={styles.riskReason}>{reason}</Text>
+                <Text style={styles.riskReason}>{t(reason)}</Text>
               </View>
             ))}
           </Card>
@@ -147,7 +150,7 @@ export default function DashboardScreen() {
         <View style={[styles.mainGrid, isWide && styles.mainGridWide]}>
           <Card style={styles.snapshotCard} padding="large">
             <SectionTitle title="Recent expenses" subtitle="The live feed that explains why profit changed." />
-            {recentExpenses.length === 0 ? <Text style={styles.muted}>No expenses recorded yet.</Text> : recentExpenses.map((expense) => (
+            {recentExpenses.length === 0 ? <Text style={styles.muted}>{t('No expenses recorded yet.')}</Text> : recentExpenses.map((expense) => (
               <View key={expense.id} style={styles.expenseRow}>
                 <View style={styles.expenseIcon}><MaterialIcons name="receipt-long" size={18} color={config.theme.warning} /></View>
                 <View style={styles.expenseText}><Text style={styles.expenseTitle}>{expense.description}</Text><Text style={styles.expenseMeta}>{expense.projectName} • {formatDate(expense.expense_date, 'short')}</Text></View>
@@ -159,13 +162,13 @@ export default function DashboardScreen() {
           <Card style={styles.workflowCard} padding="large">
             <SectionTitle title="Report preview" subtitle="Client-facing snapshot with the next financial action." />
             <View style={styles.reportPreview}>
-              <View style={styles.reportHeader}><FacadeFlowMark size={30} /><View><Text style={styles.reportTitle}>FacadeFlow Project Report</Text><Text style={styles.reportSub}>{primaryReportProject?.name || 'Demo portfolio'} • {primaryReportProject?.client?.name || 'Demo client'}</Text></View></View>
-              <FinanceRow label="Contract value" value={formatCurrency(primaryReportProject?.financials?.contract_value ?? primaryReportProject?.contract_value ?? summary?.total_contract_value ?? 0)} />
-              <FinanceRow label="Budgeted cost" value={formatCurrency(primaryReportProject?.financials?.budgeted_cost ?? primaryReportProject?.budget ?? summary?.total_budgeted_cost ?? 0)} />
-              <FinanceRow label="Actual cost" value={formatCurrency(primaryReportProject?.financials?.actual_cost ?? summary?.total_actual_cost ?? 0)} />
-              <FinanceRow label="Profit / margin" value={`${formatCurrency(primaryReportProject?.financials?.actual_profit ?? summary?.total_actual_profit ?? 0)} • ${formatMarginPercent(primaryReportProject?.financials?.actual_margin ?? summary?.actual_margin)}`} />
+              <View style={styles.reportHeader}><FacadeFlowMark size={30} /><View><Text style={styles.reportTitle}>{t('FacadeFlow Project Report')}</Text><Text style={styles.reportSub}>{primaryReportProject?.name || t('Demo portfolio')} • {primaryReportProject?.client?.name || t('Demo client')}</Text></View></View>
+              <FinanceRow label={t('Contract value')} value={formatCurrency(primaryReportProject?.financials?.contract_value ?? primaryReportProject?.contract_value ?? summary?.total_contract_value ?? 0)} />
+              <FinanceRow label={t('Budgeted cost')} value={formatCurrency(primaryReportProject?.financials?.budgeted_cost ?? primaryReportProject?.budget ?? summary?.total_budgeted_cost ?? 0)} />
+              <FinanceRow label={t('Actual cost')} value={formatCurrency(primaryReportProject?.financials?.actual_cost ?? summary?.total_actual_cost ?? 0)} />
+              <FinanceRow label={t('Profit / margin')} value={`${formatCurrency(primaryReportProject?.financials?.actual_profit ?? summary?.total_actual_profit ?? 0)} • ${formatMarginPercent(primaryReportProject?.financials?.actual_margin ?? summary?.actual_margin)}`} />
               {primaryReportProject ? <StatusPill label={getPaymentReadiness(primaryReportProject).label} tone={getPaymentReadiness(primaryReportProject).tone} /> : null}
-              <View style={styles.reportFooter}><Text style={styles.reportFooterText}>Notes / next action: verify latest site costs, then send the owner-ready progress claim.</Text></View>
+              <View style={styles.reportFooter}><Text style={styles.reportFooterText}>{t('Notes / next action: verify latest site costs, then send the owner-ready progress claim.')}</Text></View>
             </View>
           </Card>
         </View>
@@ -176,7 +179,7 @@ export default function DashboardScreen() {
         </View>
 
         <Card style={styles.actionPanel} padding="large">
-          <View style={styles.actionText}><Text style={styles.actionTitle}>Ready for a client walkthrough</Text><Text style={styles.muted}>Use the demo data only. Show dashboard → at-risk project → expenses → report preview.</Text></View>
+          <View style={styles.actionText}><Text style={styles.actionTitle}>{t('Ready for a client walkthrough')}</Text><Text style={styles.muted}>{t('Use the demo data only. Show dashboard → at-risk project → expenses → report preview.')}</Text></View>
           <View style={styles.actionButtons}><Button title="New Project" icon="add" onPress={() => router.push('/projects/create' as any)} /><Button title="Add Client" variant="secondary" icon="person-add" onPress={() => router.push('/clients/create' as any)} /></View>
         </Card>
       </DemoPage>
@@ -185,6 +188,7 @@ export default function DashboardScreen() {
 }
 
 function ProjectPreview({ project, onPress }: { project: Project; onPress: () => void }) {
+  const { t } = useI18n();
   const financials = project.financials;
   const contract = financials?.contract_value ?? project.contract_value ?? null;
   const budget = financials?.budgeted_cost ?? project.budget ?? null;
@@ -199,12 +203,12 @@ function ProjectPreview({ project, onPress }: { project: Project; onPress: () =>
     <Card style={styles.projectPreview} onPress={onPress} padding="medium">
       <View style={styles.projectPillRow}><StatusPill label={getProjectStatusLabel(project.status)} tone={statusTone(project.status)} /><StatusPill label={health.label} tone={health.tone} /></View>
       <Text style={styles.projectName}>{project.name}</Text>
-      <Text style={styles.projectClient}>{project.client?.name || 'No client'}</Text>
-      <View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>Contract</Text><Text style={styles.smallValue}>{contract != null ? formatCurrency(contract) : '—'}</Text></View>
-      <View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>Actual cost</Text><Text style={styles.smallValue}>{formatCurrency(actualCost)}</Text></View>
-      <View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>Profit / margin</Text><Text style={[styles.smallValue, { color: profit != null && profit < 0 ? config.theme.error : config.theme.success }]}>{profit == null ? '—' : `${formatCurrency(profit)} • ${formatMarginPercent(margin)}`}</Text></View>
-      <View style={styles.budgetBlock}><View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>Budget vs actual</Text><Text style={styles.smallValue}>{budget == null ? '—' : `${budgetPercent}%`}</Text></View><View style={styles.progressTrack}><View style={[styles.budgetFill, { width: `${budgetPercent}%`, backgroundColor: budgetPercent > 100 ? config.theme.error : config.theme.primaryHover }]} /></View></View>
-      <Text style={styles.lastExpense}>Last expense: {lastExpense ? `${lastExpense.description} • ${formatCurrency(lastExpense.amount)}` : 'No expenses yet'}</Text>
+      <Text style={styles.projectClient}>{project.client?.name || t('No client')}</Text>
+      <View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>{t('Contract')}</Text><Text style={styles.smallValue}>{contract != null ? formatCurrency(contract) : '—'}</Text></View>
+      <View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>{t('Actual cost')}</Text><Text style={styles.smallValue}>{formatCurrency(actualCost)}</Text></View>
+      <View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>{t('Profit / margin')}</Text><Text style={[styles.smallValue, { color: profit != null && profit < 0 ? config.theme.error : config.theme.success }]}>{profit == null ? '—' : `${formatCurrency(profit)} • ${formatMarginPercent(margin)}`}</Text></View>
+      <View style={styles.budgetBlock}><View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>{t('Budget vs actual')}</Text><Text style={styles.smallValue}>{budget == null ? '—' : `${budgetPercent}%`}</Text></View><View style={styles.progressTrack}><View style={[styles.budgetFill, { width: `${budgetPercent}%`, backgroundColor: budgetPercent > 100 ? config.theme.error : config.theme.primaryHover }]} /></View></View>
+      <Text style={styles.lastExpense}>{t('Last expense')}: {lastExpense ? `${lastExpense.description} • ${formatCurrency(lastExpense.amount)}` : t('No expenses yet')}</Text>
       <StatusPill label={readiness.label} tone={readiness.tone} />
     </Card>
   );

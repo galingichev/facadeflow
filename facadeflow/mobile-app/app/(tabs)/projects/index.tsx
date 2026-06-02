@@ -9,9 +9,11 @@ import { useEffect } from 'react';
 import { formatCurrency, getProjectStatusLabel } from '../../../src/utils';
 import { formatMarginPercent, getBudgetActualPercent, getJobHealth, getLastExpense, getPaymentReadiness } from '../../../src/utils/projectInsights';
 import type { Project } from '../../../src/types';
+import { useI18n } from '../../../src/i18n';
 
 export default function ProjectsListScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
   const { projects, isLoading, refresh } = useProjectsStore();
@@ -19,7 +21,7 @@ export default function ProjectsListScreen() {
 
   return (
     <DemoPage title="Projects that show profit, cost and progress." subtitle="Every facade job stays connected to its client, budget, expenses and live profitability.">
-      <SectionTitle title="Project pipeline" subtitle={`${projects.length} demo projects loaded`} />
+      <SectionTitle title="Project pipeline" subtitle={`${projects.length} ${t('demo projects loaded')}`} />
       <FlatList
         data={projects}
         keyExtractor={(item) => item.id}
@@ -28,7 +30,7 @@ export default function ProjectsListScreen() {
         key={isWide ? 'wide' : 'narrow'}
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refresh} tintColor={config.theme.primaryHover} />}
         renderItem={({ item }) => <ProjectCard project={item} onPress={() => router.push(`/projects/${item.id}` as any)} isWide={isWide} />}
-        ListEmptyComponent={<View style={styles.empty}><MaterialIcons name="business-center" size={64} color={config.theme.textMuted} /><Text style={styles.emptyText}>No projects yet</Text></View>}
+        ListEmptyComponent={<View style={styles.empty}><MaterialIcons name="business-center" size={64} color={config.theme.textMuted} /><Text style={styles.emptyText}>{t('No projects yet')}</Text></View>}
       />
       <TouchableOpacity style={styles.fab} onPress={() => router.push('/projects/create')} accessibilityRole="button" accessibilityLabel="New Project">
         <MaterialIcons name="add" size={24} color="white" />
@@ -38,6 +40,7 @@ export default function ProjectsListScreen() {
 }
 
 function ProjectCard({ project, onPress, isWide }: { project: Project; onPress: () => void; isWide: boolean }) {
+  const { t } = useI18n();
   const financials = project.financials;
   const contract = financials?.contract_value ?? project.contract_value ?? null;
   const budget = financials?.budgeted_cost ?? project.budget ?? null;
@@ -53,17 +56,17 @@ function ProjectCard({ project, onPress, isWide }: { project: Project; onPress: 
     <Card style={[styles.card, isWide && styles.cardWide]} onPress={onPress} padding="large">
       <View style={styles.cardTop}><View style={styles.pillRow}><StatusPill label={getProjectStatusLabel(project.status)} tone={statusTone(project.status)} /><StatusPill label={health.label} tone={health.tone} /></View><MaterialIcons name="chevron-right" size={22} color={config.theme.textMuted} /></View>
       <Text style={styles.name}>{project.name}</Text>
-      <Text style={styles.client}>{project.client?.name || 'No client'}</Text>
-      <View style={styles.progressWrap}><View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${progress}%` }]} /></View><Text style={styles.progressText}>{progress}% progress</Text></View>
-      <View style={styles.budgetPanel}><View style={styles.moneyRow}><Text style={styles.moneyLabel}>Budget vs actual</Text><Text style={styles.moneyValue}>{budget == null ? '—' : `${budgetPercent}%`}</Text></View><View style={styles.progressTrack}><View style={[styles.budgetFill, { width: `${budgetPercent}%`, backgroundColor: budgetPercent > 100 ? config.theme.error : config.theme.primaryHover }]} /></View></View>
+      <Text style={styles.client}>{project.client?.name || t('No client')}</Text>
+      <View style={styles.progressWrap}><View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${progress}%` }]} /></View><Text style={styles.progressText}>{progress}% {t('progress')}</Text></View>
+      <View style={styles.budgetPanel}><View style={styles.moneyRow}><Text style={styles.moneyLabel}>{t('Budget vs actual')}</Text><Text style={styles.moneyValue}>{budget == null ? '—' : `${budgetPercent}%`}</Text></View><View style={styles.progressTrack}><View style={[styles.budgetFill, { width: `${budgetPercent}%`, backgroundColor: budgetPercent > 100 ? config.theme.error : config.theme.primaryHover }]} /></View></View>
       <View style={styles.moneyGrid}>
-        <MoneyCell label="Contract" value={contract == null ? '—' : formatCurrency(contract)} />
-        <MoneyCell label="Budget" value={budget == null ? '—' : formatCurrency(budget)} />
-        <MoneyCell label="Actual cost" value={formatCurrency(actualCost)} />
-        <MoneyCell label="Profit / margin" value={profit == null ? '—' : `${formatCurrency(profit)} • ${formatMarginPercent(margin)}`} color={profit != null && profit < 0 ? config.theme.error : config.theme.success} />
+        <MoneyCell label={t('Contract')} value={contract == null ? '—' : formatCurrency(contract)} />
+        <MoneyCell label={t('Budget')} value={budget == null ? '—' : formatCurrency(budget)} />
+        <MoneyCell label={t('Actual cost')} value={formatCurrency(actualCost)} />
+        <MoneyCell label={t('Profit / margin')} value={profit == null ? '—' : `${formatCurrency(profit)} • ${formatMarginPercent(margin)}`} color={profit != null && profit < 0 ? config.theme.error : config.theme.success} />
       </View>
-      <Text style={styles.lastExpense}>Last expense: {lastExpense ? `${lastExpense.description} • ${formatCurrency(lastExpense.amount)}` : 'No expenses yet'}</Text>
-      <Text style={styles.healthReason}>Job Health: {health.reason}</Text>
+      <Text style={styles.lastExpense}>{t('Last expense')}: {lastExpense ? `${lastExpense.description} • ${formatCurrency(lastExpense.amount)}` : t('No expenses yet')}</Text>
+      <Text style={styles.healthReason}>{t('Job Health')}: {t(health.reason)}</Text>
       <StatusPill label={readiness.label} tone={readiness.tone} />
     </Card>
   );

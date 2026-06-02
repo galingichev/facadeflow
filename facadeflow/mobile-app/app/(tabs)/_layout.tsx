@@ -1,8 +1,10 @@
 import { Tabs } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { config } from '../../src/lib/config';
+import { useI18n } from '../../src/i18n';
 
 export default function TabsLayout() {
+  const { t } = useI18n();
   return (
     <Tabs
       screenOptions={{
@@ -27,9 +29,9 @@ export default function TabsLayout() {
         },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Dashboard', tabBarIcon: ({ color }) => <MaterialIcons name="space-dashboard" size={23} color={color} /> }} />
-      <Tabs.Screen name="projects/index" options={{ title: 'Projects', tabBarIcon: ({ color }) => <MaterialIcons name="business-center" size={23} color={color} /> }} />
-      <Tabs.Screen name="clients" options={{ title: 'Clients', tabBarIcon: ({ color }) => <MaterialIcons name="groups" size={23} color={color} /> }} />
+      <Tabs.Screen name="index" options={{ title: t('Dashboard'), tabBarIcon: ({ color }) => <MaterialIcons name="space-dashboard" size={23} color={color} /> }} />
+      <Tabs.Screen name="projects/index" options={{ title: t('Projects'), tabBarIcon: ({ color }) => <MaterialIcons name="business-center" size={23} color={color} /> }} />
+      <Tabs.Screen name="clients" options={{ title: t('Clients'), tabBarIcon: ({ color }) => <MaterialIcons name="groups" size={23} color={color} /> }} />
       <Tabs.Screen name="more" options={{ href: null }} />
       <Tabs.Screen name="field" options={{ href: null }} />
       <Tabs.Screen name="estimates" options={{ href: null }} />

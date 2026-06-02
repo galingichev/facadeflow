@@ -12,6 +12,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { config } from '../../src/lib/config';
+import { useI18n } from '../../src/i18n';
 
 interface SelectOption {
   label: string;
@@ -44,6 +45,7 @@ export const Select: React.FC<SelectProps> = ({
   searchable = false,
   style,
 }) => {
+  const { t } = useI18n();
   const [visible, setVisible] = useState(false);
   const [search, setSearch] = useState('');
   const [filtered, setFiltered] = useState(options);
@@ -69,7 +71,7 @@ export const Select: React.FC<SelectProps> = ({
 
   return (
     <View style={style}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && <Text style={styles.label}>{t(label)}</Text>}
 
       <TouchableWithoutFeedback onPress={() => !disabled && setVisible(true)}>
         <View
@@ -85,7 +87,7 @@ export const Select: React.FC<SelectProps> = ({
             },
           ]}
           accessibilityRole={"combobox" as any}
-          accessibilityLabel={label || 'Select option'}
+          accessibilityLabel={label ? t(label) : t('Select an option')}
           accessibilityState={{ expanded: visible, disabled }}
           accessibilityHint={error ? `Error: ${error}` : helper || undefined}
         >
@@ -96,7 +98,7 @@ export const Select: React.FC<SelectProps> = ({
             ]}
             numberOfLines={1}
           >
-            {selectedOption ? selectedOption.label : placeholder}
+            {selectedOption ? t(selectedOption.label) : t(placeholder)}
           </Text>
           <Text style={styles.icon}>▼</Text>
         </View>
@@ -120,16 +122,16 @@ export const Select: React.FC<SelectProps> = ({
               <View
                 style={styles.modalContent}
                 accessibilityRole={"dialog" as any}
-                accessibilityLabel={label ? `${label} options` : 'Options'}
+                accessibilityLabel={label ? `${t(label)} options` : 'Options'}
               >
                 {searchable && (
                   <TextInput
                     style={styles.searchInput}
-                    placeholder="Search..."
+                    placeholder={t('Search...')}
                     value={search}
                     onChangeText={setSearch}
                     autoFocus
-                    accessibilityLabel="Search options"
+                    accessibilityLabel={t('Search...')}
                   />
                 )}
                 <FlatList
@@ -148,7 +150,7 @@ export const Select: React.FC<SelectProps> = ({
                         ]}
                         accessibilityRole={"option" as any}
                         accessibilityState={{ selected: item.value === value }}
-                        accessibilityLabel={item.label}
+                        accessibilityLabel={t(item.label)}
                       >
                         <Text
                           style={[
@@ -156,7 +158,7 @@ export const Select: React.FC<SelectProps> = ({
                             item.value === value && { color: config.theme.primary },
                           ]}
                         >
-                          {item.label}
+                          {t(item.label)}
                         </Text>
                         {item.value === value && (
                           <Text style={styles.check}>✓</Text>
@@ -165,7 +167,7 @@ export const Select: React.FC<SelectProps> = ({
                     </TouchableWithoutFeedback>
                   )}
                   ListEmptyComponent={
-                    <Text style={styles.noResults}>No results found</Text>
+                    <Text style={styles.noResults}>{t('No results found')}</Text>
                   }
                 />
               </View>
