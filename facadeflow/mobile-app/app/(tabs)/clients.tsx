@@ -23,9 +23,11 @@ export default function ClientsScreen() {
   const loadClients = useCallback(async () => {
     try {
       const [clientData, projectData] = await Promise.all([clientsStore.list(), projectsApi.list()]);
+      const projects = Array.isArray(projectData) ? projectData : (projectData as any)?.data ?? [];
       const counts: Record<string, number> = {};
-      (projectData as any[]).forEach((project) => {
-        if (project.client_id) counts[project.client_id] = (counts[project.client_id] || 0) + 1;
+      projects.forEach((project: any) => {
+        const clientId = project.client_id || project.client?.id;
+        if (clientId) counts[clientId] = (counts[clientId] || 0) + 1;
       });
       setClients(clientData as any[]);
       setProjectCounts(counts);
