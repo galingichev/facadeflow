@@ -10,6 +10,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "smoke:web:mvp": "node scripts/smoke-web-mvp.js",
+    "smoke:demo-browser": "node scripts/smoke-demo-browser.js",
     "prepare": "husky",
     "seed:client-demo": "node scripts/seed-client-demo.js",
     "smoke:mobile-flows": "node scripts/smoke-mobile-flows.js"

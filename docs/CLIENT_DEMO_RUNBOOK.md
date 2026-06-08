@@ -92,6 +92,18 @@ npm run verify:demo
 
 This runs backend tests, mobile smoke checks, Expo lint, then checks API health and resets/verifies demo data when the local API is available.
 
+Run the browser smoke against the local demo stack:
+
+```bash
+npm run smoke:demo-browser
+```
+
+It uses `http://127.0.0.1:8081` by default, checks dashboard load, API health, currency switching, Bulgarian language, project detail routing, and reports any browser console errors. To test a shared demo URL instead:
+
+```bash
+FACADEFLOW_DEMO_URL=https://your-demo-url.example npm run smoke:demo-browser
+```
+
 Run one direct health check after startup if you only need a quick API probe:
 
 ```bash

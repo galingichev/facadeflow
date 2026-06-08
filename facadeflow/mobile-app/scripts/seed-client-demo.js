@@ -44,9 +44,17 @@ function assertOwnerConfigured() {
   if (process.env.SKIP_OWNER_ENV_CHECK === '1') return;
 
   const ownerId = resolveOwnerId();
-  if (!ownerId || ownerId.includes('<') || !UUID_REGEX.test(ownerId)) {
+  const ownerIdWarning = !ownerId
+    ? 'FACADEFLOW_MVP_OWNER_ID is missing.'
+    : ownerId.includes('<')
+      ? 'FACADEFLOW_MVP_OWNER_ID is still a placeholder.'
+      : !UUID_REGEX.test(ownerId)
+        ? 'FACADEFLOW_MVP_OWNER_ID is present but is not a valid UUID.'
+        : null;
+
+  if (ownerIdWarning) {
     throw new Error([
-      'FACADEFLOW_MVP_OWNER_ID is required before seeding the client demo.',
+      ownerIdWarning,
       'Set it in backend/.env to an existing Supabase users.id UUID, then restart the backend.',
       'Example: FACADEFLOW_MVP_OWNER_ID=00000000-0000-4000-8000-000000000000',
     ].join('\n'));
