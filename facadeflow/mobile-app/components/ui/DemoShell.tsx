@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, useWindowDimensions, Platform, ViewStyle } from 'react-native';
 import { config } from '../../src/lib/config';
+import { useI18n } from '../../src/i18n';
 
 export function FacadeFlowMark({ size = 34 }: { size?: number }) {
   const radius = Math.round(size * 0.31);
@@ -17,6 +18,7 @@ export function DemoPage({
   eyebrow = 'FacadeFlow Demo', title, subtitle, children, rightSlot, style,
 }: { eyebrow?: string; title: string; subtitle?: string; children: React.ReactNode; rightSlot?: React.ReactNode; style?: ViewStyle }) {
   const { width } = useWindowDimensions();
+  const { t } = useI18n();
   const isWide = width >= 900;
   return (
     <View style={[styles.screen, isWide && styles.wideScreen, style]}>
@@ -26,12 +28,12 @@ export function DemoPage({
         <View style={styles.brandRow}>
           <FacadeFlowMark />
           <Text style={styles.brand}>FacadeFlow</Text>
-          <View style={styles.demoPill}><Text style={styles.demoPillText}>Client Demo</Text></View>
+          <View style={styles.demoPill}><Text style={styles.demoPillText}>{t('Client Demo')}</Text></View>
         </View>
         <View style={styles.headerText}>
-          <Text style={styles.eyebrow}>{eyebrow}</Text>
-          <Text style={[styles.title, isWide && styles.titleWide]}>{title}</Text>
-          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+          <Text style={styles.eyebrow}>{t(eyebrow)}</Text>
+          <Text style={[styles.title, isWide && styles.titleWide]}>{t(title)}</Text>
+          {subtitle ? <Text style={styles.subtitle}>{t(subtitle)}</Text> : null}
         </View>
         {rightSlot}
       </View>
@@ -41,12 +43,14 @@ export function DemoPage({
 }
 
 export function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
-  return <View style={styles.sectionTitleWrap}><Text style={styles.sectionTitle}>{title}</Text>{subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}</View>;
+  const { t } = useI18n();
+  return <View style={styles.sectionTitleWrap}><Text style={styles.sectionTitle}>{t(title)}</Text>{subtitle ? <Text style={styles.sectionSubtitle}>{t(subtitle)}</Text> : null}</View>;
 }
 
 export function StatusPill({ label, tone = 'neutral' }: { label: string; tone?: 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'purple' }) {
+  const { t } = useI18n();
   const color = { neutral: '#a9b0bc', success: config.theme.success, warning: config.theme.warning, danger: config.theme.error, info: '#60a5fa', purple: config.theme.primaryHover }[tone];
-  return <View style={[styles.statusPill, { borderColor: `${color}66`, backgroundColor: `${color}1f` }]}><View style={[styles.statusDot, { backgroundColor: color }]} /><Text style={[styles.statusPillText, { color }]}>{label}</Text></View>;
+  return <View style={[styles.statusPill, { borderColor: `${color}66`, backgroundColor: `${color}1f` }]}><View style={[styles.statusDot, { backgroundColor: color }]} /><Text style={[styles.statusPillText, { color }]}>{t(label)}</Text></View>;
 }
 
 export function MoneyText({ value, color }: { value: string; color?: string }) {

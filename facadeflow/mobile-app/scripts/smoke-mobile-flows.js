@@ -21,6 +21,8 @@ includesAll('dashboard flow', dashboard, [
   '/projects/create',
   'Add Client',
   '/clients/create',
+  'LanguageSelector',
+  'useI18n',
 ]);
 
 const clientFlow = [

@@ -2,6 +2,7 @@ import React from 'react';
 import { TouchableOpacity, Text, View, StyleSheet, ActivityIndicator, ViewStyle, TextStyle, TouchableOpacityProps } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { config } from '../../src/lib/config';
+import { useI18n } from '../../src/i18n';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 export type ButtonSize = 'small' | 'medium' | 'large';
@@ -23,9 +24,11 @@ export const Button: React.FC<ButtonProps> = ({
   title, variant = 'primary', size = 'medium', loading = false, leftIcon, rightIcon, icon,
   fullWidth = false, style, textStyle, disabled, accessibilityLabel, ...rest
 }) => {
+  const { t } = useI18n();
   const background = disabled ? config.theme.secondary : getBackgroundColor(variant);
   const textColor = disabled ? config.theme.textMuted : getTextColor(variant);
   const sizeStyles = getSizeStyles(size);
+  const translatedTitle = t(title);
 
   return (
     <TouchableOpacity
@@ -38,7 +41,7 @@ export const Button: React.FC<ButtonProps> = ({
       ]}
       disabled={disabled || loading}
       activeOpacity={0.84}
-      accessibilityLabel={accessibilityLabel || title}
+      accessibilityLabel={accessibilityLabel || translatedTitle}
       accessibilityRole="button"
       accessibilityState={{ disabled: disabled || loading }}
       {...rest}
@@ -46,7 +49,7 @@ export const Button: React.FC<ButtonProps> = ({
       {loading ? <ActivityIndicator color={textColor} size="small" /> : <>
         {icon && <View style={[styles.iconWrapper, { marginRight: 8 }]}><MaterialIcons name={icon as any} size={18} color={textColor} /></View>}
         {leftIcon && <View style={[styles.iconWrapper, { marginRight: 8 }]}>{leftIcon}</View>}
-        <Text style={[styles.text, { color: textColor }, sizeStyles.text, textStyle]}>{title}</Text>
+        <Text style={[styles.text, { color: textColor }, sizeStyles.text, textStyle]}>{translatedTitle}</Text>
         {rightIcon && <View style={[styles.iconWrapper, { marginLeft: 8 }]}>{rightIcon}</View>}
       </>}
     </TouchableOpacity>

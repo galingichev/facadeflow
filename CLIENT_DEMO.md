@@ -2,6 +2,8 @@
 
 ## Startup
 
+Runbook: [`docs/CLIENT_DEMO_RUNBOOK.md`](docs/CLIENT_DEMO_RUNBOOK.md)
+
 From the repository root:
 
 ```bash
@@ -75,6 +77,5 @@ curl http://127.0.0.1:8081/
 Run smoke verification:
 
 ```bash
-cd facadeflow/mobile-app
-WEB_BASE_URL=http://127.0.0.1:8081 API_BASE_URL=http://127.0.0.1:3000/api npm run smoke:web:mvp
+npm run verify:demo
 ```

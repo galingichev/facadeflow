@@ -4,9 +4,9 @@ Updated: 2026-05-27
 
 ## Product goal
 
-Build FacadeFlow into a reliable vertical SaaS MVP for doors, windows, and facades contractors.
+Build FacadeFlow into a focused vertical SaaS MVP for doors, windows, and facades contractors.
 
-The MVP must help a contractor track:
+The core demo should show how a contractor can track:
 
 - clients
 - projects
@@ -14,33 +14,46 @@ The MVP must help a contractor track:
 - budgeted cost
 - real expenses
 - actual cost
-- project profit/loss
-- dashboard totals
+- profit/loss
+- at-risk projects
+- dashboard business totals
 
 ## Current status
 
-Completed:
+FacadeFlow is now in a client-demo-ready foundation state.
 
-- Main app code is on GitHub `main`.
-- GitHub Actions CI is configured and passing.
-- Branch protection requires the `Validate FacadeFlow` check before merge.
-- Backend API tests cover clients, projects, and project expenses.
-- Mobile smoke checks cover Dashboard, Client, and Project flows.
+Completed today:
+
+- GitHub `main` is clean and current.
+- CI is configured and passing with the `Validate FacadeFlow` check.
+- Branch protection requires CI before merge.
+- Backend tests cover clients, projects, and project expenses.
+- Mobile smoke tests cover Dashboard, Clients, and Projects flows.
 - Client demo terminology is standardized.
-- Obvious backend scratch files were removed.
+- Client-facing repository cleanup was merged.
+- A polished SaaS-style mobile dashboard/demo UI was merged into `main`.
+- Demo storytelling and brand polish were added.
+- Client demo decision experience was added through the PR stack.
+
+Latest merged work:
+
+- `eea2bfc feat: add polished SaaS demo dashboard (#4)`
+- PR #5 was merged into PR #4 before PR #4 was merged to `main`.
+- Open GitHub PRs after merge: none.
 
 ## Current MVP surface
 
-Keep current work focused on:
+Keep the main demo focused on:
 
 1. Dashboard financial summary.
-2. Clients CRUD.
-3. Projects CRUD.
-4. Project contract value and budget fields.
-5. Project expenses.
-6. Actual cost and profit/loss summary.
+2. At-risk project visibility.
+3. Clients list and client detail flow.
+4. Projects list and project detail flow.
+5. Contract value, budgeted cost, actual cost, and profit/loss.
+6. Project expenses.
+7. Client demo seed data and repeatable smoke validation.
 
-Secondary modules should stay out of the main demo until they have a reliable flow:
+Keep these secondary modules out of the main demo until the core business flow is stronger:
 
 - Photos
 - Voice notes
@@ -49,10 +62,18 @@ Secondary modules should stay out of the main demo until they have a reliable fl
 - Scheduling
 - Inventory
 
-## Next recommended work
+## Recommended next focused PR
 
-1. Verify the app end-to-end with real Supabase data.
-2. Document exact Supabase setup and migration steps.
-3. Harden the client demo seed and runbook.
-4. Add service/integration tests against a test database.
-5. Add stronger mobile UI tests after the demo flow is stable.
+Highest-impact next PR:
+
+**Supabase setup + repeatable client demo runbook**
+
+Scope:
+
+- Document the exact Supabase setup required to run the app.
+- Add or verify database migration steps for the current clients/projects/expenses schema.
+- Make the client demo seed workflow reliable from a clean environment.
+- Add a short demo runbook for Canyon/Everest to reset data and launch the mobile demo.
+- Add one verification command that proves the demo data and smoke flow work after setup.
+
+Do not expand into new product modules yet. The next PR should make the existing demo easy to reproduce and trust.

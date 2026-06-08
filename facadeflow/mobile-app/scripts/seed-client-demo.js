@@ -1,5 +1,66 @@
+const fs = require('fs');
+const path = require('path');
+
 const API_BASE_URL = process.env.API_BASE_URL || 'http://127.0.0.1:3000/api';
 const PREFIX = process.env.CLIENT_DEMO_PREFIX || 'Client Demo:';
+const ROOT_DIR = path.resolve(__dirname, '../../..');
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
+
+const EXPECTED = {
+  clients: 3,
+  projects: 5,
+  expenses: 7,
+  activeProjects: 1,
+  contractValue: 298500,
+  actualCost: 58800,
+  actualProfit: 239700,
+};
+
+function readEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) return {};
+
+  return fs.readFileSync(filePath, 'utf8').split(/\r?\n/).reduce((env, line) => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) return env;
+    const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
+    if (!match) return env;
+    const [, key, rawValue] = match;
+    env[key] = rawValue.replace(/^['"]|['"]$/g, '').trim();
+    return env;
+  }, {});
+}
+
+function resolveOwnerId() {
+  const backendEnv = readEnvFile(path.join(ROOT_DIR, 'backend/.env'));
+  return process.env.FACADEFLOW_MVP_OWNER_ID
+    || process.env.MVP_OWNER_ID
+    || process.env.PROJECTS_CREATED_BY
+    || backendEnv.FACADEFLOW_MVP_OWNER_ID
+    || backendEnv.MVP_OWNER_ID
+    || backendEnv.PROJECTS_CREATED_BY;
+}
+
+function assertOwnerConfigured() {
+  if (process.env.SKIP_OWNER_ENV_CHECK === '1') return;
+
+  const ownerId = resolveOwnerId();
+  if (!ownerId || ownerId.includes('<') || !UUID_REGEX.test(ownerId)) {
+    throw new Error([
+      'FACADEFLOW_MVP_OWNER_ID is required before seeding the client demo.',
+      'Set it in backend/.env to an existing Supabase users.id UUID, then restart the backend.',
+      'Example: FACADEFLOW_MVP_OWNER_ID=00000000-0000-4000-8000-000000000000',
+    ].join('\n'));
+  }
+}
+
+async function runStep(label, action) {
+  try {
+    console.log(`\n==> ${label}`);
+    return await action();
+  } catch (error) {
+    throw new Error(`Failed step: ${label}\n${error.message || error}`);
+  }
+}
 
 async function api(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -56,42 +117,104 @@ async function cleanupExisting() {
   }
 }
 
-async function main() {
-  await api('/system/health');
-  await cleanupExisting();
-  const clientIds = new Map();
-  for (const client of clients) {
-    const { key, ...payload } = client;
-    const created = await api('/clients', { method: 'POST', body: JSON.stringify(payload) });
-    clientIds.set(key, created.body.data.id);
-    console.log(`Created client: ${client.name}`);
-  }
-  const projectIds = new Map();
-  for (const project of projects) {
-    const { clientKey, ...payload } = project;
-    payload.client_id = clientIds.get(clientKey);
-    const created = await api('/projects', { method: 'POST', body: JSON.stringify(payload) });
-    projectIds.set(project.name, created.body.data.id);
-    console.log(`Created project: ${project.name}`);
-  }
-  for (const [fragment, rows] of Object.entries(expenses)) {
-    const fullProjectName = [...projectIds.keys()].find((name) => name.includes(fragment));
-    const projectId = projectIds.get(fullProjectName);
-    for (const expense of rows) {
-      await api(`/projects/${projectId}/expenses`, { method: 'POST', body: JSON.stringify(expense) });
-      console.log(`Created expense for ${fullProjectName}: ${expense.description}`);
+async function verifyDemoData(projectIds) {
+  const [allClients, allProjects, summary] = await Promise.all([
+    api('/clients'),
+    api('/projects'),
+    api('/dashboard/summary'),
+  ]);
+
+  const demoClients = (allClients.body.data || []).filter((client) => client.name?.startsWith(PREFIX));
+  const demoProjects = (allProjects.body.data || []).filter((project) => project.name?.startsWith(PREFIX));
+  const expenseLists = await Promise.all(
+    [...projectIds.values()].map((projectId) => api(`/projects/${projectId}/expenses`))
+  );
+  const demoExpenses = expenseLists.flatMap((result) => result.body.data || []);
+  const demoContractValue = demoProjects.reduce((sum, project) => sum + Number(project.contract_value || 0), 0);
+  const demoActualCost = demoExpenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+  const demoActualProfit = demoContractValue - demoActualCost;
+
+  const checks = [
+    ['demo clients', demoClients.length, EXPECTED.clients],
+    ['demo projects', demoProjects.length, EXPECTED.projects],
+    ['demo expenses', demoExpenses.length, EXPECTED.expenses],
+    ['demo contract value', demoContractValue, EXPECTED.contractValue],
+    ['demo actual cost', demoActualCost, EXPECTED.actualCost],
+    ['demo actual profit', demoActualProfit, EXPECTED.actualProfit],
+  ];
+
+  for (const [label, actual, expected] of checks) {
+    if (actual !== expected) {
+      throw new Error(`${label} expected ${expected}, got ${actual}`);
     }
   }
-  const summary = (await api('/dashboard/summary')).body.data;
+
+  const dashboard = summary.body.data || {};
+  if ((dashboard.total_contract_value || 0) < EXPECTED.contractValue) {
+    throw new Error(`dashboard total_contract_value should be at least ${EXPECTED.contractValue}, got ${dashboard.total_contract_value}`);
+  }
+  if ((dashboard.total_actual_cost || 0) < EXPECTED.actualCost) {
+    throw new Error(`dashboard total_actual_cost should be at least ${EXPECTED.actualCost}, got ${dashboard.total_actual_cost}`);
+  }
+
+  return {
+    clients: demoClients.length,
+    projects: demoProjects.length,
+    expenses: demoExpenses.length,
+    demo_contract_value: demoContractValue,
+    demo_actual_cost: demoActualCost,
+    demo_actual_profit: demoActualProfit,
+    dashboard_active_projects: dashboard.active_projects,
+    dashboard_total_contract_value: dashboard.total_contract_value,
+    dashboard_total_actual_cost: dashboard.total_actual_cost,
+    dashboard_total_actual_profit: dashboard.total_actual_profit,
+    dashboard_total_expenses: dashboard.total_expenses,
+  };
+}
+
+async function main() {
+  assertOwnerConfigured();
+  await runStep('API health check', () => api('/system/health'));
+  await runStep('Clean existing Client Demo records', cleanupExisting);
+
+  const clientIds = new Map();
+  await runStep('Create demo clients', async () => {
+    for (const client of clients) {
+      const { key, ...payload } = client;
+      const created = await api('/clients', { method: 'POST', body: JSON.stringify(payload) });
+      clientIds.set(key, created.body.data.id);
+      console.log(`Created client: ${client.name}`);
+    }
+  });
+
+  const projectIds = new Map();
+  await runStep('Create demo projects', async () => {
+    for (const project of projects) {
+      const { clientKey, ...payload } = project;
+      payload.client_id = clientIds.get(clientKey);
+      const created = await api('/projects', { method: 'POST', body: JSON.stringify(payload) });
+      projectIds.set(project.name, created.body.data.id);
+      console.log(`Created project: ${project.name}`);
+    }
+  });
+
+  await runStep('Create demo expenses', async () => {
+    for (const [fragment, rows] of Object.entries(expenses)) {
+      const fullProjectName = [...projectIds.keys()].find((name) => name.includes(fragment));
+      const projectId = projectIds.get(fullProjectName);
+      if (!projectId) throw new Error(`Could not resolve project for expense group: ${fragment}`);
+
+      for (const expense of rows) {
+        await api(`/projects/${projectId}/expenses`, { method: 'POST', body: JSON.stringify(expense) });
+        console.log(`Created expense for ${fullProjectName}: ${expense.description}`);
+      }
+    }
+  });
+
+  const summary = await runStep('Verify demo data and dashboard financials', () => verifyDemoData(projectIds));
   console.log();
-  console.log('Client demo dataset ready. Dashboard summary:');
-  console.log(JSON.stringify({
-    active_projects: summary.active_projects,
-    total_contract_value: summary.total_contract_value,
-    total_actual_cost: summary.total_actual_cost,
-    total_actual_profit: summary.total_actual_profit,
-    total_expenses: summary.total_expenses,
-  }, null, 2));
+  console.log('Client demo dataset ready.');
+  console.log(JSON.stringify(summary, null, 2));
 }
 
 main().catch((error) => { console.error(error); process.exit(1); });

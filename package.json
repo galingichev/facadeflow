@@ -6,9 +6,12 @@
   "scripts": {
     "web:proxy": "node scripts/web-dev-proxy.js",
     "setup-db": "ts-node scripts/setup-db.ts",
+    "setup:demo-db": "bash scripts/setup-demo-db.sh",
     "test": "npm test --prefix backend -- --runInBand",
     "lint": "npm run lint --prefix facadeflow/mobile-app",
-    "smoke:mobile-flows": "npm run smoke:mobile-flows --prefix facadeflow/mobile-app"
+    "smoke:mobile-flows": "npm run smoke:mobile-flows --prefix facadeflow/mobile-app",
+    "seed:client-demo": "npm run seed:client-demo --prefix facadeflow/mobile-app",
+    "verify:demo": "node scripts/verify-demo.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
