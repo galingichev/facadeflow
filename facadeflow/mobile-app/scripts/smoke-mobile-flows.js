@@ -22,6 +22,7 @@ includesAll('dashboard flow', dashboard, [
   'Add Client',
   '/clients/create',
   'LanguageSelector',
+  'CurrencySelector',
   'useI18n',
 ]);
 
@@ -61,6 +62,34 @@ includesAll('project flow', projectFlow, [
   'Last expense',
 ]);
 
+
+const i18n = read('src/i18n/index.tsx');
+includesAll('currency/localization support', i18n, [
+  "export type AppCurrency = 'USD' | 'EUR' | 'BGN'",
+  'facadeflow.currency',
+  'CURRENCY_OPTIONS',
+  'readStoredCurrency',
+  'setCurrency',
+  'Bulgarian Lev',
+  'Ready for final invoice',
+  'Project Profit Report',
+]);
+
+const currencySelector = read('components/CurrencySelector.tsx');
+includesAll('currency selector component', currencySelector, [
+  'CurrencySelector',
+  'Choose currency',
+  'setCurrency',
+  'currentCurrency.symbol',
+]);
+
+const utilities = read('src/utils/index.ts');
+includesAll('currency formatter utility', utilities, [
+  'getActiveCurrency',
+  'getActiveLanguage',
+  'Intl.NumberFormat(locale',
+  "currency: AppCurrency = getActiveCurrency()",
+]);
 const apiEndpoints = read('src/api/endpoints.ts');
 includesAll('API endpoint contract', apiEndpoints, [
   "api.get<PaginatedResponse<Client>>('/clients'",

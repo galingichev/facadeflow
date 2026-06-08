@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 export type AppLanguage = 'en' | 'bg';
+export type AppCurrency = 'USD' | 'EUR' | 'BGN';
 
 type LanguageOption = {
   code: AppLanguage;
@@ -10,21 +11,39 @@ type LanguageOption = {
   nativeLabel: string;
 };
 
+type CurrencyOption = {
+  code: AppCurrency;
+  label: string;
+  nativeLabel: string;
+  symbol: string;
+};
+
 type I18nContextValue = {
   language: AppLanguage;
   languages: LanguageOption[];
   setLanguage: (language: AppLanguage) => Promise<void>;
+  currency: AppCurrency;
+  currencies: CurrencyOption[];
+  setCurrency: (currency: AppCurrency) => Promise<void>;
   t: (text: string) => string;
 };
 
-const STORAGE_KEY = 'facadeflow.language';
+const LANGUAGE_STORAGE_KEY = 'facadeflow.language';
+const CURRENCY_STORAGE_KEY = 'facadeflow.currency';
 
 export const LANGUAGE_OPTIONS: LanguageOption[] = [
   { code: 'en', label: 'English', nativeLabel: 'English' },
   { code: 'bg', label: 'Bulgarian', nativeLabel: 'Български' },
 ];
 
+export const CURRENCY_OPTIONS: CurrencyOption[] = [
+  { code: 'USD', label: 'US Dollar', nativeLabel: 'Щатски долар', symbol: '$' },
+  { code: 'EUR', label: 'Euro', nativeLabel: 'Евро', symbol: '€' },
+  { code: 'BGN', label: 'Bulgarian Lev', nativeLabel: 'Български лев', symbol: 'лв.' },
+];
+
 let activeLanguage: AppLanguage = 'en';
+let activeCurrency: AppCurrency = 'USD';
 
 const translations: Record<AppLanguage, Record<string, string>> = {
   en: {},
@@ -38,6 +57,13 @@ const translations: Record<AppLanguage, Record<string, string>> = {
     'Choose language': 'Избор на език',
     'App language': 'Език на приложението',
     'Language changed': 'Езикът е сменен',
+    'Currency': 'Валута',
+    'Choose currency': 'Избор на валута',
+    'Display currency': 'Валута за показване',
+    'Currency changed': 'Валутата е сменена',
+    'US Dollar': 'Щатски долар',
+    'Euro': 'Евро',
+    'Bulgarian Lev': 'Български лев',
     'The app language is now Bulgarian.': 'Езикът на приложението вече е български.',
     'The app language is now English.': 'Езикът на приложението вече е английски.',
     'OK': 'ОК',
@@ -126,6 +152,31 @@ const translations: Record<AppLanguage, Record<string, string>> = {
     'Controlled': 'Под контрол',
     'Low margin': 'Нисък марж',
     'Over budget': 'Над бюджет',
+    'Healthy': 'Здравословен',
+    'Missing budget': 'Липсва бюджет',
+    'Completed but unprofitable': 'Завършен, но непечеливш',
+    'Check costs before invoicing': 'Проверете разходите преди фактуриране',
+    'Ready for final invoice': 'Готов за финална фактура',
+    'Review after quote approval': 'Преглед след одобрение на офертата',
+    'Add budget to see margin risk.': 'Добавете бюджет, за да видите риска за маржа.',
+    'Approved job has no costs recorded.': 'Одобреният проект няма записани разходи.',
+    'Finished job closed below zero profit.': 'Завършеният проект е приключил под нулева печалба.',
+    'Actual cost is above budget.': 'Реалната себестойност е над бюджета.',
+    'Margin is below the demo target.': 'Маржът е под демо целта.',
+    'Status needs owner follow-up.': 'Статусът изисква проследяване от собственика.',
+    'Budget, costs and margin are under control.': 'Бюджетът, разходите и маржът са под контрол.',
+    'Paused or cancelled status needs attention.': 'Проект на пауза или отказан проект изисква внимание.',
+    'Owner review needed': 'Нужен е преглед от собственика',
+    'project needs owner review.': 'проект се нуждае от преглед от собственика.',
+    'projects need owner review.': 'проекта се нуждаят от преглед от собственика.',
+    'job ready for progress claim.': 'проект е готов за акт/плащане.',
+    'jobs ready for progress claim.': 'проекта са готови за акт/плащане.',
+    'in latest recorded facade expenses.': 'в последните записани фасадни разходи.',
+    'active project can continue as planned.': 'активен проект може да продължи по план.',
+    'active projects can continue as planned.': 'активни проекта могат да продължат по план.',
+    'over budget.': 'над бюджета.',
+    'Margin at': 'Марж',
+    'review pricing or expenses.': 'прегледайте цените или разходите.',
     'Clients, companies and project relationships in one place.': 'Клиенти, компании и проектни връзки на едно място.',
     'A cleaner client list helps the demo story start with the customer, then move into projects, expenses and profit.': 'Ясният списък с клиенти започва историята от клиента, после преминава към проекти, разходи и печалба.',
     'Client CRM': 'Клиентски CRM',
@@ -145,6 +196,64 @@ const translations: Record<AppLanguage, Record<string, string>> = {
     'Loading dashboard...': 'Зареждане на таблото...',
     'Dashboard unavailable': 'Таблото не е достъпно',
     'The demo backend did not respond.': 'Демо сървърът не отговори.',
+    'Project not found': 'Проектът не е намерен',
+    'This project may have been deleted or is no longer available.': 'Проектът може да е изтрит или вече да не е достъпен.',
+    'Back to Projects': 'Назад към проекти',
+    'Failed to delete project': 'Неуспешно изтриване на проекта',
+    'Are you sure you want to delete this project?': 'Сигурни ли сте, че искате да изтриете този проект?',
+    'Delete Project': 'Изтрий проект',
+    'Edit': 'Редактирай',
+    'Overview': 'Преглед',
+    'Expenses': 'Разходи',
+    'Report Preview': 'Преглед на отчет',
+    'Project Control Room': 'Контролна стая на проекта',
+    'Project profit detail view for the client demo: contract value, budget, expenses, current margin and owner-ready report.': 'Детайлен изглед за печалбата: договор, бюджет, разходи, текущ марж и готов отчет за собственика.',
+    'Profit detail view': 'Детайлен преглед на печалбата',
+    'A simple explanation of whether this job is still on plan.': 'Кратко обяснение дали проектът още върви по план.',
+    'Current margin': 'Текущ марж',
+    'Contract value minus actual expenses. Budget variance updates as expenses are recorded.': 'Договорната стойност минус реалните разходи. Отклонението от бюджета се обновява при записване на разходи.',
+    'This project is currently losing money.': 'Този проект в момента е на загуба.',
+    'Profit is positive, but spending is above budget.': 'Печалбата е положителна, но разходите са над бюджета.',
+    'This project is currently profitable and inside the demo control range.': 'Този проект е печеливш и в контролния диапазон на демото.',
+    'Client': 'Клиент',
+    'Status': 'Статус',
+    'Start Date': 'Начална дата',
+    'End Date': 'Крайна дата',
+    'Expense Count': 'Брой разходи',
+    'Cost Variance': 'Отклонение от бюджета',
+    'Created': 'Създаден',
+    'Last Updated': 'Последно обновен',
+    'Description': 'Описание',
+    'Record costs and immediately show the client how profit changes.': 'Записвайте разходи и веднага показвайте на клиента как се променя печалбата.',
+    'Actual Cost': 'Реална себестойност',
+    'Actual Profit': 'Реална печалба',
+    'Category': 'Категория',
+    'Amount': 'Сума',
+    'Vendor': 'Доставчик',
+    'Optional': 'По избор',
+    'Expense Date': 'Дата на разхода',
+    'Add Expense': 'Добави разход',
+    'Materials': 'Материали',
+    'Labor': 'Труд',
+    'Subcontractor': 'Подизпълнител',
+    'Equipment': 'Оборудване',
+    'Transport': 'Транспорт',
+    'Permits': 'Разрешителни',
+    'Overhead': 'Общи разходи',
+    'Other': 'Други',
+    'Recorded Expenses': 'Записани разходи',
+    'Delete Expense': 'Изтрий разход',
+    'Delete this expense?': 'Да се изтрие ли този разход?',
+    'Expense description is required': 'Описание на разхода е задължително',
+    'Expense amount must be a non-negative number': 'Сумата трябва да е неотрицателно число',
+    'Expense date is required': 'Дата на разхода е задължителна',
+    'Failed to fetch project expenses': 'Неуспешно зареждане на разходите',
+    'Failed to create project expense': 'Неуспешно създаване на разход',
+    'Failed to delete project expense': 'Неуспешно изтриване на разход',
+    'Brand-polished one-page PDF/report style for the client conversation.': 'Изчистен едностраничен отчет за клиентски разговор.',
+    'Project Profit Report': 'Отчет за печалба по проект',
+    'Owner summary': 'Обобщение за собственика',
+    'This preview is designed to become the printable report/PDF styling in Phase 3.': 'Този преглед е основа за печатен отчет/PDF във Фаза 3.',
   },
 };
 
@@ -157,37 +266,79 @@ function translate(text: string, language = activeLanguage) {
 async function readStoredLanguage(): Promise<AppLanguage> {
   try {
     if (Platform.OS === 'web') {
-      const stored = globalThis.localStorage?.getItem(STORAGE_KEY) as AppLanguage | null;
+      const stored = globalThis.localStorage?.getItem(LANGUAGE_STORAGE_KEY) as AppLanguage | null;
       return stored === 'bg' || stored === 'en' ? stored : 'en';
     }
 
-    const stored = await SecureStore.getItemAsync(STORAGE_KEY);
+    const stored = await SecureStore.getItemAsync(LANGUAGE_STORAGE_KEY);
     return stored === 'bg' || stored === 'en' ? stored : 'en';
   } catch {
     return 'en';
   }
 }
 
+async function readStoredCurrency(): Promise<AppCurrency> {
+  try {
+    if (Platform.OS === 'web') {
+      const stored = globalThis.localStorage?.getItem(CURRENCY_STORAGE_KEY) as AppCurrency | null;
+      return isAppCurrency(stored) ? stored : 'USD';
+    }
+
+    const stored = await SecureStore.getItemAsync(CURRENCY_STORAGE_KEY);
+    return isAppCurrency(stored) ? stored : 'USD';
+  } catch {
+    return 'USD';
+  }
+}
+
 async function writeStoredLanguage(language: AppLanguage) {
   try {
     if (Platform.OS === 'web') {
-      globalThis.localStorage?.setItem(STORAGE_KEY, language);
+      globalThis.localStorage?.setItem(LANGUAGE_STORAGE_KEY, language);
       return;
     }
 
-    await SecureStore.setItemAsync(STORAGE_KEY, language);
+    await SecureStore.setItemAsync(LANGUAGE_STORAGE_KEY, language);
   } catch {
     // Language still changes for the current session if persistence fails.
   }
 }
 
+async function writeStoredCurrency(currency: AppCurrency) {
+  try {
+    if (Platform.OS === 'web') {
+      globalThis.localStorage?.setItem(CURRENCY_STORAGE_KEY, currency);
+      return;
+    }
+
+    await SecureStore.setItemAsync(CURRENCY_STORAGE_KEY, currency);
+  } catch {
+    // Currency still changes for the current session if persistence fails.
+  }
+}
+
+function isAppCurrency(value: unknown): value is AppCurrency {
+  return value === 'USD' || value === 'EUR' || value === 'BGN';
+}
+
+export function getActiveLanguage() {
+  return activeLanguage;
+}
+
+export function getActiveCurrency() {
+  return activeCurrency;
+}
+
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<AppLanguage>('en');
+  const [currency, setCurrencyState] = useState<AppCurrency>('USD');
 
   useEffect(() => {
-    readStoredLanguage().then((stored) => {
-      activeLanguage = stored;
-      setLanguageState(stored);
+    Promise.all([readStoredLanguage(), readStoredCurrency()]).then(([storedLanguage, storedCurrency]) => {
+      activeLanguage = storedLanguage;
+      activeCurrency = storedCurrency;
+      setLanguageState(storedLanguage);
+      setCurrencyState(storedCurrency);
     });
   }, []);
 
@@ -199,8 +350,15 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
       setLanguageState(nextLanguage);
       await writeStoredLanguage(nextLanguage);
     },
+    currency,
+    currencies: CURRENCY_OPTIONS,
+    setCurrency: async (nextCurrency: AppCurrency) => {
+      activeCurrency = nextCurrency;
+      setCurrencyState(nextCurrency);
+      await writeStoredCurrency(nextCurrency);
+    },
     t: (text: string) => translate(text, language),
-  }), [language]);
+  }), [currency, language]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }

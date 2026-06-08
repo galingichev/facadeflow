@@ -8,6 +8,7 @@ import { formatMarginPercent, getBudgetActualPercent, getJobHealth, getLastExpen
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { LanguageSelector } from '../../components/LanguageSelector';
+import { CurrencySelector } from '../../components/CurrencySelector';
 import { DemoPage, FacadeFlowMark, MoneyText, SectionTitle, StatusPill } from '../../components/ui/DemoShell';
 import { useI18n } from '../../src/i18n';
 import type { DashboardSummary, Project, ProjectExpense } from '../../src/types';
@@ -64,9 +65,9 @@ export default function DashboardScreen() {
   const actualProfit = summary?.total_actual_profit ?? 0;
   const margin = summary?.actual_margin;
   const topProjects = useMemo(() => projects.slice(0, 4), [projects]);
-  const atRiskProjects = useMemo(() => getAtRiskProjects(projects), [projects]);
+  const atRiskProjects = useMemo(() => getAtRiskProjects(projects, t), [projects, t]);
   const recentExpenses = useMemo(() => getRecentExpenses(projects), [projects]);
-  const ownerBriefing = useMemo(() => getOwnerBriefing(projects, summary), [projects, summary]);
+  const ownerBriefing = useMemo(() => getOwnerBriefing(projects, summary, t), [projects, summary, t]);
   const primaryReportProject = useMemo(() => projects.find((project) => project.status === 'in_progress') || projects[0], [projects]);
   const quickStats = [
     { label: t('Contract value'), value: formatCurrency(summary?.total_contract_value ?? 0), icon: 'payments', tone: config.theme.primaryHover },
@@ -88,7 +89,7 @@ export default function DashboardScreen() {
       <DemoPage
         title="Run facade, window and door jobs with profit visible from day one."
         subtitle="FacadeFlow turns scattered client notes, budgets and expenses into a clean operating dashboard for contractors who need every project to stay on margin."
-        rightSlot={<View style={styles.headerActions}><LanguageSelector /><Button title="New Project" icon="add" onPress={() => router.push('/projects/create' as any)} /><Button title="View Projects" variant="outline" icon="business-center" onPress={() => router.push('/projects' as any)} /></View>}
+        rightSlot={<View style={styles.headerActions}><LanguageSelector /><CurrencySelector /><Button title="New Project" icon="add" onPress={() => router.push('/projects/create' as any)} /><Button title="View Projects" variant="outline" icon="business-center" onPress={() => router.push('/projects' as any)} /></View>}
       >
         <Card style={styles.introPanel} padding="large">
           <View style={styles.introLogo}><FacadeFlowMark size={46} /><View><Text style={styles.introTitle}>{t('Client demo storyline')}</Text><Text style={styles.muted}>{t('Show the owner how a job moves from quote to expenses to profit report.')}</Text></View></View>
@@ -217,27 +218,27 @@ function ProjectPreview({ project, onPress }: { project: Project; onPress: () =>
 function FinanceRow({ label, value }: { label: string; value: string }) { return <View style={styles.financeRow}><Text style={styles.financeLabel}>{label}</Text><Text style={styles.financeValue}>{value}</Text></View>; }
 function formatMargin(value: number | null | undefined) { return formatMarginPercent(value); }
 function statusTone(status: string): 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'purple' { if (status === 'completed') return 'success'; if (status === 'quoted' || status === 'inquired') return 'warning'; if (status === 'on_hold' || status === 'cancelled') return 'danger'; if (status === 'in_progress') return 'info'; if (status === 'approved') return 'purple'; return 'neutral'; }
-function getOwnerBriefing(projects: Project[], summary: DashboardSummary | null) {
+function getOwnerBriefing(projects: Project[], summary: DashboardSummary | null, t: (text: string) => string) {
   const healthRows = projects.map((project) => ({ project, health: getJobHealth(project) }));
   const riskCount = healthRows.filter(({ health }) => health.tone === 'danger' || health.label === 'Low margin').length;
   const claimReady = projects.filter((project) => getPaymentReadiness(project).label === 'Ready for progress claim').length;
   const recentTotal = getRecentExpenses(projects).reduce((sum, expense) => sum + expense.amount, 0);
   const nextRisk = healthRows.find(({ health }) => health.tone === 'danger' || health.label === 'Low margin');
   return [
-    { title: 'Job Health', copy: riskCount > 0 ? `${riskCount} project${riskCount === 1 ? '' : 's'} need owner review.` : 'All active demo jobs look controlled.', icon: riskCount > 0 ? 'warning' : 'verified', color: riskCount > 0 ? config.theme.warning : config.theme.success },
-    { title: 'Payment readiness', copy: claimReady > 0 ? `${claimReady} job${claimReady === 1 ? '' : 's'} ready for progress claim.` : 'No progress claim is ready yet.', icon: 'request-quote', color: claimReady > 0 ? config.theme.success : config.theme.textMuted },
-    { title: 'Recent cost movement', copy: `${formatCurrency(recentTotal)} in latest recorded facade expenses.`, icon: 'receipt-long', color: config.theme.warning },
-    { title: 'Next owner decision', copy: nextRisk ? `${nextRisk.project.name}: ${nextRisk.health.reason}` : `${summary?.active_projects ?? 0} active projects can continue as planned.`, icon: 'assignment-late', color: nextRisk ? config.theme.error : config.theme.primaryHover },
+    { title: 'Job Health', copy: riskCount > 0 ? `${riskCount} ${t(riskCount === 1 ? 'project needs owner review.' : 'projects need owner review.')}` : 'All active demo jobs look controlled.', icon: riskCount > 0 ? 'warning' : 'verified', color: riskCount > 0 ? config.theme.warning : config.theme.success },
+    { title: 'Payment readiness', copy: claimReady > 0 ? `${claimReady} ${t(claimReady === 1 ? 'job ready for progress claim.' : 'jobs ready for progress claim.')}` : 'No progress claim is ready yet.', icon: 'request-quote', color: claimReady > 0 ? config.theme.success : config.theme.textMuted },
+    { title: 'Recent cost movement', copy: `${formatCurrency(recentTotal)} ${t('in latest recorded facade expenses.')}`, icon: 'receipt-long', color: config.theme.warning },
+    { title: 'Next owner decision', copy: nextRisk ? `${nextRisk.project.name}: ${t(nextRisk.health.reason)}` : `${summary?.active_projects ?? 0} ${t((summary?.active_projects ?? 0) === 1 ? 'active project can continue as planned.' : 'active projects can continue as planned.')}`, icon: 'assignment-late', color: nextRisk ? config.theme.error : config.theme.primaryHover },
   ];
 }
-function getAtRiskProjects(projects: Project[]): RiskProject[] {
+function getAtRiskProjects(projects: Project[], t: (text: string) => string): RiskProject[] {
   return projects.map((project) => {
     const f = project.financials;
     const variance = f?.cost_variance ?? null;
     const margin = f?.actual_margin ?? null;
     if (project.status === 'on_hold' || project.status === 'cancelled') return { project, reason: 'Paused or cancelled status needs attention.', tone: 'danger' as const };
-    if (variance != null && variance < 0) return { project, reason: `${formatCurrency(Math.abs(variance))} over budget.`, tone: 'danger' as const };
-    if (margin != null && margin < 0.18) return { project, reason: `Margin at ${formatMargin(margin)}; review pricing or expenses.`, tone: 'warning' as const };
+    if (variance != null && variance < 0) return { project, reason: `${formatCurrency(Math.abs(variance))} ${t('over budget.')}`, tone: 'danger' as const };
+    if (margin != null && margin < 0.18) return { project, reason: `${t('Margin at')} ${formatMargin(margin)}; ${t('review pricing or expenses.')}`, tone: 'warning' as const };
     return null;
   }).filter(Boolean).slice(0, 3) as RiskProject[];
 }
