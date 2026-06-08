@@ -1,7 +1,7 @@
 import type { TaskStatus, TaskPriority } from '../types';
 import { Platform, Dimensions } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import { translateInstant } from '../i18n';
+import { getActiveCurrency, getActiveLanguage, translateInstant, type AppCurrency } from '../i18n';
 
 // =====================
 // Date Utilities
@@ -72,10 +72,13 @@ export const addDays = (date: Date | string, days: number): Date => {
 // =====================
 // Currency Utilities
 // =====================
-export const formatCurrency = (amount: number, currency = 'USD'): string => {
-  return new Intl.NumberFormat('en-US', {
+export const formatCurrency = (amount: number, currency: AppCurrency = getActiveCurrency()): string => {
+  const locale = getActiveLanguage() === 'bg' ? 'bg-BG' : 'en-US';
+
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
+    maximumFractionDigits: 2,
   }).format(amount);
 };
 
