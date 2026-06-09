@@ -4,7 +4,7 @@ const path = require('path');
 const API_BASE_URL = process.env.API_BASE_URL || 'http://127.0.0.1:3000/api';
 const PREFIX = process.env.CLIENT_DEMO_PREFIX || 'Client Demo:';
 const ROOT_DIR = path.resolve(__dirname, '../../..');
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const EXPECTED = {
   clients: 3,
