@@ -49,5 +49,8 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "overrides": {
+    "shell-quote": "^1.8.4"
+  }
 }

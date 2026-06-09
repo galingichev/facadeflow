@@ -6,6 +6,7 @@ const cors = require('cors');
 const projectsRouter = require('./routes/projects');
 const clientsRouter = require('./routes/clients');
 const projectsService = require('./services/projectsService');
+const { createClient: createSupabaseClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,7 +29,20 @@ const corsOptions = {
   },
 };
 
-const requireBearerToken = (req, res, next) => {
+const buildAuthClient = () => {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    return null;
+  }
+
+  return createSupabaseClient(supabaseUrl, supabaseKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+};
+
+const requireBearerToken = async (req, res, next) => {
   if (
     process.env.FACADEFLOW_REQUIRE_AUTH !== 'true' ||
     req.method === 'OPTIONS' ||
@@ -46,8 +60,27 @@ const requireBearerToken = (req, res, next) => {
     return;
   }
 
-  req.authToken = match[1].trim();
-  next();
+  const authClient = buildAuthClient();
+  if (!authClient) {
+    res.status(500).json({ error: 'Auth is enabled but Supabase auth is not configured' });
+    return;
+  }
+
+  try {
+    const token = match[1].trim();
+    const { data, error } = await authClient.auth.getUser(token);
+
+    if (error || !data?.user?.id) {
+      res.status(401).json({ error: 'Invalid bearer token' });
+      return;
+    }
+
+    req.authToken = token;
+    req.authUser = data.user;
+    next();
+  } catch (error) {
+    next(error);
+  }
 };
 
 // Middleware
