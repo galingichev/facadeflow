@@ -32,6 +32,13 @@ function resolveOwnerId() {
     || backendEnv.PROJECTS_CREATED_BY;
 }
 
+function getOwnerIdWarning(ownerId) {
+  if (!ownerId) return 'FACADEFLOW_MVP_OWNER_ID is missing.';
+  if (ownerId.includes('<')) return 'FACADEFLOW_MVP_OWNER_ID is still a placeholder.';
+  if (!UUID_REGEX.test(ownerId)) return 'FACADEFLOW_MVP_OWNER_ID is present but is not a valid UUID.';
+  return null;
+}
+
 function runStep(label, command, args, options = {}) {
   console.log(`\n==> ${label}`);
   const result = spawnSync(command, args, {
@@ -92,8 +99,9 @@ async function runApiChecksIfAvailable() {
   }
 
   const ownerId = resolveOwnerId();
-  if (!ownerId || ownerId.includes('<') || !UUID_REGEX.test(ownerId)) {
-    console.log('Client demo seed skipped: FACADEFLOW_MVP_OWNER_ID is not configured.');
+  const ownerIdWarning = getOwnerIdWarning(ownerId);
+  if (ownerIdWarning) {
+    console.log(`Client demo seed skipped: ${ownerIdWarning}`);
     console.log('Set backend/.env FACADEFLOW_MVP_OWNER_ID to an existing Supabase users.id UUID, restart the backend, then rerun npm run verify:demo.');
     return;
   }
