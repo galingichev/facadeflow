@@ -1,5 +1,17 @@
 const clientsService = require('../services/clientsService');
 
+const CLIENT_CREATE_FIELDS = ['name', 'email', 'phone', 'address', 'notes'];
+
+function normalizeClientCreatePayload(body = {}) {
+  return CLIENT_CREATE_FIELDS.reduce((payload, field) => {
+    if (Object.prototype.hasOwnProperty.call(body, field)) {
+      const value = body[field];
+      payload[field] = typeof value === 'string' ? value.trim() : value;
+    }
+    return payload;
+  }, {});
+}
+
 async function listClients(req, res) {
   try {
     const clients = await clientsService.getClients();
@@ -12,7 +24,12 @@ async function listClients(req, res) {
 
 async function createClient(req, res) {
   try {
-    const client = await clientsService.createClient(req.body);
+    const payload = normalizeClientCreatePayload(req.body);
+    if (!payload.name || typeof payload.name !== 'string') {
+      return res.status(400).json({ error: 'Client name is required' });
+    }
+
+    const client = await clientsService.createClient(payload);
     res.status(201).json({ data: client });
   } catch (err) {
     console.error('Error creating client:', err);
