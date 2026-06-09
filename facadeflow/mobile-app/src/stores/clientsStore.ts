@@ -49,6 +49,7 @@ export const useClientsStore = create<ClientState>()((set, get) => ({
       set({ isLoading: false });
     } catch (error: any) {
       set({ error: error.message || 'Failed to create client', isLoading: false });
+      throw error;
     }
   },
 

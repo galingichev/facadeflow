@@ -6,7 +6,7 @@ import { config } from '../../../src/lib/config';
 
 export default function CreateClientScreen() {
   const router = useRouter();
-  const { createClient, fetchClients, isLoading, error } = useClientsStore();
+  const { createClient, isLoading, error } = useClientsStore();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -24,10 +24,9 @@ export default function CreateClientScreen() {
         phone: phone.trim(),
         email: email.trim(),
       });
-      await fetchClients();
       router.back();
-    } catch (err) {
-      Alert.alert('Error', err.message || error || 'Failed to create client');
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || error || 'Failed to create client');
     } finally {
       setLoading(false);
     }

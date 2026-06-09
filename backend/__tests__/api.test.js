@@ -27,6 +27,76 @@ const app = require('../server');
 describe('FacadeFlow backend API', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    delete process.env.FACADEFLOW_CORS_ORIGINS;
+    delete process.env.FACADEFLOW_REQUIRE_AUTH;
+  });
+
+  test('CORS preflight allows configured origins and rejects unlisted origins', async () => {
+    process.env.FACADEFLOW_CORS_ORIGINS = 'https://demo.facadeflow.app, https://app.facadeflow.app';
+
+    await request(app)
+      .options('/api/clients')
+      .set('Origin', 'https://demo.facadeflow.app')
+      .set('Access-Control-Request-Method', 'GET')
+      .expect(204)
+      .expect('Access-Control-Allow-Origin', 'https://demo.facadeflow.app');
+
+    const rejected = await request(app)
+      .options('/api/clients')
+      .set('Origin', 'https://evil.example')
+      .set('Access-Control-Request-Method', 'GET');
+
+    expect(rejected.headers['access-control-allow-origin']).toBeUndefined();
+  });
+
+  test('optional auth guard protects API routes when enabled and keeps health public', async () => {
+    process.env.FACADEFLOW_REQUIRE_AUTH = 'true';
+    clientsService.getClients.mockResolvedValue([]);
+
+    await request(app).get('/api/system/health').expect(200);
+    await request(app).get('/api/clients').expect(401).expect({ error: 'Missing bearer token' });
+    await request(app)
+      .get('/api/clients')
+      .set('Authorization', 'Bearer demo-token')
+      .expect(200)
+      .expect({ data: [] });
+  });
+
+  test('client create rejects empty names without calling the service', async () => {
+    await request(app)
+      .post('/api/clients')
+      .send({ name: '   ' })
+      .expect(400)
+      .expect({ error: 'Client name is required' });
+
+    expect(clientsService.createClient).not.toHaveBeenCalled();
+  });
+
+  test('client create trims allowed fields and ignores unexpected fields', async () => {
+    const client = { id: 'client-1', name: 'ACME Facades' };
+    clientsService.createClient.mockResolvedValue(client);
+
+    await request(app)
+      .post('/api/clients')
+      .send({
+        id: 'malicious-id',
+        created_by: 'attacker',
+        name: '  ACME Facades  ',
+        email: ' test@example.com ',
+        phone: ' +359 888 123 456 ',
+        address: ' Site 1 ',
+        notes: ' VIP ',
+      })
+      .expect(201)
+      .expect({ data: client });
+
+    expect(clientsService.createClient).toHaveBeenCalledWith({
+      name: 'ACME Facades',
+      email: 'test@example.com',
+      phone: '+359 888 123 456',
+      address: 'Site 1',
+      notes: 'VIP',
+    });
   });
 
   test('clients CRUD endpoints return wrapped data and expected status codes', async () => {

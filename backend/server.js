@@ -11,14 +11,55 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const API_PREFIX = '/api';
 
+const getCorsOrigins = () => (process.env.FACADEFLOW_CORS_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const corsOptions = {
+  origin(origin, callback) {
+    const allowedOrigins = getCorsOrigins();
+    if (allowedOrigins.length === 0 || !origin) {
+      callback(null, true);
+      return;
+    }
+
+    callback(null, allowedOrigins.includes(origin));
+  },
+};
+
+const requireBearerToken = (req, res, next) => {
+  if (
+    process.env.FACADEFLOW_REQUIRE_AUTH !== 'true' ||
+    req.method === 'OPTIONS' ||
+    req.path === `${API_PREFIX}/system/health` ||
+    !req.path.startsWith(API_PREFIX)
+  ) {
+    next();
+    return;
+  }
+
+  const authHeader = req.get('Authorization') || '';
+  const match = authHeader.match(/^Bearer\s+(.+)$/);
+  if (!match || !match[1].trim()) {
+    res.status(401).json({ error: 'Missing bearer token' });
+    return;
+  }
+
+  req.authToken = match[1].trim();
+  next();
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Health check
 app.get(`${API_PREFIX}/system/health`, (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+app.use(requireBearerToken);
 
 const sendDashboardSummary = async (req, res) => {
   try {

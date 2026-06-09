@@ -50,6 +50,17 @@ jobs:
           node -e "JSON.parse(require(\"fs\").readFileSync(\"backend/package.json\", \"utf8\"))"
           node -e "JSON.parse(require(\"fs\").readFileSync(\"facadeflow/mobile-app/package.json\", \"utf8\"))"
 
+      - name: Root production dependency audit
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Backend production dependency audit
+        working-directory: backend
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Mobile production dependency audit
+        working-directory: facadeflow/mobile-app
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Mobile app lint
         working-directory: facadeflow/mobile-app
         run: npm run lint
