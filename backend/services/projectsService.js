@@ -177,28 +177,31 @@ function isMissingExpenseTableError(error) {
   return error?.code === '42P01' || error?.message?.includes('project_expenses');
 }
 
-async function getExpenseTotalsByProjectIds(projectIds, context = {}) {
+async function getExpenseSummariesByProjectIds(projectIds, context = {}) {
   if (!projectIds.length) return new Map();
 
   const query = scopeToUser(supabase
     .from('project_expenses')
-    .select('project_id, amount')
-    .in('project_id', projectIds), context);
+    .select('id, project_id, category, description, amount, expense_date, vendor, created_by, created_at, updated_at')
+    .in('project_id', projectIds), context)
+    .order('expense_date', { ascending: false })
+    .order('created_at', { ascending: false });
 
   const { data, error } = await query;
 
   if (isMissingExpenseTableError(error)) return new Map();
   if (error) throw error;
 
-  const totals = new Map();
+  const summaries = new Map();
   for (const expense of data || []) {
-    const current = totals.get(expense.project_id) || { actualCost: 0, expenseCount: 0 };
+    const current = summaries.get(expense.project_id) || { actualCost: 0, expenseCount: 0, latestExpense: null };
     current.actualCost += toNumber(expense.amount);
     current.expenseCount += 1;
-    totals.set(expense.project_id, current);
+    if (!current.latestExpense) current.latestExpense = expense;
+    summaries.set(expense.project_id, current);
   }
 
-  return totals;
+  return summaries;
 }
 
 function attachProjectFinancials(project, expenses = []) {
@@ -272,19 +275,23 @@ async function getProjects(filters = {}, context = {}) {
 
   const { data, error } = await query.order('created_at', { ascending: false });
   if (error) throw error;
-  const totals = await getExpenseTotalsByProjectIds((data || []).map((project) => project.id), context);
+  const summaries = await getExpenseSummariesByProjectIds((data || []).map((project) => project.id), context);
 
   return (data || []).map((project) => {
-    const total = totals.get(project.id) || { actualCost: 0, expenseCount: 0 };
-    const expenses = total.expenseCount > 0
-      ? [{ amount: total.actualCost }]
+    const summary = summaries.get(project.id) || { actualCost: 0, expenseCount: 0, latestExpense: null };
+    const expenses = summary.latestExpense
+      ? [summary.latestExpense]
+      : [];
+    const financialExpenses = summary.expenseCount > 0
+      ? [{ amount: summary.actualCost }]
       : [];
 
     return {
       ...project,
+      expenses,
       financials: {
-        ...buildProjectFinancials(project, expenses),
-        expense_count: total.expenseCount,
+        ...buildProjectFinancials(project, financialExpenses),
+        expense_count: summary.expenseCount,
       },
     };
   });
