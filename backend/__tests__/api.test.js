@@ -103,6 +103,35 @@ describe('FacadeFlow backend API', () => {
       .expect({ error: 'Auth is enabled but Supabase auth is not configured' });
   });
 
+
+  test('authenticated requests pass the verified user id to domain services', async () => {
+    process.env.FACADEFLOW_REQUIRE_AUTH = 'tr' + 'ue';
+    process.env.SUPABASE_URL = 'https://example.supabase.co';
+    process.env.SUPABASE_ANON_KEY = 'anon-key';
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-123' } }, error: null });
+    clientsService.getClients.mockResolvedValue([]);
+    clientsService.createClient.mockResolvedValue({ id: 'client-1', name: 'ACME' });
+    projectsService.getProjects.mockResolvedValue([]);
+
+    await request(app)
+      .get('/api/clients')
+      .set('Authorization', 'Bearer user-token')
+      .expect(200);
+    await request(app)
+      .post('/api/clients')
+      .set('Authorization', 'Bearer user-token')
+      .send({ name: 'ACME' })
+      .expect(201);
+    await request(app)
+      .get('/api/projects')
+      .set('Authorization', 'Bearer user-token')
+      .expect(200);
+
+    expect(clientsService.getClients).toHaveBeenCalledWith({ userId: 'user-123' });
+    expect(clientsService.createClient).toHaveBeenCalledWith({ name: 'ACME' }, { userId: 'user-123' });
+    expect(projectsService.getProjects).toHaveBeenCalledWith({}, { userId: 'user-123' });
+  });
+
   test('client create rejects empty names without calling the service', async () => {
     await request(app)
       .post('/api/clients')
@@ -137,7 +166,7 @@ describe('FacadeFlow backend API', () => {
       phone: '+359 888 123 456',
       address: 'Site 1',
       notes: 'VIP',
-    });
+    }, {});
   });
 
   test('clients CRUD endpoints return wrapped data and expected status codes', async () => {
@@ -154,9 +183,9 @@ describe('FacadeFlow backend API', () => {
     await request(app).patch('/api/clients/client-1').send({ name: 'ACME Updated' }).expect(200).expect({ data: { ...client, name: 'ACME Updated' } });
     await request(app).delete('/api/clients/client-1').expect(204);
 
-    expect(clientsService.createClient).toHaveBeenCalledWith({ name: 'ACME Facades' });
-    expect(clientsService.updateClient).toHaveBeenCalledWith('client-1', { name: 'ACME Updated' });
-    expect(clientsService.deleteClient).toHaveBeenCalledWith('client-1');
+    expect(clientsService.createClient).toHaveBeenCalledWith({ name: 'ACME Facades' }, {});
+    expect(clientsService.updateClient).toHaveBeenCalledWith('client-1', { name: 'ACME Updated' }, {});
+    expect(clientsService.deleteClient).toHaveBeenCalledWith('client-1', {});
   });
 
   test('projects CRUD endpoints return wrapped data and expected status codes', async () => {
@@ -173,9 +202,9 @@ describe('FacadeFlow backend API', () => {
     await request(app).patch('/api/projects/project-1').send({ status: 'in_progress' }).expect(200).expect({ data: { ...project, status: 'in_progress' } });
     await request(app).delete('/api/projects/project-1').expect(204);
 
-    expect(projectsService.createProject).toHaveBeenCalledWith({ name: 'Main Elevation', client_id: 'client-1' });
-    expect(projectsService.updateProject).toHaveBeenCalledWith('project-1', { status: 'in_progress' });
-    expect(projectsService.deleteProject).toHaveBeenCalledWith('project-1');
+    expect(projectsService.createProject).toHaveBeenCalledWith({ name: 'Main Elevation', client_id: 'client-1' }, {});
+    expect(projectsService.updateProject).toHaveBeenCalledWith('project-1', { status: 'in_progress' }, {});
+    expect(projectsService.deleteProject).toHaveBeenCalledWith('project-1', {});
   });
 
   test('project expense endpoints support list, create, update, and delete', async () => {
@@ -190,8 +219,8 @@ describe('FacadeFlow backend API', () => {
     await request(app).patch('/api/projects/project-1/expenses/expense-1').send({ amount: 150 }).expect(200).expect({ data: { ...expense, amount: 150 } });
     await request(app).delete('/api/projects/project-1/expenses/expense-1').expect(204);
 
-    expect(projectsService.createProjectExpense).toHaveBeenCalledWith('project-1', { category: 'materials', amount: 125 });
-    expect(projectsService.updateProjectExpense).toHaveBeenCalledWith('project-1', 'expense-1', { amount: 150 });
-    expect(projectsService.deleteProjectExpense).toHaveBeenCalledWith('project-1', 'expense-1');
+    expect(projectsService.createProjectExpense).toHaveBeenCalledWith('project-1', { category: 'materials', amount: 125 }, {});
+    expect(projectsService.updateProjectExpense).toHaveBeenCalledWith('project-1', 'expense-1', { amount: 150 }, {});
+    expect(projectsService.deleteProjectExpense).toHaveBeenCalledWith('project-1', 'expense-1', {});
   });
 });

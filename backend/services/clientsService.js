@@ -4,6 +4,10 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 const supabase = supabaseCreateClient(supabaseUrl, supabaseKey);
 
+function scopeToUser(query, context = {}) {
+  return context.userId ? query.eq('created_by', context.userId) : query;
+}
+
 class ConflictError extends Error {
   constructor(message) {
     super(message);
@@ -12,30 +16,38 @@ class ConflictError extends Error {
   }
 }
 
-async function getClients() {
-  const { data, error } = await supabase
+async function getClients(context = {}) {
+  const query = scopeToUser(supabase
     .from('clients')
-    .select('*')
+    .select('*'), context)
     .order('name', { ascending: true });
+
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 }
 
-async function createClient(clientData) {
+async function createClient(clientData, context = {}) {
+  const payload = context.userId
+    ? { ...clientData, created_by: context.userId }
+    : clientData;
+
   const { data, error } = await supabase
     .from('clients')
-    .insert(clientData)
+    .insert(payload)
     .select()
     .single();
   if (error) throw error;
   return data;
 }
 
-async function deleteClient(clientId) {
-  const { count, error: countError } = await supabase
+async function deleteClient(clientId, context = {}) {
+  const projectCountQuery = scopeToUser(supabase
     .from('projects')
     .select('id', { count: 'exact', head: true })
-    .eq('client_id', clientId);
+    .eq('client_id', clientId), context);
+
+  const { count, error: countError } = await projectCountQuery;
 
   if (countError) throw countError;
 
@@ -43,33 +55,39 @@ async function deleteClient(clientId) {
     throw new ConflictError('This client has projects and cannot be deleted. Move or delete the projects first.');
   }
 
-  const { error } = await supabase
+  const deleteQuery = scopeToUser(supabase
     .from('clients')
     .delete()
-    .eq('id', clientId);
+    .eq('id', clientId), context);
+
+  const { error } = await deleteQuery;
   if (error) throw error;
   return true;
 }
 
 
-async function getClient(clientId) {
-  const { data, error } = await supabase
+async function getClient(clientId, context = {}) {
+  const query = scopeToUser(supabase
     .from('clients')
     .select('*')
-    .eq('id', clientId)
+    .eq('id', clientId), context)
     .single();
+
+  const { data, error } = await query;
   if (error?.code === 'PGRST116') return null;
   if (error) throw error;
   return data;
 }
 
-async function updateClient(clientId, clientData) {
-  const { data, error } = await supabase
+async function updateClient(clientId, clientData, context = {}) {
+  const query = scopeToUser(supabase
     .from('clients')
     .update(clientData)
     .eq('id', clientId)
-    .select()
+    .select(), context)
     .single();
+
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 }

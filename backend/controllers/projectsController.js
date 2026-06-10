@@ -1,8 +1,12 @@
 const projectsService = require('../services/projectsService');
 
+function getRequestContext(req) {
+  return req.authUser?.id ? { userId: req.authUser.id } : {};
+}
+
 async function listProjects(req, res) {
   try {
-    const projects = await projectsService.getProjects(req.query);
+    const projects = await projectsService.getProjects(req.query, getRequestContext(req));
     res.json({ data: projects });
   } catch (err) {
     console.error('Error fetching projects:', err);
@@ -12,7 +16,7 @@ async function listProjects(req, res) {
 
 async function getProject(req, res) {
   try {
-    const project = await projectsService.getProjectById(req.params.id);
+    const project = await projectsService.getProjectById(req.params.id, getRequestContext(req));
     if (!project) return res.status(404).json({ error: 'Not found' });
     res.json({ data: project });
   } catch (err) {
@@ -23,7 +27,7 @@ async function getProject(req, res) {
 
 async function createProject(req, res) {
   try {
-    const project = await projectsService.createProject(req.body);
+    const project = await projectsService.createProject(req.body, getRequestContext(req));
     res.status(201).json({ data: project });
   } catch (err) {
     console.error('Error creating project:', err);
@@ -36,7 +40,7 @@ async function createProject(req, res) {
 
 async function updateProject(req, res) {
   try {
-    const project = await projectsService.updateProject(req.params.id, req.body);
+    const project = await projectsService.updateProject(req.params.id, req.body, getRequestContext(req));
     if (!project) return res.status(404).json({ error: 'Not found' });
     res.json({ data: project });
   } catch (err) {
@@ -50,7 +54,7 @@ async function updateProject(req, res) {
 
 async function deleteProject(req, res) {
   try {
-    await projectsService.deleteProject(req.params.id);
+    await projectsService.deleteProject(req.params.id, getRequestContext(req));
     res.status(204).send();
   } catch (err) {
     console.error('Error deleting project:', err);
@@ -60,7 +64,7 @@ async function deleteProject(req, res) {
 
 async function listProjectExpenses(req, res) {
   try {
-    const expenses = await projectsService.getProjectExpenses(req.params.id);
+    const expenses = await projectsService.getProjectExpenses(req.params.id, getRequestContext(req));
     res.json({ data: expenses });
   } catch (err) {
     console.error('Error fetching project expenses:', err);
@@ -70,7 +74,7 @@ async function listProjectExpenses(req, res) {
 
 async function createProjectExpenseHandler(req, res) {
   try {
-    const expense = await projectsService.createProjectExpense(req.params.id, req.body);
+    const expense = await projectsService.createProjectExpense(req.params.id, req.body, getRequestContext(req));
     res.status(201).json({ data: expense });
   } catch (err) {
     console.error('Error creating project expense:', err);
@@ -83,7 +87,7 @@ async function createProjectExpenseHandler(req, res) {
 
 async function updateProjectExpenseHandler(req, res) {
   try {
-    const expense = await projectsService.updateProjectExpense(req.params.id, req.params.expenseId, req.body);
+    const expense = await projectsService.updateProjectExpense(req.params.id, req.params.expenseId, req.body, getRequestContext(req));
     if (!expense) return res.status(404).json({ error: 'Not found' });
     res.json({ data: expense });
   } catch (err) {
@@ -97,7 +101,7 @@ async function updateProjectExpenseHandler(req, res) {
 
 async function deleteProjectExpenseHandler(req, res) {
   try {
-    const expense = await projectsService.deleteProjectExpense(req.params.id, req.params.expenseId);
+    const expense = await projectsService.deleteProjectExpense(req.params.id, req.params.expenseId, getRequestContext(req));
     if (!expense) return res.status(404).json({ error: 'Not found' });
     res.status(204).send();
   } catch (err) {

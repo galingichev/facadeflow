@@ -2,6 +2,10 @@ const clientsService = require('../services/clientsService');
 
 const CLIENT_CREATE_FIELDS = ['name', 'email', 'phone', 'address', 'notes'];
 
+function getRequestContext(req) {
+  return req.authUser?.id ? { userId: req.authUser.id } : {};
+}
+
 function normalizeClientCreatePayload(body = {}) {
   return CLIENT_CREATE_FIELDS.reduce((payload, field) => {
     if (Object.prototype.hasOwnProperty.call(body, field)) {
@@ -14,7 +18,7 @@ function normalizeClientCreatePayload(body = {}) {
 
 async function listClients(req, res) {
   try {
-    const clients = await clientsService.getClients();
+    const clients = await clientsService.getClients(getRequestContext(req));
     res.json({ data: clients });
   } catch (err) {
     console.error('Error fetching clients:', err);
@@ -29,7 +33,7 @@ async function createClient(req, res) {
       return res.status(400).json({ error: 'Client name is required' });
     }
 
-    const client = await clientsService.createClient(payload);
+    const client = await clientsService.createClient(payload, getRequestContext(req));
     res.status(201).json({ data: client });
   } catch (err) {
     console.error('Error creating client:', err);
@@ -40,7 +44,7 @@ async function createClient(req, res) {
 async function deleteClient(req, res) {
   try {
     const { id } = req.params;
-    await clientsService.deleteClient(id);
+    await clientsService.deleteClient(id, getRequestContext(req));
     res.status(204).send(); // No Content
   } catch (err) {
     console.error('Error deleting client:', err);
@@ -54,7 +58,7 @@ async function deleteClient(req, res) {
 
 async function getClient(req, res) {
   try {
-    const client = await clientsService.getClient(req.params.id);
+    const client = await clientsService.getClient(req.params.id, getRequestContext(req));
     if (!client) return res.status(404).json({ error: 'Not found' });
     res.json({ data: client });
   } catch (err) {
@@ -65,7 +69,7 @@ async function getClient(req, res) {
 
 async function updateClient(req, res) {
   try {
-    const client = await clientsService.updateClient(req.params.id, req.body);
+    const client = await clientsService.updateClient(req.params.id, req.body, getRequestContext(req));
     res.json({ data: client });
   } catch (err) {
     console.error('Error updating client:', err);
