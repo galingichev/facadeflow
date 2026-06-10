@@ -30,6 +30,20 @@ supabase link --project-ref your-project-ref
 supabase db push
 ```
 
+Using the guarded Node apply script:
+
+```bash
+SUPABASE_PROJECT_ID=your-project-ref \nSUPABASE_DB_PASSWORD=your-database-password \nFACADEFLOW_CONFIRM_DB_APPLY=yes \nnode scripts/apply-migration.js
+```
+
+Preview the migration plan without connecting:
+
+```bash
+SUPABASE_PROJECT_ID=your-project-ref \nSUPABASE_DB_PASSWORD=placeholder \nFACADEFLOW_CONFIRM_DB_APPLY=yes \nFACADEFLOW_DB_DRY_RUN=yes \nnode scripts/apply-migration.js
+```
+
+`FACADEFLOW_APPLY_SEED=yes` is intentionally separate so production/shared databases do not receive demo seed data by accident.
+
 ## Seed data
 
 `seed.sql` is local/demo data only. Review it before running against any shared environment.

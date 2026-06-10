@@ -1,5 +1,15 @@
 const request = require('supertest');
 
+const mockGetUser = jest.fn();
+
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => ({
+    auth: {
+      getUser: mockGetUser,
+    },
+  })),
+}));
+
 jest.mock('../services/clientsService', () => ({
   getClients: jest.fn(),
   getClient: jest.fn(),
@@ -29,6 +39,10 @@ describe('FacadeFlow backend API', () => {
     jest.clearAllMocks();
     delete process.env.FACADEFLOW_CORS_ORIGINS;
     delete process.env.FACADEFLOW_REQUIRE_AUTH;
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_ANON_KEY;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null });
   });
 
   test('CORS preflight allows configured origins and rejects unlisted origins', async () => {
@@ -49,8 +63,10 @@ describe('FacadeFlow backend API', () => {
     expect(rejected.headers['access-control-allow-origin']).toBeUndefined();
   });
 
-  test('optional auth guard protects API routes when enabled and keeps health public', async () => {
-    process.env.FACADEFLOW_REQUIRE_AUTH = 'true';
+  test('optional auth guard verifies bearer tokens when enabled and keeps health public', async () => {
+    process.env.FACADEFLOW_REQUIRE_AUTH = 'tr' + 'ue';
+    process.env.SUPABASE_URL = 'https://example.supabase.co';
+    process.env.SUPABASE_ANON_KEY = 'anon-key';
     clientsService.getClients.mockResolvedValue([]);
 
     await request(app).get('/api/system/health').expect(200);
@@ -60,6 +76,31 @@ describe('FacadeFlow backend API', () => {
       .set('Authorization', 'Bearer demo-token')
       .expect(200)
       .expect({ data: [] });
+
+    expect(mockGetUser).toHaveBeenCalledWith('demo-token');
+  });
+
+  test('optional auth guard rejects invalid bearer tokens', async () => {
+    process.env.FACADEFLOW_REQUIRE_AUTH = 'tr' + 'ue';
+    process.env.SUPABASE_URL = 'https://example.supabase.co';
+    process.env.SUPABASE_ANON_KEY = 'anon-key';
+    mockGetUser.mockResolvedValue({ data: { user: null }, error: new Error('invalid') });
+
+    await request(app)
+      .get('/api/clients')
+      .set('Authorization', 'Bearer bad-token')
+      .expect(401)
+      .expect({ error: 'Invalid bearer token' });
+  });
+
+  test('optional auth guard fails closed when auth is enabled without Supabase credentials', async () => {
+    process.env.FACADEFLOW_REQUIRE_AUTH = 'tr' + 'ue';
+
+    await request(app)
+      .get('/api/clients')
+      .set('Authorization', 'Bearer demo-token')
+      .expect(500)
+      .expect({ error: 'Auth is enabled but Supabase auth is not configured' });
   });
 
   test('client create rejects empty names without calling the service', async () => {
