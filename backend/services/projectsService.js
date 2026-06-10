@@ -6,6 +6,10 @@ const supabase = supabaseCreateClient(supabaseUrl, supabaseKey);
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+function scopeToUser(query, context = {}) {
+  return context.userId ? query.eq('created_by', context.userId) : query;
+}
+
 const DEFAULT_PROJECT_ADDRESS = {
   street: '',
   city: '',
@@ -55,11 +59,11 @@ class ValidationError extends Error {
   }
 }
 
-function resolveMvpOwnerId() {
-  return process.env.FACADEFLOW_MVP_OWNER_ID || process.env.MVP_OWNER_ID || process.env.PROJECTS_CREATED_BY;
+function resolveMvpOwnerId(context = {}) {
+  return context.userId || process.env.FACADEFLOW_MVP_OWNER_ID || process.env.MVP_OWNER_ID || process.env.PROJECTS_CREATED_BY;
 }
 
-function normalizeCreateProjectPayload(projectData = {}) {
+function normalizeCreateProjectPayload(projectData = {}, context = {}) {
   const payload = {};
 
   for (const field of CREATE_PROJECT_FIELDS) {
@@ -86,7 +90,7 @@ function normalizeCreateProjectPayload(projectData = {}) {
     payload.address = DEFAULT_PROJECT_ADDRESS;
   }
 
-  const createdBy = resolveMvpOwnerId();
+  const createdBy = resolveMvpOwnerId(context);
   if (!createdBy || !UUID_REGEX.test(createdBy)) {
     throw new ValidationError('Project created_by cannot be resolved. Set FACADEFLOW_MVP_OWNER_ID to a valid user UUID.');
   }
@@ -173,13 +177,15 @@ function isMissingExpenseTableError(error) {
   return error?.code === '42P01' || error?.message?.includes('project_expenses');
 }
 
-async function getExpenseTotalsByProjectIds(projectIds) {
+async function getExpenseTotalsByProjectIds(projectIds, context = {}) {
   if (!projectIds.length) return new Map();
 
-  const { data, error } = await supabase
+  const query = scopeToUser(supabase
     .from('project_expenses')
     .select('project_id, amount')
-    .in('project_id', projectIds);
+    .in('project_id', projectIds), context);
+
+  const { data, error } = await query;
 
   if (isMissingExpenseTableError(error)) return new Map();
   if (error) throw error;
@@ -254,11 +260,11 @@ function normalizeExpensePayload(expenseData = {}, { isUpdate = false } = {}) {
 /**
  * Get all projects with optional filters
  */
-async function getProjects(filters = {}) {
-  let query = supabase.from('projects').select(`
+async function getProjects(filters = {}, context = {}) {
+  let query = scopeToUser(supabase.from('projects').select(`
     *,
     client:clients (*)
-  `);
+  `), context);
 
   if (filters.status) {
     query = query.eq('status', filters.status);
@@ -266,7 +272,7 @@ async function getProjects(filters = {}) {
 
   const { data, error } = await query.order('created_at', { ascending: false });
   if (error) throw error;
-  const totals = await getExpenseTotalsByProjectIds((data || []).map((project) => project.id));
+  const totals = await getExpenseTotalsByProjectIds((data || []).map((project) => project.id), context);
 
   return (data || []).map((project) => {
     const total = totals.get(project.id) || { actualCost: 0, expenseCount: 0 };
@@ -287,29 +293,31 @@ async function getProjects(filters = {}) {
 /**
  * Get a single project by ID
  */
-async function getProjectById(id) {
-  const { data, error } = await supabase
+async function getProjectById(id, context = {}) {
+  const query = scopeToUser(supabase
     .from('projects')
     .select(`
       *,
       client:clients (*)
     `)
-    .eq('id', id)
+    .eq('id', id), context)
     .maybeSingle();
+
+  const { data, error } = await query;
 
   if (error?.code === 'PGRST116') return null;
   if (error) throw error;
   if (!data) return null;
 
-  const expenses = await getProjectExpenses(id);
+  const expenses = await getProjectExpenses(id, context);
   return attachProjectFinancials(data, expenses);
 }
 
 /**
  * Create a new project
  */
-async function createProject(projectData) {
-  const payload = normalizeCreateProjectPayload(projectData);
+async function createProject(projectData, context = {}) {
+  const payload = normalizeCreateProjectPayload(projectData, context);
 
   const { data, error } = await supabase
     .from('projects')
@@ -328,47 +336,53 @@ async function createProject(projectData) {
 /**
  * Update a project
  */
-async function updateProject(id, projectData) {
+async function updateProject(id, projectData, context = {}) {
   const payload = normalizeUpdateProjectPayload(projectData);
 
-  const { data, error } = await supabase
+  const query = scopeToUser(supabase
     .from('projects')
     .update(payload)
     .eq('id', id)
-    .select()
+    .select(), context)
     .maybeSingle();
+
+  const { data, error } = await query;
 
   if (error?.code === 'PGRST116') return null;
   if (error) throw error;
-  const expenses = await getProjectExpenses(id);
+  if (!data) return null;
+  const expenses = await getProjectExpenses(id, context);
   return attachProjectFinancials(data, expenses);
 }
 
 /**
  * Delete a project
  */
-async function deleteProject(id) {
-  const { error } = await supabase.from('projects').delete().eq('id', id);
+async function deleteProject(id, context = {}) {
+  const query = scopeToUser(supabase.from('projects').delete().eq('id', id), context);
+  const { error } = await query;
   if (error) throw error;
   return { success: true };
 }
 
-async function getProjectExpenses(projectId) {
-  const { data, error } = await supabase
+async function getProjectExpenses(projectId, context = {}) {
+  const query = scopeToUser(supabase
     .from('project_expenses')
     .select('*')
-    .eq('project_id', projectId)
+    .eq('project_id', projectId), context)
     .order('expense_date', { ascending: false })
     .order('created_at', { ascending: false });
+
+  const { data, error } = await query;
 
   if (isMissingExpenseTableError(error)) return [];
   if (error) throw error;
   return data || [];
 }
 
-async function createProjectExpense(projectId, expenseData) {
+async function createProjectExpense(projectId, expenseData, context = {}) {
   const payload = normalizeExpensePayload(expenseData);
-  const createdBy = resolveMvpOwnerId();
+  const createdBy = resolveMvpOwnerId(context);
 
   if (!createdBy || !UUID_REGEX.test(createdBy)) {
     throw new ValidationError('Expense created_by cannot be resolved. Set FACADEFLOW_MVP_OWNER_ID to a valid user UUID.');
@@ -391,30 +405,34 @@ async function createProjectExpense(projectId, expenseData) {
   return data;
 }
 
-async function updateProjectExpense(projectId, expenseId, expenseData) {
+async function updateProjectExpense(projectId, expenseId, expenseData, context = {}) {
   const payload = normalizeExpensePayload(expenseData, { isUpdate: true });
 
-  const { data, error } = await supabase
+  const query = scopeToUser(supabase
     .from('project_expenses')
     .update(payload)
     .eq('id', expenseId)
     .eq('project_id', projectId)
-    .select()
+    .select(), context)
     .maybeSingle();
+
+  const { data, error } = await query;
 
   if (error?.code === 'PGRST116') return null;
   if (error) throw error;
   return data;
 }
 
-async function deleteProjectExpense(projectId, expenseId) {
-  const { data, error } = await supabase
+async function deleteProjectExpense(projectId, expenseId, context = {}) {
+  const query = scopeToUser(supabase
     .from('project_expenses')
     .delete()
     .eq('id', expenseId)
     .eq('project_id', projectId)
-    .select('id')
+    .select('id'), context)
     .maybeSingle();
+
+  const { data, error } = await query;
 
   if (error?.code === 'PGRST116') return null;
   if (error) throw error;

@@ -96,7 +96,8 @@ app.use(requireBearerToken);
 
 const sendDashboardSummary = async (req, res) => {
   try {
-    const projects = await projectsService.getProjects();
+    const requestContext = req.authUser?.id ? { userId: req.authUser.id } : {};
+    const projects = await projectsService.getProjects({}, requestContext);
     const financialProjects = projects.filter((project) => {
       const financials = project.financials || {};
       return (
@@ -173,15 +174,20 @@ app.get(`${API_PREFIX}/dashboard/brief`, async (req, res) => {
     const now = new Date();
     const threeDaysLater = new Date();
     threeDaysLater.setDate(now.getDate() + 3);
-    const { data: tasks, error: taskErr } = await supabase
+    let query = supabase
       .from('tasks')
       .select('title, due_date')
       .gte('due_date', now.toISOString())
       .lte('due_date', threeDaysLater.toISOString())
       .order('due_date', { ascending: true })
       .limit(10);
+    if (req.authUser?.id) {
+      query = query.eq('created_by', req.authUser.id);
+    }
+    const { data: tasks, error: taskErr } = await query;
     if (taskErr) throw taskErr;
     const items = (tasks || []).map(t => ({ type: 'task', title: t.title, due_date: t.due_date }));
+
     res.json({ data: { items } });
   } catch (error) {
     console.error('Dashboard brief error:', error);
