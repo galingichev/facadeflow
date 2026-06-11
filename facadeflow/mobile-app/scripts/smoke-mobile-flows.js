@@ -38,6 +38,9 @@ includesAll('client flow', clientFlow, [
   'clientsApi.update',
   'clientsApi.delete',
   'Create Client',
+  'Client name is required.',
+  'Client created. Opening client record...',
+  'router.replace(`/clients/${client.id}/edit`',
 ]);
 
 const projectFlow = [
@@ -56,6 +59,10 @@ includesAll('project flow', projectFlow, [
   'projectsApi.createExpense',
   'projectsApi.deleteExpense',
   'Create Project',
+  'Project name is required.',
+  'Client is required.',
+  'Project created. Opening project detail...',
+  'router.replace(`/projects/${project.id}`',
   'Expenses',
   'Job Health',
   'Budget vs actual',
