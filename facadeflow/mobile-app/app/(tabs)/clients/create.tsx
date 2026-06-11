@@ -1,32 +1,47 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useClientsStore } from '../../../src/stores/clientsStore';
 import { config } from '../../../src/lib/config';
 
+type FormErrors = {
+  name?: string;
+  submit?: string;
+};
+
 export default function CreateClientScreen() {
   const router = useRouter();
-  const { createClient, isLoading, error } = useClientsStore();
+  const { createClient, isLoading } = useClientsStore();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const clearFieldError = (field: keyof FormErrors) => {
+    setErrors((current) => ({ ...current, [field]: undefined, submit: undefined }));
+  };
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      Alert.alert('Error', 'Client name is required');
+      setErrors({ name: 'Client name is required.' });
       return;
     }
+
+    setErrors({});
+    setSuccessMessage('');
     setLoading(true);
     try {
-      await createClient({
+      const client = await createClient({
         name: name.trim(),
         phone: phone.trim(),
         email: email.trim(),
       });
-      router.back();
+      setSuccessMessage('Client created. Opening client record...');
+      setTimeout(() => router.replace(`/clients/${client.id}/edit` as any), 650);
     } catch (err: any) {
-      Alert.alert('Error', err?.message || error || 'Failed to create client');
+      setErrors({ submit: err?.response?.data?.error || err?.message || 'Failed to create client.' });
     } finally {
       setLoading(false);
     }
@@ -36,12 +51,16 @@ export default function CreateClientScreen() {
     <View style={styles.container}>
       <Text style={styles.label}>Client Name</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, errors.name && styles.inputError]}
         value={name}
-        onChangeText={setName}
+        onChangeText={(value) => {
+          setName(value);
+          clearFieldError('name');
+        }}
         placeholder="Enter client name"
         placeholderTextColor={config.theme.textSecondary}
       />
+      {errors.name ? <Text style={styles.errorText}>{errors.name}</Text> : null}
       <Text style={styles.label}>Phone</Text>
       <TextInput
         style={styles.input}
@@ -58,6 +77,8 @@ export default function CreateClientScreen() {
         placeholder="Optional"
         placeholderTextColor={config.theme.textSecondary}
       />
+      {errors.submit ? <Text style={styles.formError}>{errors.submit}</Text> : null}
+      {successMessage ? <Text style={styles.successText}>{successMessage}</Text> : null}
       <View style={{ height: 20 }} />
       <Button
         title={isLoading || loading ? 'Creating...' : 'Create Client'}
@@ -87,5 +108,24 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
     color: config.theme.text,
+  },
+  inputError: {
+    borderColor: config.theme.error,
+    marginBottom: 6,
+  },
+  errorText: {
+    color: config.theme.error,
+    fontSize: 13,
+    marginBottom: 16,
+  },
+  formError: {
+    color: config.theme.error,
+    fontSize: 14,
+    marginBottom: 12,
+  },
+  successText: {
+    color: config.theme.success,
+    fontSize: 14,
+    marginBottom: 12,
   },
 });

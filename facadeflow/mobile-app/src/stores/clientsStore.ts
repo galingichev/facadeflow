@@ -9,7 +9,7 @@ interface ClientState {
   error: string | null;
   fetchClients: () => Promise<void>;
   fetchClient: (clientId: string) => Promise<void>;
-  createClient: (data: Partial<Client>) => Promise<void>;
+  createClient: (data: Partial<Client>) => Promise<Client>;
   updateClient: (clientId: string, data: Partial<Client>) => Promise<void>;
   removeClient: (clientId: string) => Promise<void>;
 }
@@ -44,9 +44,10 @@ export const useClientsStore = create<ClientState>()((set, get) => ({
   createClient: async (data: Partial<Client>) => {
     set({ isLoading: true, error: null });
     try {
-      await clientsApi.create(data);
+      const client = await clientsApi.create(data);
       await get().fetchClients(); // Refresh list after creation
       set({ isLoading: false });
+      return client;
     } catch (error: any) {
       set({ error: error.message || 'Failed to create client', isLoading: false });
       throw error;
