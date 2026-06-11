@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableWithoutFeedback, PanResponder, Image } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, PanResponder, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Svg, Circle, Line, Text as SvgText, Rect, G } from 'react-native-svg';
 import { config } from '../../src/lib/config';
@@ -144,9 +144,10 @@ export const PhotoAnnotator: React.FC<PhotoAnnotatorProps> = ({
       <View style={styles.toolbar}>
         <View style={styles.toolGroup}>
           {(['arrow', 'circle', 'highlight', 'pan'] as const).map((tool) => (
-            <TouchableWithoutFeedback
+            <TouchableOpacity
               key={tool}
               onPress={() => setSelectedTool(tool)}
+              activeOpacity={0.82}
             >
               <View
                 style={[
@@ -160,15 +161,16 @@ export const PhotoAnnotator: React.FC<PhotoAnnotatorProps> = ({
                   color={selectedTool === tool ? '#fff' : config.theme.text}
                 />
               </View>
-            </TouchableWithoutFeedback>
+            </TouchableOpacity>
           ))}
         </View>
 
         <View style={styles.colorGroup}>
           {COLORS.map((color: string) => (
-            <TouchableWithoutFeedback
+            <TouchableOpacity
               key={color}
               onPress={() => setSelectedColor(color)}
+              activeOpacity={0.82}
             >
               <View
                 style={[
@@ -177,7 +179,7 @@ export const PhotoAnnotator: React.FC<PhotoAnnotatorProps> = ({
                   selectedColor === color && styles.colorSwatchActive,
                 ]}
               />
-            </TouchableWithoutFeedback>
+            </TouchableOpacity>
           ))}
         </View>
 
@@ -207,15 +209,13 @@ export const PhotoAnnotator: React.FC<PhotoAnnotatorProps> = ({
         </View>
       </View>
 
-      <TouchableWithoutFeedback {...panResponder.panHandlers}>
-        <View style={styles.imageContainer}>
-          <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="contain" />
-          <Svg width={IMAGE_WIDTH} height={IMAGE_HEIGHT} style={styles.svgOverlay}>
-            {annotations.map(renderAnnotation)}
-            {currentDrawing && renderAnnotation(currentDrawing)}
-          </Svg>
-        </View>
-      </TouchableWithoutFeedback>
+      <View style={styles.imageContainer} {...panResponder.panHandlers}>
+        <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="contain" />
+        <Svg width={IMAGE_WIDTH} height={IMAGE_HEIGHT} style={styles.svgOverlay}>
+          {annotations.map(renderAnnotation)}
+          {currentDrawing && renderAnnotation(currentDrawing)}
+        </Svg>
+      </View>
 
       <View style={styles.instructions}>
         <MaterialIcons name="info-outline" size={16} color={config.theme.textSecondary} />

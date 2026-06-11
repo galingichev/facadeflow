@@ -3,7 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableWithoutFeedback,
+  Pressable,
   Modal,
   FlatList,
   TextInput,
@@ -73,36 +73,36 @@ export const Select: React.FC<SelectProps> = ({
     <View style={style}>
       {label && <Text style={styles.label}>{t(label)}</Text>}
 
-      <TouchableWithoutFeedback onPress={() => !disabled && setVisible(true)}>
-        <View
+      <Pressable
+        onPress={() => !disabled && setVisible(true)}
+        disabled={disabled}
+        style={[
+          styles.selectBox,
+          {
+            backgroundColor: disabled ? config.theme.border : config.theme.background,
+            borderColor: error
+              ? config.theme.error
+              : visible
+              ? config.theme.primary
+              : config.theme.border,
+          },
+        ]}
+        accessibilityRole={"combobox" as any}
+        accessibilityLabel={label ? t(label) : t('Select an option')}
+        accessibilityState={{ expanded: visible, disabled }}
+        accessibilityHint={error ? `Error: ${error}` : helper || undefined}
+      >
+        <Text
           style={[
-            styles.selectBox,
-            {
-              backgroundColor: disabled ? config.theme.border : config.theme.background,
-              borderColor: error
-                ? config.theme.error
-                : visible
-                ? config.theme.primary
-                : config.theme.border,
-            },
+            styles.selectText,
+            !selectedOption && { color: config.theme.textSecondary },
           ]}
-          accessibilityRole={"combobox" as any}
-          accessibilityLabel={label ? t(label) : t('Select an option')}
-          accessibilityState={{ expanded: visible, disabled }}
-          accessibilityHint={error ? `Error: ${error}` : helper || undefined}
+          numberOfLines={1}
         >
-          <Text
-            style={[
-              styles.selectText,
-              !selectedOption && { color: config.theme.textSecondary },
-            ]}
-            numberOfLines={1}
-          >
-            {selectedOption ? t(selectedOption.label) : t(placeholder)}
-          </Text>
-          <Text style={styles.icon}>▼</Text>
-        </View>
-      </TouchableWithoutFeedback>
+          {selectedOption ? t(selectedOption.label) : t(placeholder)}
+        </Text>
+        <Text style={styles.icon}>▼</Text>
+      </Pressable>
 
       {error && <Text style={styles.error}>{error}</Text>}
       {helper && !error && <Text style={styles.helper}>{helper}</Text>}
@@ -114,66 +114,67 @@ export const Select: React.FC<SelectProps> = ({
         onRequestClose={() => setVisible(false)}
         accessibilityViewIsModal={true}
       >
-        <TouchableWithoutFeedback onPress={() => setVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        <View style={styles.modalOverlay}>
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => setVisible(false)}
+            accessibilityRole="button"
+            accessibilityLabel={t('Close')}
+          />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
+            <View
+              style={styles.modalContent}
+              accessibilityRole={"dialog" as any}
+              accessibilityLabel={label ? `${t(label)} options` : 'Options'}
             >
-              <View
-                style={styles.modalContent}
-                accessibilityRole={"dialog" as any}
-                accessibilityLabel={label ? `${t(label)} options` : 'Options'}
-              >
-                {searchable && (
-                  <TextInput
-                    style={styles.searchInput}
-                    placeholder={t('Search...')}
-                    value={search}
-                    onChangeText={setSearch}
-                    autoFocus
-                    accessibilityLabel={t('Search...')}
-                  />
-                )}
-                <FlatList
-                  data={filtered}
-                  keyExtractor={(item) => item.value}
-                  style={styles.optionsList}
-                  renderItem={({ item }) => (
-                    <TouchableWithoutFeedback
-                      onPress={() => handleSelect(item.value)}
-                      key={item.value}
-                    >
-                      <View
-                        style={[
-                          styles.option,
-                          item.value === value && styles.optionSelected,
-                        ]}
-                        accessibilityRole={"option" as any}
-                        accessibilityState={{ selected: item.value === value }}
-                        accessibilityLabel={t(item.label)}
-                      >
-                        <Text
-                          style={[
-                            styles.optionText,
-                            item.value === value && { color: config.theme.primary },
-                          ]}
-                        >
-                          {t(item.label)}
-                        </Text>
-                        {item.value === value && (
-                          <Text style={styles.check}>✓</Text>
-                        )}
-                      </View>
-                    </TouchableWithoutFeedback>
-                  )}
-                  ListEmptyComponent={
-                    <Text style={styles.noResults}>{t('No results found')}</Text>
-                  }
+              {searchable && (
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder={t('Search...')}
+                  value={search}
+                  onChangeText={setSearch}
+                  autoFocus
+                  accessibilityLabel={t('Search...')}
                 />
-              </View>
-            </KeyboardAvoidingView>
-          </View>
-        </TouchableWithoutFeedback>
+              )}
+              <FlatList
+                data={filtered}
+                keyExtractor={(item) => item.value}
+                style={styles.optionsList}
+                renderItem={({ item }) => (
+                  <Pressable
+                    onPress={() => handleSelect(item.value)}
+                    key={item.value}
+                    style={[
+                      styles.option,
+                      item.value === value && styles.optionSelected,
+                    ]}
+                    accessibilityRole={"option" as any}
+                    accessibilityState={{ selected: item.value === value }}
+                    accessibilityLabel={t(item.label)}
+                  >
+                    <Text
+                      style={[
+                        styles.optionText,
+                        item.value === value && { color: config.theme.primary },
+                      ]}
+                    >
+                      {t(item.label)}
+                    </Text>
+                    {item.value === value && (
+                      <Text style={styles.check}>✓</Text>
+                    )}
+                  </Pressable>
+                )}
+                ListEmptyComponent={
+                  <Text style={styles.noResults}>{t('No results found')}</Text>
+                }
+              />
+            </View>
+          </KeyboardAvoidingView>
+        </View>
       </Modal>
     </View>
   );
@@ -222,6 +223,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
   },
   modalContent: {
     backgroundColor: config.theme.background,

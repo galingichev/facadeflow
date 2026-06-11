@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { config } from '../../src/lib/config';
+import { platformShadow } from '../../src/utils/platformStyles';
 
 interface SwitchProps {
   label?: string;
@@ -146,11 +147,7 @@ const styles = StyleSheet.create({
   },
   thumb: {
     backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
+    ...platformShadow({ offsetY: 1, opacity: 0.2, radius: 2, elevation: 2 }),
   },
   helper: {
     fontSize: 12,

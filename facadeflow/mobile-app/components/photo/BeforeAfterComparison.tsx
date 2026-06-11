@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
 import { config } from '../../src/lib/config';
 import { Button } from '../ui/Button';
+import { platformShadow } from '../../src/utils/platformStyles';
 
 interface BeforeAfterComparisonProps {
   beforeImageUrl: string;
@@ -190,11 +191,7 @@ const styles = StyleSheet.create({
     top: 0,
     width: 4,
     backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
+    ...platformShadow({ offsetY: 0, opacity: 0.3, radius: 4, elevation: 4 }),
   },
   sliderHandle: {
     width: 32,
@@ -207,11 +204,7 @@ const styles = StyleSheet.create({
     marginTop: -16,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+    ...platformShadow({ offsetY: 2, opacity: 0.2, radius: 4, elevation: 4 }),
   },
   sliderTouchArea: {
     position: 'absolute',

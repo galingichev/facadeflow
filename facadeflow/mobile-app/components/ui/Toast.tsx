@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { config } from '../../src/lib/config';
+import { platformShadow } from '../../src/utils/platformStyles';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -188,11 +189,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginHorizontal: 16,
     marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    ...platformShadow({ offsetY: 2, opacity: 0.1, radius: 4, elevation: 2 }),
   },
   toastRoot: {
     position: 'absolute',
