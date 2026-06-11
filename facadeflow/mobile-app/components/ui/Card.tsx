@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, ViewStyle, StyleSheet, TouchableOpacity, Platform, StyleProp } from 'react-native';
+import { View, ViewStyle, StyleSheet, TouchableOpacity, StyleProp } from 'react-native';
 import { config } from '../../src/lib/config';
+import { platformShadow } from '../../src/utils/platformStyles';
 
 interface CardProps {
   children: React.ReactNode;
@@ -48,10 +49,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   elevation: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 18 },
-    shadowOpacity: Platform.OS === 'web' ? 0.18 : 0.32,
-    shadowRadius: 36,
-    elevation: 6,
+    ...platformShadow({ offsetY: 18, opacity: 0.32, radius: 36, elevation: 6 }),
   },
 });

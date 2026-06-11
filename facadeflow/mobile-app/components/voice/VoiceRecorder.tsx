@@ -4,6 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { config } from '../../src/lib/config';
 import { useVoiceRecorder } from '../../src/hooks/useVoiceRecorder';
 import { Button } from '../ui/Button';
+import { platformShadow } from '../../src/utils/platformStyles';
 import { useToast } from '../ui/Toast';
 
 interface VoiceRecorderProps {
@@ -255,11 +256,7 @@ const styles = StyleSheet.create({
     backgroundColor: config.theme.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: config.theme.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    ...platformShadow({ color: config.theme.primary, offsetY: 4, opacity: 0.3, radius: 12, elevation: 8 }),
   },
   recordingUI: {
     alignItems: 'center',

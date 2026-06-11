@@ -10,6 +10,7 @@ import { formatCurrency, getProjectStatusLabel } from '../../../src/utils';
 import { formatMarginPercent, getBudgetActualPercent, getJobHealth, getLastExpense, getPaymentReadiness } from '../../../src/utils/projectInsights';
 import type { Project } from '../../../src/types';
 import { useI18n } from '../../../src/i18n';
+import { platformShadow } from '../../../src/utils/platformStyles';
 
 export default function ProjectsListScreen() {
   const router = useRouter();
@@ -99,5 +100,5 @@ const styles = StyleSheet.create({
   healthReason: { color: config.theme.textSecondary, fontSize: 13, lineHeight: 18 },
   empty: { alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
   emptyText: { marginTop: 16, fontSize: 16, color: config.theme.textSecondary },
-  fab: { position: 'absolute', bottom: 20, right: 20, backgroundColor: config.theme.primary, borderRadius: 999, padding: 15, elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.35, shadowRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)' },
+  fab: { position: 'absolute', bottom: 20, right: 20, backgroundColor: config.theme.primary, borderRadius: 999, padding: 15, ...platformShadow({ offsetY: 10, opacity: 0.35, radius: 20, elevation: 6 }), borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)' },
 });
