@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { View, Text, Button, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useClientsStore } from '../../../src/stores/clientsStore';
 import { config } from '../../../src/lib/config';
+import { Input } from '../../../components/ui/Input';
 
 type FormErrors = {
   name?: string;
@@ -49,33 +50,27 @@ export default function CreateClientScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Client Name</Text>
-      <TextInput
-        style={[styles.input, errors.name && styles.inputError]}
+      <Input
+        label="Client Name"
+        error={errors.name}
         value={name}
         onChangeText={(value) => {
           setName(value);
           clearFieldError('name');
         }}
         placeholder="Enter client name"
-        placeholderTextColor={config.theme.textSecondary}
       />
-      {errors.name ? <Text style={styles.errorText}>{errors.name}</Text> : null}
-      <Text style={styles.label}>Phone</Text>
-      <TextInput
-        style={styles.input}
+      <Input
+        label="Phone"
         value={phone}
         onChangeText={setPhone}
         placeholder="Optional"
-        placeholderTextColor={config.theme.textSecondary}
       />
-      <Text style={styles.label}>Email</Text>
-      <TextInput
-        style={styles.input}
+      <Input
+        label="Email"
         value={email}
         onChangeText={setEmail}
         placeholder="Optional"
-        placeholderTextColor={config.theme.textSecondary}
       />
       {errors.submit ? <Text style={styles.formError}>{errors.submit}</Text> : null}
       {successMessage ? <Text style={styles.successText}>{successMessage}</Text> : null}
@@ -95,28 +90,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: config.theme.background,
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 8,
-    color: config.theme.text,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: config.theme.border,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    color: config.theme.text,
-  },
-  inputError: {
-    borderColor: config.theme.error,
-    marginBottom: 6,
-  },
-  errorText: {
-    color: config.theme.error,
-    fontSize: 13,
-    marginBottom: 16,
   },
   formError: {
     color: config.theme.error,

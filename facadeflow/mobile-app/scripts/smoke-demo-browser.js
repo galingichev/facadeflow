@@ -133,6 +133,32 @@ async function assertNoDashboardMobileOverflow(page, width) {
   );
 }
 
+async function assertLabelQueriesWork(page, projectId) {
+  await page.goto(buildUrl('/clients/create'), { waitUntil: 'domcontentloaded', timeout: 45000 });
+  for (const label of ['Client Name', 'Phone', 'Email']) {
+    const field = page.getByLabel(label, { exact: true });
+    await field.waitFor({ timeout: 10000 });
+    assert.equal(await field.count(), 1, `Expected one create-client field labelled "${label}"`);
+  }
+
+  await page.goto(buildUrl('/projects/create'), { waitUntil: 'domcontentloaded', timeout: 45000 });
+  for (const label of ['Project Name', 'Client', 'Status', 'Start Date', 'End Date', 'Contract Value', 'Budgeted Cost']) {
+    const field = page.getByLabel(label, { exact: true });
+    await field.waitFor({ timeout: 10000 });
+    assert.equal(await field.count(), 1, `Expected one create-project field labelled "${label}"`);
+  }
+
+  await page.goto(buildUrl(`/projects/${projectId}`), { waitUntil: 'domcontentloaded', timeout: 45000 });
+  await page.getByText('Expenses', { exact: true }).click();
+  for (const label of ['Category', 'Description', 'Amount', 'Vendor', 'Expense Date']) {
+    const field = page.getByLabel(label, { exact: true });
+    await field.waitFor({ timeout: 10000 });
+    assert.equal(await field.count(), 1, `Expected one expense field labelled "${label}"`);
+  }
+
+  console.log('Label query checks passed: client, project, expense forms');
+}
+
 async function chooseCurrency(page, code) {
   await page.getByLabel(/Choose currency|Избор на валута/).click();
   await page.getByLabel(new RegExp(`^${code}\\b`)).click();
@@ -209,6 +235,10 @@ async function main() {
     console.log('Dashboard mobile overflow checks passed: 360px, 390px, 430px');
 
     await page.setViewportSize({ width: 1366, height: 900 });
+    await page.goto(buildUrl('/'), { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await waitForDashboard(page);
+    await assertLabelQueriesWork(page, projectId);
+
     await page.goto(buildUrl('/'), { waitUntil: 'domcontentloaded', timeout: 45000 });
     await waitForDashboard(page);
 

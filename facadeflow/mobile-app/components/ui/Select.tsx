@@ -46,6 +46,11 @@ export const Select: React.FC<SelectProps> = ({
   style,
 }) => {
   const { t } = useI18n();
+  const selectId = React.useId();
+  const hasError = Boolean(error);
+  const hasHelper = Boolean(helper);
+  const labelId = label ? `${selectId}-label` : undefined;
+  const descriptionId = hasError || hasHelper ? `${selectId}-description` : undefined;
   const [visible, setVisible] = useState(false);
   const [search, setSearch] = useState('');
   const [filtered, setFiltered] = useState(options);
@@ -71,7 +76,7 @@ export const Select: React.FC<SelectProps> = ({
 
   return (
     <View style={style}>
-      {label && <Text style={styles.label}>{t(label)}</Text>}
+      {label && <Text nativeID={labelId} style={styles.label}>{t(label)}</Text>}
 
       <Pressable
         onPress={() => !disabled && setVisible(true)}
@@ -80,7 +85,7 @@ export const Select: React.FC<SelectProps> = ({
           styles.selectBox,
           {
             backgroundColor: disabled ? config.theme.border : config.theme.background,
-            borderColor: error
+            borderColor: hasError
               ? config.theme.error
               : visible
               ? config.theme.primary
@@ -89,6 +94,8 @@ export const Select: React.FC<SelectProps> = ({
         ]}
         accessibilityRole={"combobox" as any}
         accessibilityLabel={label ? t(label) : t('Select an option')}
+        aria-labelledby={labelId}
+        aria-describedby={descriptionId}
         accessibilityState={{ expanded: visible, disabled }}
         accessibilityHint={error ? `Error: ${error}` : helper || undefined}
       >
@@ -104,8 +111,8 @@ export const Select: React.FC<SelectProps> = ({
         <Text style={styles.icon}>▼</Text>
       </Pressable>
 
-      {error && <Text style={styles.error}>{error}</Text>}
-      {helper && !error && <Text style={styles.helper}>{helper}</Text>}
+      {hasError ? <Text nativeID={descriptionId} style={styles.error}>{error}</Text> : null}
+      {hasHelper && !hasError ? <Text nativeID={descriptionId} style={styles.helper}>{helper}</Text> : null}
 
       <Modal
         visible={visible}
