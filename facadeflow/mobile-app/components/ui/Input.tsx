@@ -22,6 +22,12 @@ interface InputProps extends TextInputProps {
 
 export const Input = forwardRef<TextInput, InputProps>(
   ({ label, error, helper, containerStyle, inputStyle, leftIcon, rightIcon, ...rest }, ref) => {
+    const inputId = React.useId();
+    const hasError = Boolean(error);
+    const hasHelper = Boolean(helper);
+    const labelId = label ? `${inputId}-label` : undefined;
+    const descriptionId = hasError || hasHelper ? `${inputId}-description` : undefined;
+
     // Build accessibility label from label + error/helper
     const a11yLabel = React.useMemo(() => {
       const parts: string[] = [];
@@ -33,12 +39,12 @@ export const Input = forwardRef<TextInput, InputProps>(
 
     return (
       <View style={[styles.container, containerStyle]}>
-        {label && <Text style={styles.label}>{label}</Text>}
+        {label && <Text nativeID={labelId} style={styles.label}>{label}</Text>}
         <View
           style={[
             styles.inputContainer,
             {
-              borderColor: error ? config.theme.error : config.theme.border,
+              borderColor: hasError ? config.theme.error : config.theme.border,
               backgroundColor: config.theme.background,
             },
           ]}
@@ -55,14 +61,16 @@ export const Input = forwardRef<TextInput, InputProps>(
             ]}
             placeholderTextColor={config.theme.textSecondary}
             accessibilityLabel={a11yLabel}
+            aria-labelledby={labelId}
+            aria-describedby={descriptionId}
             accessibilityRole="text"
             accessibilityState={{ disabled: rest.editable === false }}
             {...rest}
           />
           {rightIcon && <View style={styles.iconRight}>{rightIcon}</View>}
         </View>
-        {error && <Text style={styles.error}>{error}</Text>}
-        {helper && !error && <Text style={styles.helper}>{helper}</Text>}
+        {hasError ? <Text nativeID={descriptionId} style={styles.error}>{error}</Text> : null}
+        {hasHelper && !hasError ? <Text nativeID={descriptionId} style={styles.helper}>{helper}</Text> : null}
       </View>
     );
   }

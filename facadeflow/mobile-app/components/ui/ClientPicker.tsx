@@ -15,9 +15,15 @@ import type { Client } from '../../src/types';
 type ClientPickerProps = {
   value: string;
   onChange: (clientId: string) => void;
+  label?: string;
+  error?: string;
 };
 
-export default function ClientPicker({ value, onChange }: ClientPickerProps) {
+export default function ClientPicker({ value, onChange, label, error }: ClientPickerProps) {
+  const pickerId = React.useId();
+  const hasError = Boolean(error);
+  const labelId = label ? `${pickerId}-label` : undefined;
+  const errorId = hasError ? `${pickerId}-error` : undefined;
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -43,14 +49,21 @@ export default function ClientPicker({ value, onChange }: ClientPickerProps) {
 
   return (
     <View>
+      {label ? <Text nativeID={labelId} style={styles.label}>{label}</Text> : null}
       <TouchableOpacity
-        style={styles.trigger}
+        style={[styles.trigger, hasError && styles.triggerError]}
         onPress={() => setModalVisible(true)}
+        accessibilityRole="combobox"
+        accessibilityLabel={label}
+        aria-labelledby={labelId}
+        aria-describedby={errorId}
+        accessibilityState={{ expanded: modalVisible }}
       >
         <Text style={styles.triggerText}>
           {selectedClient ? selectedClient.name : 'Select a client'}
         </Text>
       </TouchableOpacity>
+      {hasError ? <Text nativeID={errorId} style={styles.error}>{error}</Text> : null}
 
       <Modal
         visible={modalVisible}
@@ -102,6 +115,12 @@ export default function ClientPicker({ value, onChange }: ClientPickerProps) {
 }
 
 const styles = StyleSheet.create({
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: config.theme.text,
+    marginBottom: 6,
+  },
   trigger: {
     borderWidth: 1,
     borderColor: config.theme.border,
@@ -110,8 +129,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     backgroundColor: config.theme.background,
   },
+  triggerError: {
+    borderColor: config.theme.error,
+    marginBottom: 6,
+  },
   triggerText: {
     color: config.theme.text,
+  },
+  error: {
+    color: config.theme.error,
+    fontSize: 13,
+    marginBottom: 16,
   },
   overlay: {
     flex: 1,

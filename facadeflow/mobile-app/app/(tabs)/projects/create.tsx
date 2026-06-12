@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Button, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { createProject } from '../../../src/services/projectService';
 import { useProjectsStore } from '../../../src/stores/projectsStore';
 import { config } from '../../../src/lib/config';
 import type { ProjectStatus } from '../../../src/types';
 import ClientPicker from '../../../components/ui/ClientPicker';
+import { Input } from '../../../components/ui/Input';
 import { Select } from '../../../components/ui/Select';
 
 const STATUS_OPTIONS: { label: string; value: ProjectStatus }[] = [
@@ -107,33 +108,29 @@ export default function CreateProjectScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <Text style={styles.label}>Project Name</Text>
-      <TextInput
-        style={[styles.input, errors.name && styles.inputError]}
+      <Input
+        label="Project Name"
+        error={errors.name}
         value={name}
         onChangeText={(value) => {
           setName(value);
           clearFieldError('name');
         }}
         placeholder="Enter project name"
-        placeholderTextColor={config.theme.textSecondary}
       />
-      {errors.name ? <Text style={styles.errorText}>{errors.name}</Text> : null}
 
-      <Text style={styles.label}>Client</Text>
-      <View style={errors.clientId && styles.pickerError}>
-        <ClientPicker
-          value={clientId}
-          onChange={(value) => {
-            setClientId(value);
-            clearFieldError('clientId');
-          }}
-        />
-      </View>
-      {errors.clientId ? <Text style={styles.errorText}>{errors.clientId}</Text> : null}
+      <ClientPicker
+        label="Client"
+        value={clientId}
+        onChange={(value) => {
+          setClientId(value);
+          clearFieldError('clientId');
+        }}
+        error={errors.clientId}
+      />
 
-      <Text style={styles.label}>Status</Text>
       <Select
+        label="Status"
         options={STATUS_OPTIONS}
         value={status}
         onValueChange={(value) => setStatus(value as ProjectStatus)}
@@ -141,62 +138,54 @@ export default function CreateProjectScreen() {
         style={styles.selectField}
       />
 
-      <Text style={styles.label}>Start Date</Text>
-      <TextInput
-        style={[styles.input, errors.startDate && styles.inputError]}
+      <Input
+        label="Start Date"
+        error={errors.startDate}
         value={startDate}
         onChangeText={(value) => {
           setStartDate(value);
           clearFieldError('startDate');
         }}
         placeholder="YYYY-MM-DD"
-        placeholderTextColor={config.theme.textSecondary}
         inputMode="numeric"
       />
-      {errors.startDate ? <Text style={styles.errorText}>{errors.startDate}</Text> : null}
 
-      <Text style={styles.label}>End Date</Text>
-      <TextInput
-        style={[styles.input, errors.endDate && styles.inputError]}
+      <Input
+        label="End Date"
+        error={errors.endDate}
         value={endDate}
         onChangeText={(value) => {
           setEndDate(value);
           clearFieldError('endDate');
         }}
         placeholder="YYYY-MM-DD"
-        placeholderTextColor={config.theme.textSecondary}
         inputMode="numeric"
       />
-      {errors.endDate ? <Text style={styles.errorText}>{errors.endDate}</Text> : null}
 
-      <Text style={styles.label}>Contract Value</Text>
-      <TextInput
-        style={[styles.input, errors.contractValue && styles.inputError]}
+      <Input
+        label="Contract Value"
+        error={errors.contractValue}
         value={contractValue}
         onChangeText={(value) => {
           setContractValue(value);
           clearFieldError('contractValue');
         }}
         placeholder="Total payable by client"
-        placeholderTextColor={config.theme.textSecondary}
         keyboardType="numeric"
       />
-      {errors.contractValue ? <Text style={styles.errorText}>{errors.contractValue}</Text> : null}
 
-      <Text style={styles.label}>Budgeted Cost</Text>
-      <TextInput
-        style={[styles.input, errors.budget && styles.inputError]}
+      <Input
+        label="Budgeted Cost"
+        error={errors.budget}
         value={budget}
         onChangeText={(value) => {
           setBudget(value);
           clearFieldError('budget');
         }}
         placeholder="Expected spend to complete"
-        placeholderTextColor={config.theme.textSecondary}
         keyboardType="numeric"
       />
 
-      {errors.budget ? <Text style={styles.errorText}>{errors.budget}</Text> : null}
       {errors.submit ? <Text style={styles.formError}>{errors.submit}</Text> : null}
       {successMessage ? <Text style={styles.successText}>{successMessage}</Text> : null}
       <View style={{ height: 20 }} />
@@ -225,34 +214,6 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     paddingBottom: 32,
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 8,
-    color: config.theme.text,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: config.theme.border,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    color: config.theme.text,
-  },
-  inputError: {
-    borderColor: config.theme.error,
-    marginBottom: 6,
-  },
-  pickerError: {
-    borderWidth: 1,
-    borderColor: config.theme.error,
-    borderRadius: 8,
-    marginBottom: 6,
-  },
-  errorText: {
-    color: config.theme.error,
-    fontSize: 13,
-    marginBottom: 16,
   },
   formError: {
     color: config.theme.error,
