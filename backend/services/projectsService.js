@@ -247,8 +247,8 @@ function normalizeExpensePayload(expenseData = {}, { isUpdate = false } = {}) {
 
   if (!isUpdate || payload.amount !== undefined) {
     const amount = Number(payload.amount);
-    if (!Number.isFinite(amount) || amount < 0) {
-      throw new ValidationError('Expense amount must be a non-negative number');
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new ValidationError('Expense amount must be greater than 0');
     }
     payload.amount = amount;
   }

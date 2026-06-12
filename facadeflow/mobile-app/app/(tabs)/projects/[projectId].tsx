@@ -23,6 +23,7 @@ const EXPENSE_CATEGORY_OPTIONS: { label: string; value: ExpenseCategory }[] = [
   { label: 'Overhead', value: 'overhead' },
   { label: 'Other', value: 'other' },
 ];
+const EXPENSE_AMOUNT_ERROR = 'Amount is required and must be greater than 0.';
 
 export default function ProjectDetailScreen() {
   const router = useRouter();
@@ -129,6 +130,7 @@ function ExpensesTab({ project }: { project: Project }) {
   const [category, setCategory] = React.useState<ExpenseCategory>('materials');
   const [description, setDescription] = React.useState('');
   const [amount, setAmount] = React.useState('');
+  const [amountError, setAmountError] = React.useState('');
   const [vendor, setVendor] = React.useState('');
   const [expenseDate, setExpenseDate] = React.useState(new Date().toISOString().slice(0, 10));
   const [isLoadingExpenses, setIsLoadingExpenses] = React.useState(false);
@@ -136,12 +138,14 @@ function ExpensesTab({ project }: { project: Project }) {
   const financials = getProjectFinancials(project);
   const loadExpenses = React.useCallback(async () => { setIsLoadingExpenses(true); try { setExpenses(await projectsApi.getExpenses(project.id)); } catch (error: any) { Alert.alert('Error', error.response?.data?.error || 'Failed to fetch project expenses'); } finally { setIsLoadingExpenses(false); } }, [project.id]);
   React.useEffect(() => { if (project.expenses) setExpenses(project.expenses); else loadExpenses(); }, [loadExpenses, project.expenses]);
-  const resetForm = () => { setCategory('materials'); setDescription(''); setAmount(''); setVendor(''); setExpenseDate(new Date().toISOString().slice(0, 10)); };
+  const resetForm = () => { setCategory('materials'); setDescription(''); setAmount(''); setAmountError(''); setVendor(''); setExpenseDate(new Date().toISOString().slice(0, 10)); };
   const createExpense = async () => {
-    const parsedAmount = Number(amount);
+    const trimmedAmount = amount.trim();
+    const parsedAmount = Number(trimmedAmount);
     if (!description.trim()) { Alert.alert('Error', 'Expense description is required'); return; }
-    if (!Number.isFinite(parsedAmount) || parsedAmount < 0) { Alert.alert('Error', 'Expense amount must be a non-negative number'); return; }
+    if (!trimmedAmount || !Number.isFinite(parsedAmount) || parsedAmount <= 0) { setAmountError(EXPENSE_AMOUNT_ERROR); return; }
     if (!expenseDate.trim()) { Alert.alert('Error', 'Expense date is required'); return; }
+    setAmountError('');
     setIsSavingExpense(true);
     try { await projectsApi.createExpense(project.id, { category, description: description.trim(), amount: parsedAmount, expense_date: expenseDate.trim(), vendor: vendor.trim() || undefined }); resetForm(); await Promise.all([loadExpenses(), fetchProject(project.id)]); }
     catch (error: any) { Alert.alert('Error', error.response?.data?.error || 'Failed to create project expense'); }
@@ -159,7 +163,7 @@ function ExpensesTab({ project }: { project: Project }) {
       <View style={styles.expenseForm}>
         <Select label="Category" options={EXPENSE_CATEGORY_OPTIONS} value={category} onValueChange={(value) => setCategory(value as ExpenseCategory)} style={styles.expenseField} />
         <Input label="Description" value={description} onChangeText={setDescription} placeholder="e.g. Aluminium profiles" />
-        <Input label="Amount" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="0.00" />
+        <Input label="Amount" value={amount} onChangeText={(value) => { setAmount(value); if (amountError) setAmountError(''); }} keyboardType="decimal-pad" placeholder="0.00" error={amountError} />
         <Input label="Vendor" value={vendor} onChangeText={setVendor} placeholder="Optional" />
         <Input label="Expense Date" value={expenseDate} onChangeText={setExpenseDate} placeholder="YYYY-MM-DD" />
         <Button title="Add Expense" variant="primary" loading={isSavingExpense} onPress={createExpense} fullWidth />

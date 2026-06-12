@@ -58,6 +58,8 @@ includesAll('project flow', projectFlow, [
   'projectsApi.delete',
   'projectsApi.createExpense',
   'projectsApi.deleteExpense',
+  'EXPENSE_AMOUNT_ERROR',
+  'Amount is required and must be greater than 0.',
   'Create Project',
   'Project name is required.',
   'Client is required.',
