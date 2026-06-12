@@ -22,8 +22,8 @@ export function DemoPage({
   const isWide = width >= 900;
   return (
     <View style={[styles.screen, isWide && styles.wideScreen, style]}>
-      <View style={styles.heroGlow} />
-      <View style={styles.heroGlowSecondary} />
+      <View style={[styles.heroGlow, isWide && styles.heroGlowWide]} />
+      <View style={[styles.heroGlowSecondary, isWide && styles.heroGlowSecondaryWide]} />
       <View style={[styles.header, isWide && styles.headerWide]}>
         <View style={styles.brandRow}>
           <FacadeFlowMark />
@@ -60,8 +60,10 @@ export function MoneyText({ value, color }: { value: string; color?: string }) {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: config.theme.background, position: 'relative' },
   wideScreen: { alignItems: 'center' },
-  heroGlow: { position: 'absolute', top: -170, right: -70, width: 340, height: 340, borderRadius: 170, backgroundColor: 'rgba(94,106,210,0.20)', opacity: Platform.OS === 'web' ? 1 : 0.75 },
-  heroGlowSecondary: { position: 'absolute', top: 130, left: -130, width: 260, height: 260, borderRadius: 130, backgroundColor: 'rgba(16,185,129,0.08)' },
+  heroGlow: { position: 'absolute', top: -170, right: 0, width: 340, height: 340, borderRadius: 170, backgroundColor: 'rgba(94,106,210,0.20)', opacity: Platform.OS === 'web' ? 1 : 0.75 },
+  heroGlowWide: { right: -70 },
+  heroGlowSecondary: { position: 'absolute', top: 130, left: 0, width: 260, height: 260, borderRadius: 130, backgroundColor: 'rgba(16,185,129,0.08)' },
+  heroGlowSecondaryWide: { left: -130 },
   header: { paddingHorizontal: 18, paddingTop: 20, paddingBottom: 10, gap: 18 },
   headerWide: { width: '100%', maxWidth: 1180, paddingTop: 34, paddingHorizontal: 24 },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },

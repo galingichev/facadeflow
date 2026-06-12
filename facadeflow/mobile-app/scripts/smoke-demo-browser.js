@@ -60,6 +60,79 @@ async function waitForDashboard(page) {
   await page.getByText('Revenue pipeline', { exact: true }).waitFor({ timeout: 10000 });
 }
 
+async function assertNoDashboardMobileOverflow(page, width) {
+  await page.setViewportSize({ width, height: 844 });
+  await page.goto(buildUrl('/'), { waitUntil: 'domcontentloaded', timeout: 45000 });
+  await waitForDashboard(page);
+
+  const overflow = await page.evaluate(() => {
+    const viewportWidth = document.documentElement.clientWidth;
+    const documentWidth = Math.max(
+      document.documentElement.scrollWidth,
+      document.body?.scrollWidth || 0
+    );
+    const targets = [
+      'Client demo storyline',
+      'Show the owner how a job moves from quote to expenses to profit report.',
+      'Report preview',
+      'FacadeFlow Project Report',
+      'Notes / next action: verify latest site costs',
+    ];
+
+    const findSmallestTextElement = (text) => {
+      const matches = Array.from(document.querySelectorAll('body *')).filter((element) => (
+        element.textContent?.includes(text)
+      ));
+      return matches.find((element) => !Array.from(element.children).some((child) => child.textContent?.includes(text))) || null;
+    };
+
+    const offenders = [];
+    for (const text of targets) {
+      let element = findSmallestTextElement(text);
+      let depth = 0;
+      while (element && depth < 7 && element !== document.body) {
+        const rect = element.getBoundingClientRect();
+        const overflowRight = rect.right - viewportWidth;
+        const hasScrollOverflow = element.scrollWidth - element.clientWidth > 1;
+        const escapesViewport = rect.left < -1 || overflowRight > 1;
+
+        if (hasScrollOverflow || escapesViewport) {
+          offenders.push({
+            text,
+            tag: element.tagName.toLowerCase(),
+            className: String(element.getAttribute('class') || ''),
+            clientWidth: element.clientWidth,
+            scrollWidth: element.scrollWidth,
+            left: Math.round(rect.left),
+            right: Math.round(rect.right),
+            viewportWidth,
+          });
+        }
+
+        element = element.parentElement;
+        depth += 1;
+      }
+    }
+
+    return {
+      viewportWidth,
+      documentWidth,
+      documentOverflow: documentWidth - viewportWidth,
+      offenders,
+    };
+  });
+
+  assert(
+    overflow.documentOverflow <= 1,
+    `Dashboard document overflows horizontally at ${width}px: ${JSON.stringify(overflow, null, 2)}`
+  );
+  assert.equal(
+    overflow.offenders.length,
+    0,
+    `Dashboard storyline/report content overflows horizontally at ${width}px: ${JSON.stringify(overflow.offenders, null, 2)}`
+  );
+}
+
 async function chooseCurrency(page, code) {
   await page.getByLabel(/Choose currency|Избор на валута/).click();
   await page.getByLabel(new RegExp(`^${code}\\b`)).click();
@@ -129,6 +202,15 @@ async function main() {
     assert(text.includes('Profit Snapshot'), 'Dashboard Profit Snapshot is missing');
     assert(text.includes('Revenue pipeline'), 'Dashboard money row is missing');
     assert(text.includes('USD') || text.includes('$'), 'USD formatting is not visible');
+
+    for (const width of [360, 390, 430]) {
+      await assertNoDashboardMobileOverflow(page, width);
+    }
+    console.log('Dashboard mobile overflow checks passed: 360px, 390px, 430px');
+
+    await page.setViewportSize({ width: 1366, height: 900 });
+    await page.goto(buildUrl('/'), { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await waitForDashboard(page);
 
     const usdText = text;
     await chooseCurrency(page, 'EUR');

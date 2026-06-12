@@ -92,7 +92,13 @@ export default function DashboardScreen() {
         rightSlot={<View style={styles.headerActions}><LanguageSelector /><CurrencySelector /><Button title="New Project" icon="add" onPress={() => router.push('/projects/create' as any)} /><Button title="View Projects" variant="outline" icon="business-center" onPress={() => router.push('/projects' as any)} /></View>}
       >
         <Card style={styles.introPanel} padding="large">
-          <View style={styles.introLogo}><FacadeFlowMark size={46} /><View><Text style={styles.introTitle}>{t('Client demo storyline')}</Text><Text style={styles.muted}>{t('Show the owner how a job moves from quote to expenses to profit report.')}</Text></View></View>
+          <View style={styles.introLogo}>
+            <FacadeFlowMark size={46} />
+            <View style={styles.introCopy}>
+              <Text style={styles.introTitle}>{t('Client demo storyline')}</Text>
+              <Text style={styles.muted}>{t('Show the owner how a job moves from quote to expenses to profit report.')}</Text>
+            </View>
+          </View>
           <View style={styles.storySteps}>
             {['Client and project created', 'Budget and contract recorded', 'Expenses tracked by category', 'At-risk jobs highlighted', 'One-page profit report preview'].map((item, index) => (
               <View key={item} style={styles.storyStep}><Text style={styles.storyNumber}>{index + 1}</Text><Text style={styles.storyText}>{t(item)}</Text></View>
@@ -163,7 +169,13 @@ export default function DashboardScreen() {
           <Card style={styles.workflowCard} padding="large">
             <SectionTitle title="Report preview" subtitle="Client-facing snapshot with the next financial action." />
             <View style={styles.reportPreview}>
-              <View style={styles.reportHeader}><FacadeFlowMark size={30} /><View><Text style={styles.reportTitle}>{t('FacadeFlow Project Report')}</Text><Text style={styles.reportSub}>{primaryReportProject?.name || t('Demo portfolio')} • {primaryReportProject?.client?.name || t('Demo client')}</Text></View></View>
+              <View style={styles.reportHeader}>
+                <FacadeFlowMark size={30} />
+                <View style={styles.reportHeaderCopy}>
+                  <Text style={styles.reportTitle}>{t('FacadeFlow Project Report')}</Text>
+                  <Text style={styles.reportSub}>{primaryReportProject?.name || t('Demo portfolio')} • {primaryReportProject?.client?.name || t('Demo client')}</Text>
+                </View>
+              </View>
               <FinanceRow label={t('Contract value')} value={formatCurrency(primaryReportProject?.financials?.contract_value ?? primaryReportProject?.contract_value ?? summary?.total_contract_value ?? 0)} />
               <FinanceRow label={t('Budgeted cost')} value={formatCurrency(primaryReportProject?.financials?.budgeted_cost ?? primaryReportProject?.budget ?? summary?.total_budgeted_cost ?? 0)} />
               <FinanceRow label={t('Actual cost')} value={formatCurrency(primaryReportProject?.financials?.actual_cost ?? summary?.total_actual_cost ?? 0)} />
@@ -252,8 +264,9 @@ const styles = StyleSheet.create({
   centerCard: { minHeight: 220, alignItems: 'center', justifyContent: 'center' },
   headerActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   introPanel: { gap: 18, backgroundColor: 'rgba(94,106,210,0.11)' },
-  introLogo: { flexDirection: 'row', alignItems: 'center', gap: 14, flexWrap: 'wrap' },
-  introTitle: { color: config.theme.text, fontSize: 20, fontWeight: '800' },
+  introLogo: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  introCopy: { flex: 1, minWidth: 0, gap: 2 },
+  introTitle: { color: config.theme.text, fontSize: 20, fontWeight: '800', flexShrink: 1 },
   storySteps: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   storyStep: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: config.theme.border, backgroundColor: 'rgba(255,255,255,0.035)', borderRadius: 999, paddingVertical: 8, paddingHorizontal: 11 },
   storyNumber: { color: '#fff', backgroundColor: config.theme.primary, borderRadius: 999, width: 22, height: 22, textAlign: 'center', lineHeight: 22, fontWeight: '800', fontSize: 12 },
@@ -270,7 +283,7 @@ const styles = StyleSheet.create({
   briefingGridWide: { flexDirection: 'row', flexWrap: 'wrap' },
   briefingItem: { flex: 1, minWidth: 210, flexDirection: 'row', gap: 12, borderWidth: 1, borderColor: config.theme.borderSubtle, backgroundColor: 'rgba(255,255,255,0.025)', borderRadius: 16, padding: 13 },
   briefingIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  briefingText: { flex: 1, gap: 3 },
+  briefingText: { flex: 1, minWidth: 0, gap: 3 },
   briefingTitle: { color: config.theme.text, fontSize: 14, fontWeight: '900' },
   briefingCopy: { color: config.theme.textSecondary, fontSize: 13, lineHeight: 18 },
   mainGrid: { gap: 14 },
@@ -282,22 +295,23 @@ const styles = StyleSheet.create({
   marginValue: { color: config.theme.text, fontSize: 46, lineHeight: 52, fontWeight: '800', letterSpacing: -1.6, marginTop: 6 },
   financeRows: { gap: 12 },
   financeRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 16, borderBottomWidth: 1, borderBottomColor: config.theme.borderSubtle, paddingBottom: 10 },
-  financeLabel: { color: config.theme.textSecondary, fontSize: 14 },
-  financeValue: { color: config.theme.text, fontSize: 14, fontWeight: '800' },
+  financeLabel: { color: config.theme.textSecondary, fontSize: 14, flex: 1, minWidth: 0 },
+  financeValue: { color: config.theme.text, fontSize: 14, fontWeight: '800', flexShrink: 1, textAlign: 'right' },
   safeState: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 14, backgroundColor: 'rgba(16,185,129,0.09)', borderWidth: 1, borderColor: 'rgba(16,185,129,0.25)' },
   riskRow: { gap: 8, borderWidth: 1, borderColor: config.theme.borderSubtle, borderRadius: 16, padding: 13, backgroundColor: 'rgba(255,255,255,0.025)' },
   riskName: { color: config.theme.text, fontSize: 15, fontWeight: '800' },
   riskReason: { color: config.theme.textSecondary, fontSize: 13, lineHeight: 18 },
   expenseRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: config.theme.borderSubtle },
   expenseIcon: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(245,158,11,0.12)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.25)' },
-  expenseText: { flex: 1, gap: 2 },
+  expenseText: { flex: 1, minWidth: 0, gap: 2 },
   expenseTitle: { color: config.theme.text, fontSize: 14, fontWeight: '800' },
   expenseMeta: { color: config.theme.textMuted, fontSize: 12 },
   expenseAmount: { color: config.theme.warning, fontSize: 14, fontWeight: '800' },
   reportPreview: { gap: 12, padding: 16, backgroundColor: '#f8fafc', borderRadius: 16 },
   reportHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
-  reportTitle: { color: '#111827', fontSize: 17, fontWeight: '900' },
-  reportSub: { color: '#64748b', fontSize: 12, fontWeight: '700' },
+  reportHeaderCopy: { flex: 1, minWidth: 0, gap: 2 },
+  reportTitle: { color: '#111827', fontSize: 17, fontWeight: '900', flexShrink: 1 },
+  reportSub: { color: '#64748b', fontSize: 12, fontWeight: '700', lineHeight: 17, flexShrink: 1 },
   reportFooter: { marginTop: 4, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#e5e7eb' },
   reportFooterText: { color: '#64748b', fontSize: 11, fontWeight: '700' },
   projectGrid: { gap: 12 },
@@ -314,7 +328,7 @@ const styles = StyleSheet.create({
   smallLabel: { color: config.theme.textMuted, fontSize: 12 },
   smallValue: { color: config.theme.text, fontSize: 13, fontWeight: '800' },
   actionPanel: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 16, alignItems: 'center', backgroundColor: 'rgba(94,106,210,0.12)' },
-  actionText: { flex: 1, minWidth: 240, gap: 4 },
+  actionText: { flex: 1, minWidth: 0, gap: 4 },
   actionTitle: { color: config.theme.text, fontSize: 20, fontWeight: '800' },
   actionButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   muted: { color: config.theme.textSecondary, fontSize: 14, lineHeight: 20 },
