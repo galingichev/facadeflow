@@ -5,6 +5,8 @@ const API_BASE_URL = process.env.API_BASE_URL || 'http://127.0.0.1:3000/api';
 const PREFIX = process.env.CLIENT_DEMO_PREFIX || 'Client Demo:';
 const ROOT_DIR = path.resolve(__dirname, '../../..');
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const INTERNAL_ARTIFACT_PATTERN = /\b(QA|Everest|test)\b/i;
+const BLANK_AMOUNT_PATTERN = /blank\s+amount/i;
 
 const EXPECTED = {
   clients: 3,
@@ -125,6 +127,63 @@ async function cleanupExisting() {
   }
 }
 
+function isInternalArtifactText(value) {
+  return typeof value === 'string' && INTERNAL_ARTIFACT_PATTERN.test(value);
+}
+
+function isInternalArtifactClient(client) {
+  return [client.name, client.email, client.phone, client.company, client.notes].some(isInternalArtifactText);
+}
+
+function isInternalArtifactProject(project) {
+  return [project.name, project.description, project.client?.name, project.client?.email].some(isInternalArtifactText);
+}
+
+function isInternalArtifactExpense(expense) {
+  return [expense.description, expense.vendor, expense.category].some(isInternalArtifactText)
+    || (BLANK_AMOUNT_PATTERN.test(expense.description || '') && Number(expense.amount || 0) <= 0);
+}
+
+async function cleanupInternalArtifacts() {
+  const existingProjects = (await api('/projects')).body.data || [];
+  const removed = {
+    expenses: [],
+    projects: [],
+    clients: [],
+  };
+
+  for (const project of existingProjects) {
+    const expenses = (await api(`/projects/${project.id}/expenses`)).body.data || [];
+    for (const expense of expenses) {
+      if (!isInternalArtifactExpense(expense)) continue;
+      await api(`/projects/${project.id}/expenses/${expense.id}`, { method: 'DELETE' });
+      removed.expenses.push({
+        id: expense.id,
+        project: project.name,
+        description: expense.description,
+        amount: Number(expense.amount || 0),
+      });
+    }
+  }
+
+  for (const project of existingProjects) {
+    if (!isInternalArtifactProject(project)) continue;
+    await api(`/projects/${project.id}`, { method: 'DELETE' });
+    removed.projects.push({ id: project.id, name: project.name });
+  }
+
+  const existingClients = (await api('/clients')).body.data || [];
+  for (const client of existingClients) {
+    if (!isInternalArtifactClient(client)) continue;
+    await api(`/clients/${client.id}`, { method: 'DELETE' });
+    removed.clients.push({ id: client.id, name: client.name });
+  }
+
+  console.log('Removed internal demo artifacts:');
+  console.log(JSON.stringify(removed, null, 2));
+  return removed;
+}
+
 async function verifyDemoData(projectIds) {
   const [allClients, allProjects, summary] = await Promise.all([
     api('/clients'),
@@ -134,13 +193,19 @@ async function verifyDemoData(projectIds) {
 
   const demoClients = (allClients.body.data || []).filter((client) => client.name?.startsWith(PREFIX));
   const demoProjects = (allProjects.body.data || []).filter((project) => project.name?.startsWith(PREFIX));
-  const expenseLists = await Promise.all(
+  const allProjectIds = (allProjects.body.data || []).map((project) => project.id);
+  const allExpenseLists = await Promise.all(allProjectIds.map((projectId) => api(`/projects/${projectId}/expenses`)));
+  const allExpenses = allExpenseLists.flatMap((result) => result.body.data || []);
+  const demoExpenseLists = await Promise.all(
     [...projectIds.values()].map((projectId) => api(`/projects/${projectId}/expenses`))
   );
-  const demoExpenses = expenseLists.flatMap((result) => result.body.data || []);
+  const demoExpenses = demoExpenseLists.flatMap((result) => result.body.data || []);
   const demoContractValue = demoProjects.reduce((sum, project) => sum + Number(project.contract_value || 0), 0);
   const demoActualCost = demoExpenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
   const demoActualProfit = demoContractValue - demoActualCost;
+  const forbiddenClients = (allClients.body.data || []).filter(isInternalArtifactClient);
+  const forbiddenProjects = (allProjects.body.data || []).filter(isInternalArtifactProject);
+  const forbiddenExpenses = allExpenses.filter(isInternalArtifactExpense);
 
   const checks = [
     ['demo clients', demoClients.length, EXPECTED.clients],
@@ -155,6 +220,14 @@ async function verifyDemoData(projectIds) {
     if (actual !== expected) {
       throw new Error(`${label} expected ${expected}, got ${actual}`);
     }
+  }
+
+  if (forbiddenClients.length || forbiddenProjects.length || forbiddenExpenses.length) {
+    throw new Error(`Internal demo artifacts still present: ${JSON.stringify({
+      clients: forbiddenClients.map((client) => ({ id: client.id, name: client.name })),
+      projects: forbiddenProjects.map((project) => ({ id: project.id, name: project.name })),
+      expenses: forbiddenExpenses.map((expense) => ({ id: expense.id, description: expense.description, amount: expense.amount })),
+    }, null, 2)}`);
   }
 
   const dashboard = summary.body.data || {};
@@ -183,6 +256,7 @@ async function verifyDemoData(projectIds) {
 async function main() {
   assertOwnerConfigured();
   await runStep('API health check', () => api('/system/health'));
+  await runStep('Clean internal QA/test demo artifacts', cleanupInternalArtifacts);
   await runStep('Clean existing Client Demo records', cleanupExisting);
 
   const clientIds = new Map();
