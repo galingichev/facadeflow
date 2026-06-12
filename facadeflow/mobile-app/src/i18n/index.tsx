@@ -245,7 +245,7 @@ const translations: Record<AppLanguage, Record<string, string>> = {
     'Delete Expense': 'Изтрий разход',
     'Delete this expense?': 'Да се изтрие ли този разход?',
     'Expense description is required': 'Описание на разхода е задължително',
-    'Expense amount must be a non-negative number': 'Сумата трябва да е неотрицателно число',
+    'Amount is required and must be greater than 0.': 'Сумата е задължителна и трябва да е по-голяма от 0.',
     'Expense date is required': 'Дата на разхода е задължителна',
     'Failed to fetch project expenses': 'Неуспешно зареждане на разходите',
     'Failed to create project expense': 'Неуспешно създаване на разход',

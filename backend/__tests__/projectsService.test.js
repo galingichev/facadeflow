@@ -102,4 +102,54 @@ describe('projectsService', () => {
       actual_profit: 28000,
     });
   });
+
+  test.each([
+    ['blank string', ''],
+    ['whitespace string', '   '],
+    ['invalid text', 'not-a-number'],
+    ['zero', 0],
+    ['negative', -25],
+  ])('createProjectExpense rejects %s amount before inserting', async (_label, amount) => {
+    const projectsService = require('../services/projectsService');
+
+    await expect(projectsService.createProjectExpense('project-1', {
+      category: 'materials',
+      description: 'Aluminium profiles',
+      amount,
+    })).rejects.toMatchObject({
+      name: 'ValidationError',
+      statusCode: 400,
+      message: 'Expense amount must be greater than 0',
+    });
+
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+
+  test('createProjectExpense accepts a positive amount', async () => {
+    const expense = {
+      id: 'expense-1',
+      project_id: 'project-1',
+      category: 'materials',
+      description: 'Aluminium profiles',
+      amount: 125.5,
+    };
+    const query = createQuery(expense);
+    mockFrom.mockReturnValue(query);
+
+    const projectsService = require('../services/projectsService');
+    const result = await projectsService.createProjectExpense('project-1', {
+      category: 'materials',
+      description: '  Aluminium profiles  ',
+      amount: '125.50',
+    }, { userId: '11111111-1111-4111-8111-111111111111' });
+
+    expect(result).toEqual(expense);
+    expect(query.insert).toHaveBeenCalledWith({
+      category: 'materials',
+      description: 'Aluminium profiles',
+      amount: 125.5,
+      project_id: 'project-1',
+      created_by: '11111111-1111-4111-8111-111111111111',
+    });
+  });
 });
