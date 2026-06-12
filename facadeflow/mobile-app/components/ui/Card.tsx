@@ -47,6 +47,7 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 18,
     overflow: 'hidden',
+    minWidth: 0,
   },
   elevation: {
     ...platformShadow({ offsetY: 18, opacity: 0.32, radius: 36, elevation: 6 }),
