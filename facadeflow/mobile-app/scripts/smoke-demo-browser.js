@@ -11,6 +11,8 @@ const BENIGN_CONSOLE_PATTERNS = [
   /shadow\* style props are deprecated/i,
   /TouchableWithoutFeedback is deprecated/i,
 ];
+const INTERNAL_ARTIFACT_PATTERN = /\b(QA|Everest|test)\b/i;
+const BLANK_EXPENSE_PATTERN = /blank\s+amount/i;
 
 function normalizeBaseUrl(value) {
   return String(value).replace(/\/+$/, '');
@@ -58,6 +60,17 @@ async function getBodyText(page) {
 async function waitForDashboard(page) {
   await page.getByText('Profit Snapshot', { exact: true }).waitFor({ timeout: 30000 });
   await page.getByText('Revenue pipeline', { exact: true }).waitFor({ timeout: 10000 });
+}
+
+function assertNoInternalArtifacts(text, context) {
+  assert(
+    !INTERNAL_ARTIFACT_PATTERN.test(text),
+    `${context} includes internal QA/test/Everest artifact text`
+  );
+  assert(
+    !BLANK_EXPENSE_PATTERN.test(text),
+    `${context} includes stale blank-amount expense artifact text`
+  );
 }
 
 async function assertNoDashboardMobileOverflow(page, width) {
@@ -180,6 +193,16 @@ async function main() {
   assert(projects.length > 0, 'No projects returned from API; seed demo data before running browser smoke');
   const projectId = projects[0].id;
   assert(projectId, 'First API project has no id');
+  assertNoInternalArtifacts(JSON.stringify(projects), 'Projects API response');
+
+  const expenseResponses = await Promise.all(
+    projects.map((project) => fetchJson(`/api/projects/${project.id}/expenses`))
+  );
+  assertNoInternalArtifacts(JSON.stringify(expenseResponses), 'Project expenses API responses');
+  const zeroBlankExpenses = expenseResponses.flatMap((response) => response.data || []).filter((expense) => (
+    BLANK_EXPENSE_PATTERN.test(expense.description || '') && Number(expense.amount || 0) <= 0
+  ));
+  assert.equal(zeroBlankExpenses.length, 0, 'Stale $0.00 blank-amount expense artifacts are still present');
 
   const browser = await chromium.launch({
     headless: true,
@@ -187,7 +210,10 @@ async function main() {
     args: ['--no-sandbox'],
   });
 
-  const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
+  const context = await browser.newContext({
+    viewport: { width: 1366, height: 900 },
+    extraHTTPHeaders: { 'ngrok-skip-browser-warning': 'true' },
+  });
   await context.addInitScript((keys) => {
     for (const key of keys) {
       globalThis.localStorage?.removeItem(key);
@@ -228,6 +254,7 @@ async function main() {
     assert(text.includes('Profit Snapshot'), 'Dashboard Profit Snapshot is missing');
     assert(text.includes('Revenue pipeline'), 'Dashboard money row is missing');
     assert(text.includes('USD') || text.includes('$'), 'USD formatting is not visible');
+    assertNoInternalArtifacts(text, 'Dashboard');
 
     for (const width of [360, 390, 430]) {
       await assertNoDashboardMobileOverflow(page, width);
