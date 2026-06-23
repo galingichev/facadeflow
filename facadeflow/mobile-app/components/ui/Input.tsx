@@ -9,6 +9,7 @@ import {
   TextStyle,
 } from 'react-native';
 import { config } from '../../src/lib/config';
+import { useI18n } from '../../src/i18n';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -22,24 +23,29 @@ interface InputProps extends TextInputProps {
 
 export const Input = forwardRef<TextInput, InputProps>(
   ({ label, error, helper, containerStyle, inputStyle, leftIcon, rightIcon, ...rest }, ref) => {
+    const { t } = useI18n();
     const inputId = React.useId();
     const hasError = Boolean(error);
     const hasHelper = Boolean(helper);
     const labelId = label ? `${inputId}-label` : undefined;
     const descriptionId = hasError || hasHelper ? `${inputId}-description` : undefined;
+    const translatedLabel = label ? t(label) : undefined;
+    const translatedError = error ? t(error) : undefined;
+    const translatedHelper = helper ? t(helper) : undefined;
+    const translatedPlaceholder = typeof rest.placeholder === 'string' ? t(rest.placeholder) : rest.placeholder;
 
     // Build accessibility label from label + error/helper
     const a11yLabel = React.useMemo(() => {
       const parts: string[] = [];
-      if (label) parts.push(label);
-      if (error) parts.push(`Error: ${error}`);
-      else if (helper) parts.push(helper);
+      if (translatedLabel) parts.push(translatedLabel);
+      if (translatedError) parts.push(`${t('Error')}: ${translatedError}`);
+      else if (translatedHelper) parts.push(translatedHelper);
       return parts.join('. ');
-    }, [label, error, helper]);
+    }, [t, translatedLabel, translatedError, translatedHelper]);
 
     return (
       <View style={[styles.container, containerStyle]}>
-        {label && <Text nativeID={labelId} style={styles.label}>{label}</Text>}
+        {translatedLabel && <Text nativeID={labelId} style={styles.label}>{translatedLabel}</Text>}
         <View
           style={[
             styles.inputContainer,
@@ -66,11 +72,12 @@ export const Input = forwardRef<TextInput, InputProps>(
             accessibilityRole="text"
             accessibilityState={{ disabled: rest.editable === false }}
             {...rest}
+            placeholder={translatedPlaceholder}
           />
           {rightIcon && <View style={styles.iconRight}>{rightIcon}</View>}
         </View>
-        {hasError ? <Text nativeID={descriptionId} style={styles.error}>{error}</Text> : null}
-        {hasHelper && !hasError ? <Text nativeID={descriptionId} style={styles.helper}>{helper}</Text> : null}
+        {hasError ? <Text nativeID={descriptionId} style={styles.error}>{translatedError}</Text> : null}
+        {hasHelper && !hasError ? <Text nativeID={descriptionId} style={styles.helper}>{translatedHelper}</Text> : null}
       </View>
     );
   }

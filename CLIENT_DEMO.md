@@ -24,11 +24,19 @@ To expose the demo through another host or tunnel, set:
 FACADEFLOW_DEMO_URL=http://your-demo-host:8081 bash scripts/start-demo.sh
 ```
 
-If demo data is missing or messy, reseed from the mobile app folder:
+Before every client demo, reset the demo dataset from the repository root:
+
+```bash
+API_BASE_URL=http://127.0.0.1:3000/api npm run demo:reset
+```
+
+This command is safe to rerun. It removes obvious internal QA/test artifacts (`QA`, `Everest`, `test`, and stale blank-amount expense checks), clears existing `Client Demo:` records, and restores the canonical client-demo clients, projects, and expenses.
+
+Equivalent mobile-app command:
 
 ```bash
 cd facadeflow/mobile-app
-API_BASE_URL=http://127.0.0.1:3000/api npm run seed:client-demo
+API_BASE_URL=http://127.0.0.1:3000/api npm run demo:reset
 ```
 
 ## 3-minute client talk track

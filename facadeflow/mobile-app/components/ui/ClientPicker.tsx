@@ -11,6 +11,7 @@ import {
 import { getClients } from '../../src/services/clientService';
 import { config } from '../../src/lib/config';
 import type { Client } from '../../src/types';
+import { useI18n } from '../../src/i18n';
 
 type ClientPickerProps = {
   value: string;
@@ -20,10 +21,13 @@ type ClientPickerProps = {
 };
 
 export default function ClientPicker({ value, onChange, label, error }: ClientPickerProps) {
+  const { t } = useI18n();
   const pickerId = React.useId();
   const hasError = Boolean(error);
   const labelId = label ? `${pickerId}-label` : undefined;
   const errorId = hasError ? `${pickerId}-error` : undefined;
+  const translatedLabel = label ? t(label) : undefined;
+  const translatedError = error ? t(error) : undefined;
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -49,21 +53,21 @@ export default function ClientPicker({ value, onChange, label, error }: ClientPi
 
   return (
     <View>
-      {label ? <Text nativeID={labelId} style={styles.label}>{label}</Text> : null}
+      {translatedLabel ? <Text nativeID={labelId} style={styles.label}>{translatedLabel}</Text> : null}
       <TouchableOpacity
         style={[styles.trigger, hasError && styles.triggerError]}
         onPress={() => setModalVisible(true)}
         accessibilityRole="combobox"
-        accessibilityLabel={label}
+        accessibilityLabel={translatedLabel}
         aria-labelledby={labelId}
         aria-describedby={errorId}
         accessibilityState={{ expanded: modalVisible }}
       >
         <Text style={styles.triggerText}>
-          {selectedClient ? selectedClient.name : 'Select a client'}
+          {selectedClient ? selectedClient.name : t('Select a client')}
         </Text>
       </TouchableOpacity>
-      {hasError ? <Text nativeID={errorId} style={styles.error}>{error}</Text> : null}
+      {hasError ? <Text nativeID={errorId} style={styles.error}>{translatedError}</Text> : null}
 
       <Modal
         visible={modalVisible}
@@ -97,7 +101,7 @@ export default function ClientPicker({ value, onChange, label, error }: ClientPi
                   </TouchableOpacity>
                 )}
                 ListEmptyComponent={
-                  <Text style={styles.empty}>No clients found</Text>
+                  <Text style={styles.empty}>{t('No clients found')}</Text>
                 }
               />
             )}
@@ -105,7 +109,7 @@ export default function ClientPicker({ value, onChange, label, error }: ClientPi
               style={styles.cancel}
               onPress={() => setModalVisible(false)}
             >
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={styles.cancelText}>{t('Cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform, useWindowDimensions, TextInput } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { config } from '../../../src/lib/config';
@@ -12,6 +12,7 @@ import { projectsApi } from '../../../src/api/endpoints';
 import { DemoPage, FacadeFlowMark, SectionTitle, StatusPill } from '../../../components/ui/DemoShell';
 import type { ExpenseCategory, Project, ProjectExpense, ProjectFinancials } from '../../../src/types';
 import { formatCurrency, formatDate, getProjectStatusLabel } from '../../../src/utils';
+import { useI18n } from '../../../src/i18n';
 
 const EXPENSE_CATEGORY_OPTIONS: { label: string; value: ExpenseCategory }[] = [
   { label: 'Materials', value: 'materials' },
@@ -27,6 +28,7 @@ const EXPENSE_AMOUNT_ERROR = 'Amount is required and must be greater than 0.';
 
 export default function ProjectDetailScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const { projectId } = useLocalSearchParams<{ projectId: string }>();
   const { currentProject, fetchProject, isLoading } = useProjectsStore();
   const { width } = useWindowDimensions();
@@ -42,17 +44,17 @@ export default function ProjectDetailScreen() {
   }
 
   if (!project) {
-    return <View style={styles.notFoundContainer}><MaterialIcons name="error-outline" size={48} color={config.theme.textSecondary} /><Text style={styles.notFoundTitle}>Project not found</Text><Text style={styles.notFoundText}>This project may have been deleted or is no longer available.</Text><Button title="Back to Projects" onPress={() => router.replace('/projects' as any)} /></View>;
+    return <View style={styles.notFoundContainer}><MaterialIcons name="error-outline" size={48} color={config.theme.textSecondary} /><Text style={styles.notFoundTitle}>{t('Project not found')}</Text><Text style={styles.notFoundText}>{t('This project may have been deleted or is no longer available.')}</Text><Button title="Back to Projects" onPress={() => router.replace('/projects' as any)} /></View>;
   }
 
   const deleteProject = async () => {
     const deleted = await useProjectsStore.getState().deleteProject(project.id);
     if (deleted) router.replace('/projects' as any);
-    else Alert.alert('Error', 'Failed to delete project');
+    else Alert.alert(t('Error'), t('Failed to delete project'));
   };
   const confirmDeleteProject = () => {
-    if (Platform.OS === 'web') { if (window.confirm('Are you sure you want to delete this project?')) deleteProject(); return; }
-    Alert.alert('Delete Project', 'Are you sure you want to delete this project?', [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: deleteProject }]);
+    if (Platform.OS === 'web') { if (window.confirm(t('Are you sure you want to delete this project?'))) deleteProject(); return; }
+    Alert.alert(t('Delete Project'), t('Are you sure you want to delete this project?'), [{ text: t('Cancel'), style: 'cancel' }, { text: t('Delete'), style: 'destructive', onPress: deleteProject }]);
   };
   const tabs = [
     { id: 'overview', label: 'Overview', icon: 'dashboard' },
@@ -70,12 +72,12 @@ export default function ProjectDetailScreen() {
             <View style={styles.titleBlock}>
               <StatusPill label={getProjectStatusLabel(project.status)} tone={statusTone(project.status)} />
               <Text style={styles.title}>{project.name}</Text>
-              <View style={styles.clientRow}><MaterialIcons name="person" size={16} color={config.theme.textSecondary} /><Text style={styles.clientName}>{project.client?.name || 'No client'}</Text></View>
+              <View style={styles.clientRow}><MaterialIcons name="person" size={16} color={config.theme.textSecondary} /><Text style={styles.clientName}>{project.client?.name || t('No client')}</Text></View>
               {formattedAddress ? <View style={styles.clientRow}><MaterialIcons name="location-on" size={16} color={config.theme.textSecondary} /><Text style={styles.address}>{formattedAddress}</Text></View> : null}
             </View>
             <View style={styles.headerActions}>
               <Button title="Edit" variant="outline" icon="edit" onPress={() => router.push(`/projects/${project.id}/edit` as any)} />
-              <TouchableOpacity style={styles.deleteButton} onPress={confirmDeleteProject} accessibilityRole="button" accessibilityLabel={`Delete ${project.name}`}><MaterialIcons name="delete" size={20} color={config.theme.error} /></TouchableOpacity>
+              <TouchableOpacity style={styles.deleteButton} onPress={confirmDeleteProject} accessibilityRole="button" accessibilityLabel={`${t('Delete')} ${project.name}`}><MaterialIcons name="delete" size={20} color={config.theme.error} /></TouchableOpacity>
             </View>
           </View>
           <View style={styles.kpiGrid}>
@@ -86,7 +88,7 @@ export default function ProjectDetailScreen() {
           </View>
         </Card>
 
-        <View style={styles.tabBar}>{tabs.map((tab) => <TouchableOpacity key={tab.id} style={[styles.tab, activeTab === tab.id && styles.tabActive]} onPress={() => setActiveTab(tab.id)}><MaterialIcons name={tab.icon as any} size={19} color={activeTab === tab.id ? config.theme.text : config.theme.textSecondary} /><Text style={[styles.tabLabel, activeTab === tab.id && styles.tabLabelActive]}>{tab.label}</Text></TouchableOpacity>)}</View>
+        <View style={styles.tabBar}>{tabs.map((tab) => <TouchableOpacity key={tab.id} style={[styles.tab, activeTab === tab.id && styles.tabActive]} onPress={() => setActiveTab(tab.id)}><MaterialIcons name={tab.icon as any} size={19} color={activeTab === tab.id ? config.theme.text : config.theme.textSecondary} /><Text style={[styles.tabLabel, activeTab === tab.id && styles.tabLabelActive]}>{t(tab.label)}</Text></TouchableOpacity>)}</View>
 
         <Card style={styles.contentCard} padding="large">
           {activeTab === 'overview' && <OverviewTab project={project} />}
@@ -99,6 +101,7 @@ export default function ProjectDetailScreen() {
 }
 
 function OverviewTab({ project }: { project: Project }) {
+  const { t } = useI18n();
   const financials = getProjectFinancials(project);
   const marginText = financials.actual_margin == null ? '—' : `${Math.round(financials.actual_margin * 1000) / 10}%`;
   const variance = financials.cost_variance;
@@ -106,11 +109,11 @@ function OverviewTab({ project }: { project: Project }) {
     <View style={styles.sectionStack}>
       <SectionTitle title="Profit detail view" subtitle="A simple explanation of whether this job is still on plan." />
       <View style={styles.profitPanel}>
-        <View><Text style={styles.panelLabel}>Current margin</Text><Text style={styles.marginValue}>{marginText}</Text></View>
-        <View style={styles.panelCopy}><Text style={styles.panelTitle}>{getProfitStory(financials)}</Text><Text style={styles.muted}>Contract value minus actual expenses. Budget variance updates as expenses are recorded.</Text></View>
+        <View><Text style={styles.panelLabel}>{t('Current margin')}</Text><Text style={styles.marginValue}>{marginText}</Text></View>
+        <View style={styles.panelCopy}><Text style={styles.panelTitle}>{t(getProfitStory(financials))}</Text><Text style={styles.muted}>{t('Contract value minus actual expenses. Budget variance updates as expenses are recorded.')}</Text></View>
       </View>
       <View style={styles.detailGrid}>
-        <Detail label="Client" value={project.client?.name || 'N/A'} />
+        <Detail label="Client" value={project.client?.name || t('N/A')} />
         <Detail label="Status" value={getProjectStatusLabel(project.status)} />
         <Detail label="Start Date" value={project.start_date || '—'} />
         <Detail label="End Date" value={project.end_date || '—'} />
@@ -119,12 +122,13 @@ function OverviewTab({ project }: { project: Project }) {
         <Detail label="Created" value={formatDate(project.created_at, 'long')} />
         <Detail label="Last Updated" value={formatDate(project.updated_at, 'long')} />
       </View>
-      {project.description ? <View style={styles.descriptionBlock}><Text style={styles.detailLabel}>Description</Text><Text style={styles.description}>{project.description}</Text></View> : null}
+      {project.description ? <View style={styles.descriptionBlock}><Text style={styles.detailLabel}>{t('Description')}</Text><Text style={styles.description}>{project.description}</Text></View> : null}
     </View>
   );
 }
 
 function ExpensesTab({ project }: { project: Project }) {
+  const { t } = useI18n();
   const fetchProject = useProjectsStore((state) => state.fetchProject);
   const [expenses, setExpenses] = React.useState<ProjectExpense[]>(project.expenses || []);
   const [category, setCategory] = React.useState<ExpenseCategory>('materials');
@@ -133,28 +137,42 @@ function ExpensesTab({ project }: { project: Project }) {
   const [amountError, setAmountError] = React.useState('');
   const [vendor, setVendor] = React.useState('');
   const [expenseDate, setExpenseDate] = React.useState(new Date().toISOString().slice(0, 10));
+  const [successMessage, setSuccessMessage] = React.useState('');
   const [isLoadingExpenses, setIsLoadingExpenses] = React.useState(false);
   const [isSavingExpense, setIsSavingExpense] = React.useState(false);
+  const descriptionRef = React.useRef<TextInput>(null);
+  const amountRef = React.useRef<TextInput>(null);
+  const vendorRef = React.useRef<TextInput>(null);
+  const expenseDateRef = React.useRef<TextInput>(null);
   const financials = getProjectFinancials(project);
-  const loadExpenses = React.useCallback(async () => { setIsLoadingExpenses(true); try { setExpenses(await projectsApi.getExpenses(project.id)); } catch (error: any) { Alert.alert('Error', error.response?.data?.error || 'Failed to fetch project expenses'); } finally { setIsLoadingExpenses(false); } }, [project.id]);
+  const loadExpenses = React.useCallback(async () => { setIsLoadingExpenses(true); try { setExpenses(await projectsApi.getExpenses(project.id)); } catch (error: any) { Alert.alert(t('Error'), t(error.response?.data?.error || 'Failed to fetch project expenses')); } finally { setIsLoadingExpenses(false); } }, [project.id, t]);
   React.useEffect(() => { if (project.expenses) setExpenses(project.expenses); else loadExpenses(); }, [loadExpenses, project.expenses]);
   const resetForm = () => { setCategory('materials'); setDescription(''); setAmount(''); setAmountError(''); setVendor(''); setExpenseDate(new Date().toISOString().slice(0, 10)); };
+  const normalizeAmount = (value: string) => value.replace(',', '.').replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
   const createExpense = async () => {
     const trimmedAmount = amount.trim();
     const parsedAmount = Number(trimmedAmount);
-    if (!description.trim()) { Alert.alert('Error', 'Expense description is required'); return; }
-    if (!trimmedAmount || !Number.isFinite(parsedAmount) || parsedAmount <= 0) { setAmountError(EXPENSE_AMOUNT_ERROR); return; }
-    if (!expenseDate.trim()) { Alert.alert('Error', 'Expense date is required'); return; }
+    setSuccessMessage('');
+    if (!description.trim()) { Alert.alert(t('Error'), t('Expense description is required')); descriptionRef.current?.focus(); return; }
+    if (!trimmedAmount || !Number.isFinite(parsedAmount) || parsedAmount <= 0) { setAmountError(EXPENSE_AMOUNT_ERROR); amountRef.current?.focus(); return; }
+    if (!expenseDate.trim()) { Alert.alert(t('Error'), t('Expense date is required')); expenseDateRef.current?.focus(); return; }
     setAmountError('');
     setIsSavingExpense(true);
-    try { await projectsApi.createExpense(project.id, { category, description: description.trim(), amount: parsedAmount, expense_date: expenseDate.trim(), vendor: vendor.trim() || undefined }); resetForm(); await Promise.all([loadExpenses(), fetchProject(project.id)]); }
-    catch (error: any) { Alert.alert('Error', error.response?.data?.error || 'Failed to create project expense'); }
+    try {
+      const createdExpense = await projectsApi.createExpense(project.id, { category, description: description.trim(), amount: parsedAmount, expense_date: expenseDate.trim(), vendor: vendor.trim() || undefined });
+      setExpenses((current) => [createdExpense, ...current.filter((expense) => expense.id !== createdExpense.id)]);
+      resetForm();
+      const [, updatedProject] = await Promise.all([loadExpenses(), projectsApi.get(project.id)]);
+      useProjectsStore.getState().setCurrentProject(updatedProject);
+      setSuccessMessage('Expense added. Project totals updated.');
+    }
+    catch (error: any) { Alert.alert(t('Error'), t(error.response?.data?.error || 'Failed to create project expense')); }
     finally { setIsSavingExpense(false); }
   };
   const deleteExpense = async (expense: ProjectExpense) => {
-    const removeExpense = async () => { try { await projectsApi.deleteExpense(project.id, expense.id); await Promise.all([loadExpenses(), fetchProject(project.id)]); } catch (error: any) { Alert.alert('Error', error.response?.data?.error || 'Failed to delete project expense'); } };
-    if (Platform.OS === 'web') { if (window.confirm('Delete this expense?')) await removeExpense(); return; }
-    Alert.alert('Delete Expense', 'Delete this expense?', [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: removeExpense }]);
+    const removeExpense = async () => { try { await projectsApi.deleteExpense(project.id, expense.id); await Promise.all([loadExpenses(), fetchProject(project.id)]); } catch (error: any) { Alert.alert(t('Error'), t(error.response?.data?.error || 'Failed to delete project expense')); } };
+    if (Platform.OS === 'web') { if (window.confirm(t('Delete this expense?'))) await removeExpense(); return; }
+    Alert.alert(t('Delete Expense'), t('Delete this expense?'), [{ text: t('Cancel'), style: 'cancel' }, { text: t('Delete'), style: 'destructive', onPress: removeExpense }]);
   };
   return (
     <View style={styles.sectionStack}>
@@ -162,41 +180,43 @@ function ExpensesTab({ project }: { project: Project }) {
       <View style={styles.expenseSummary}><Kpi label="Actual Cost" value={financials.actual_cost} tone={config.theme.warning} /><Kpi label="Actual Profit" value={financials.actual_profit} tone={(financials.actual_profit ?? 0) < 0 ? config.theme.error : config.theme.success} /></View>
       <View style={styles.expenseForm}>
         <Select label="Category" options={EXPENSE_CATEGORY_OPTIONS} value={category} onValueChange={(value) => setCategory(value as ExpenseCategory)} style={styles.expenseField} />
-        <Input label="Description" value={description} onChangeText={setDescription} placeholder="e.g. Aluminium profiles" />
-        <Input label="Amount" value={amount} onChangeText={(value) => { setAmount(value); if (amountError) setAmountError(''); }} keyboardType="decimal-pad" placeholder="0.00" error={amountError} />
-        <Input label="Vendor" value={vendor} onChangeText={setVendor} placeholder="Optional" />
-        <Input label="Expense Date" value={expenseDate} onChangeText={setExpenseDate} placeholder="YYYY-MM-DD" />
-        <Button title="Add Expense" variant="primary" loading={isSavingExpense} onPress={createExpense} fullWidth />
+        <Input ref={descriptionRef} label="Description" value={description} onChangeText={(value) => { setDescription(value); if (successMessage) setSuccessMessage(''); }} placeholder="e.g. Aluminium profiles" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => amountRef.current?.focus()} />
+        <Input ref={amountRef} label="Amount" value={amount} onChangeText={(value) => { setAmount(normalizeAmount(value)); if (amountError) setAmountError(''); if (successMessage) setSuccessMessage(''); }} keyboardType="decimal-pad" inputMode="decimal" placeholder="0.00" error={amountError} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => vendorRef.current?.focus()} />
+        <Input ref={vendorRef} label="Vendor" value={vendor} onChangeText={(value) => { setVendor(value); if (successMessage) setSuccessMessage(''); }} placeholder="Optional" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => expenseDateRef.current?.focus()} />
+        <Input ref={expenseDateRef} label="Expense Date" value={expenseDate} onChangeText={(value) => { setExpenseDate(value); if (successMessage) setSuccessMessage(''); }} placeholder="YYYY-MM-DD" returnKeyType="done" onSubmitEditing={createExpense} />
+        {successMessage ? <Text style={styles.successMessage}>{t(successMessage)}</Text> : null}
+        <Button title="Add Expense" variant="primary" loading={isSavingExpense} disabled={isSavingExpense} onPress={createExpense} fullWidth />
       </View>
-      <View style={styles.expenseListHeader}><Text style={styles.expenseListTitle}>Recorded Expenses</Text><Text style={styles.expenseListCount}>{expenses.length}</Text></View>
-      {isLoadingExpenses ? <ActivityIndicator size="small" color={config.theme.primary} /> : expenses.length === 0 ? <View style={styles.placeholder}><MaterialIcons name="receipt-long" size={48} color={config.theme.border} /><Text style={styles.placeholderText}>No expenses yet</Text></View> : expenses.map((expense) => (
-        <View key={expense.id} style={styles.expenseRow}><View style={styles.expenseInfo}><Text style={styles.expenseDescription}>{expense.description}</Text><Text style={styles.expenseMeta}>{[formatExpenseCategory(expense.category), formatDate(expense.expense_date, 'short'), expense.vendor].filter(Boolean).join(' - ')}</Text></View><View style={styles.expenseAmountBlock}><Text style={styles.expenseAmount}>{formatCurrency(expense.amount)}</Text><TouchableOpacity style={styles.expenseDeleteButton} onPress={() => deleteExpense(expense)} accessibilityRole="button" accessibilityLabel={`Delete expense ${expense.description}`}><MaterialIcons name="delete-outline" size={20} color={config.theme.error} /></TouchableOpacity></View></View>
+      <View style={styles.expenseListHeader}><Text style={styles.expenseListTitle}>{t('Recorded Expenses')}</Text><Text style={styles.expenseListCount}>{expenses.length}</Text></View>
+      {isLoadingExpenses ? <ActivityIndicator size="small" color={config.theme.primary} /> : expenses.length === 0 ? <View style={styles.placeholder}><MaterialIcons name="receipt-long" size={48} color={config.theme.border} /><Text style={styles.placeholderText}>{t('No expenses yet')}</Text></View> : expenses.map((expense) => (
+        <View key={expense.id} style={styles.expenseRow}><View style={styles.expenseInfo}><Text style={styles.expenseDescription}>{expense.description}</Text><Text style={styles.expenseMeta}>{[t(formatExpenseCategory(expense.category)), formatDate(expense.expense_date, 'short'), expense.vendor].filter(Boolean).join(' - ')}</Text></View><View style={styles.expenseAmountBlock}><Text style={styles.expenseAmount}>{formatCurrency(expense.amount)}</Text><TouchableOpacity style={styles.expenseDeleteButton} onPress={() => deleteExpense(expense)} accessibilityRole="button" accessibilityLabel={`${t('Delete expense')} ${expense.description}`}><MaterialIcons name="delete-outline" size={20} color={config.theme.error} /></TouchableOpacity></View></View>
       ))}
     </View>
   );
 }
 
 function ReportPreview({ project }: { project: Project }) {
+  const { t } = useI18n();
   const financials = getProjectFinancials(project);
   return (
     <View style={styles.sectionStack}>
       <SectionTitle title="Report preview" subtitle="Brand-polished one-page PDF/report style for the client conversation." />
       <View style={styles.reportPage}>
-        <View style={styles.reportHeader}><FacadeFlowMark size={38} /><View><Text style={styles.reportBrand}>FacadeFlow</Text><Text style={styles.reportSubtitle}>Project Profit Report</Text></View></View>
+        <View style={styles.reportHeader}><FacadeFlowMark size={38} /><View><Text style={styles.reportBrand}>FacadeFlow</Text><Text style={styles.reportSubtitle}>{t('Project Profit Report')}</Text></View></View>
         <Text style={styles.reportProject}>{project.name}</Text>
-        <Text style={styles.reportClient}>{project.client?.name || 'No client'} • {getProjectStatusLabel(project.status)}</Text>
+        <Text style={styles.reportClient}>{project.client?.name || t('No client')} • {t(getProjectStatusLabel(project.status))}</Text>
         <View style={styles.reportGrid}><ReportMetric label="Contract" value={financials.contract_value} /><ReportMetric label="Budget" value={financials.budgeted_cost} /><ReportMetric label="Actual cost" value={financials.actual_cost} /><ReportMetric label="Actual profit" value={financials.actual_profit} /></View>
-        <View style={styles.reportNote}><Text style={styles.reportNoteTitle}>Owner summary</Text><Text style={styles.reportNoteText}>{getProfitStory(financials)} This preview is designed to become the printable report/PDF styling in Phase 3.</Text></View>
+        <View style={styles.reportNote}><Text style={styles.reportNoteTitle}>{t('Owner summary')}</Text><Text style={styles.reportNoteText}>{t(getProfitStory(financials))} {t('This preview is designed to become the printable report/PDF styling in Phase 3.')}</Text></View>
       </View>
     </View>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | null; tone: string }) { return <View style={styles.kpi}><Text style={styles.kpiLabel}>{label}</Text><Text style={[styles.kpiValue, { color: tone }]}>{value == null ? '—' : formatCurrency(value)}</Text></View>; }
-function Detail({ label, value, color = config.theme.text }: { label: string; value: string; color?: string }) { return <View style={styles.detailCard}><Text style={styles.detailLabel}>{label}</Text><Text style={[styles.detailValue, { color }]}>{value}</Text></View>; }
-function ReportMetric({ label, value }: { label: string; value: number | null }) { return <View style={styles.reportMetric}><Text style={styles.reportMetricLabel}>{label}</Text><Text style={styles.reportMetricValue}>{value == null ? '—' : formatCurrency(value)}</Text></View>; }
+function Kpi({ label, value, tone }: { label: string; value: number | null; tone: string }) { const { t } = useI18n(); return <View style={styles.kpi}><Text style={styles.kpiLabel}>{t(label)}</Text><Text style={[styles.kpiValue, { color: tone }]}>{value == null ? '—' : formatCurrency(value)}</Text></View>; }
+function Detail({ label, value, color = config.theme.text }: { label: string; value: string; color?: string }) { const { t } = useI18n(); return <View style={styles.detailCard}><Text style={styles.detailLabel}>{t(label)}</Text><Text style={[styles.detailValue, { color }]}>{value}</Text></View>; }
+function ReportMetric({ label, value }: { label: string; value: number | null }) { const { t } = useI18n(); return <View style={styles.reportMetric}><Text style={styles.reportMetricLabel}>{t(label)}</Text><Text style={styles.reportMetricValue}>{value == null ? '—' : formatCurrency(value)}</Text></View>; }
 function getProjectFinancials(project: Project): ProjectFinancials { return project.financials || { contract_value: project.contract_value ?? null, budgeted_cost: project.budget ?? null, actual_cost: 0, planned_profit: null, actual_profit: null, cost_variance: null, actual_margin: null, expense_count: 0 }; }
-function formatExpenseCategory(category: ExpenseCategory) { return category.replace('_', ' '); }
+function formatExpenseCategory(category: ExpenseCategory) { return EXPENSE_CATEGORY_OPTIONS.find((option) => option.value === category)?.label || category.replace('_', ' '); }
 function statusTone(status: string): 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'purple' { if (status === 'completed') return 'success'; if (status === 'quoted' || status === 'inquired') return 'warning'; if (status === 'on_hold' || status === 'cancelled') return 'danger'; if (status === 'in_progress') return 'info'; if (status === 'approved') return 'purple'; return 'neutral'; }
 function getProfitStory(financials: ProjectFinancials) { const profit = financials.actual_profit ?? 0; const variance = financials.cost_variance ?? 0; if (profit < 0) return 'This project is currently losing money.'; if (variance < 0) return 'Profit is positive, but spending is above budget.'; return 'This project is currently profitable and inside the demo control range.'; }
 
@@ -247,6 +267,7 @@ const styles = StyleSheet.create({
   expenseListCount: { color: config.theme.textSecondary, fontSize: 13, fontWeight: '800' },
   placeholder: { alignItems: 'center', justifyContent: 'center', paddingVertical: 30 },
   placeholderText: { marginTop: 12, color: config.theme.textSecondary, fontSize: 14 },
+  successMessage: { color: config.theme.success, fontSize: 13, fontWeight: '800' },
   expenseRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: config.theme.borderSubtle },
   expenseInfo: { flex: 1, gap: 4 },
   expenseDescription: { color: config.theme.text, fontSize: 14, fontWeight: '800' },

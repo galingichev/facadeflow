@@ -13,7 +13,8 @@
     "smoke:demo-browser": "node scripts/smoke-demo-browser.js",
     "prepare": "husky",
     "seed:client-demo": "node scripts/seed-client-demo.js",
-    "smoke:mobile-flows": "node scripts/smoke-mobile-flows.js"
+    "smoke:mobile-flows": "node scripts/smoke-mobile-flows.js",
+    "demo:reset": "node scripts/seed-client-demo.js"
   },
   "dependencies": {
     "@expo/ngrok": "^4.1.3",

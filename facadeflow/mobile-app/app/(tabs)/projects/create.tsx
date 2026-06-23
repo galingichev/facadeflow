@@ -8,6 +8,7 @@ import type { ProjectStatus } from '../../../src/types';
 import ClientPicker from '../../../components/ui/ClientPicker';
 import { Input } from '../../../components/ui/Input';
 import { Select } from '../../../components/ui/Select';
+import { useI18n } from '../../../src/i18n';
 
 const STATUS_OPTIONS: { label: string; value: ProjectStatus }[] = [
   { label: 'Draft', value: 'draft' },
@@ -32,6 +33,7 @@ type FormErrors = {
 
 export default function CreateProjectScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const { refresh } = useProjectsStore();
   const [name, setName] = useState('');
   const [clientId, setClientId] = useState('');
@@ -186,11 +188,11 @@ export default function CreateProjectScreen() {
         keyboardType="numeric"
       />
 
-      {errors.submit ? <Text style={styles.formError}>{errors.submit}</Text> : null}
-      {successMessage ? <Text style={styles.successText}>{successMessage}</Text> : null}
+      {errors.submit ? <Text style={styles.formError}>{t(errors.submit)}</Text> : null}
+      {successMessage ? <Text style={styles.successText}>{t(successMessage)}</Text> : null}
       <View style={{ height: 20 }} />
       <Button
-        title={loading ? 'Creating...' : 'Create Project'}
+        title={loading ? t('Creating...') : t('Create Project')}
         onPress={handleSubmit}
         disabled={loading}
         color={config.theme.primary}
