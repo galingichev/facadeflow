@@ -12,7 +12,8 @@
     "smoke:mobile-flows": "npm run smoke:mobile-flows --prefix facadeflow/mobile-app",
     "seed:client-demo": "npm run seed:client-demo --prefix facadeflow/mobile-app",
     "verify:demo": "node scripts/verify-demo.js",
-    "smoke:demo-browser": "npm run smoke:demo-browser --prefix facadeflow/mobile-app"
+    "smoke:demo-browser": "npm run smoke:demo-browser --prefix facadeflow/mobile-app",
+    "demo:reset": "npm run seed:client-demo --prefix facadeflow/mobile-app"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

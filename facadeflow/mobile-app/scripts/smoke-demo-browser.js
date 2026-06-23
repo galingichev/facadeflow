@@ -214,11 +214,9 @@ async function main() {
     viewport: { width: 1366, height: 900 },
     extraHTTPHeaders: { 'ngrok-skip-browser-warning': 'true' },
   });
-  await context.addInitScript((keys) => {
-    for (const key of keys) {
-      globalThis.localStorage?.removeItem(key);
-    }
-  }, STORAGE_KEYS);
+  // Keep storage empty at the start of the smoke run, but do not clear it on
+  // every navigation. The language/currency selectors must persist across
+  // routes for the real demo flow.
 
   const page = await context.newPage();
   const consoleErrors = [];
@@ -292,10 +290,27 @@ async function main() {
     assert(text.includes('€') || text.includes('EUR'), 'Bulgarian + EUR formatting is not visible');
 
     await page.goto(buildUrl(`/projects/${projectId}`), { waitUntil: 'domcontentloaded', timeout: 45000 });
-    await page.getByText(/Overview|Обзор/).waitFor({ timeout: 30000 });
+    await page.getByText(/^(Overview|Преглед)$/).waitFor({ timeout: 30000 });
     text = await getBodyText(page);
-    assert(/Overview|Обзор/.test(text), 'Project route did not show overview tab');
+    assert(/Overview|Преглед/.test(text), 'Project route did not show overview tab');
     assert(/Expenses|Разходи/.test(text), 'Project route did not show expenses tab');
+    assert(text.includes('Детайлен преглед на печалбата'), 'Bulgarian project detail translation is missing');
+
+    await page.getByText('Разходи', { exact: true }).click();
+    text = await getBodyText(page);
+    assert(text.includes('Записани разходи'), 'Bulgarian expenses translation is missing');
+    assert(text.includes('Добави разход'), 'Bulgarian add-expense button is missing');
+
+    await page.getByText('Преглед на отчет', { exact: true }).click();
+    text = await getBodyText(page);
+    assert(text.includes('ОТЧЕТ ЗА ПЕЧАЛБА ПО ПРОЕКТ') || text.includes('Отчет за печалба по проект'), 'Bulgarian report preview translation is missing');
+    assert(text.includes('Обобщение за собственика'), 'Bulgarian report summary translation is missing');
+
+    await page.goto(buildUrl('/projects/create'), { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await page.getByText('Име на проекта', { exact: true }).waitFor({ timeout: 10000 });
+    text = await getBodyText(page);
+    assert(text.includes('Име на проекта'), 'Bulgarian create-project label translation is missing');
+    assert(text.includes('Създай проект') || text.includes('СЪЗДАЙ ПРОЕКТ'), 'Bulgarian create-project button translation is missing');
   } finally {
     await browser.close();
   }
