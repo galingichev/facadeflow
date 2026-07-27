@@ -144,6 +144,26 @@ function isInternalArtifactExpense(expense) {
     || (BLANK_AMOUNT_PATTERN.test(expense.description || '') && Number(expense.amount || 0) <= 0);
 }
 
+async function assertDemoDatasetIsIsolated() {
+  const [clientsResult, projectsResult] = await Promise.all([
+    api('/clients'),
+    api('/projects'),
+  ]);
+  const unexpectedClients = (clientsResult.body.data || []).filter(
+    (client) => !client.name?.startsWith(PREFIX) && !isInternalArtifactClient(client)
+  );
+  const unexpectedProjects = (projectsResult.body.data || []).filter(
+    (project) => !project.name?.startsWith(PREFIX) && !isInternalArtifactProject(project)
+  );
+
+  if (unexpectedClients.length || unexpectedProjects.length) {
+    throw new Error(`Refusing demo reset because non-demo records exist. Use an isolated demo database or remove them explicitly first: ${JSON.stringify({
+      clients: unexpectedClients.map((client) => ({ id: client.id, name: client.name })),
+      projects: unexpectedProjects.map((project) => ({ id: project.id, name: project.name })),
+    }, null, 2)}`);
+  }
+}
+
 async function cleanupInternalArtifacts() {
   const existingProjects = (await api('/projects')).body.data || [];
   const removed = {
@@ -256,6 +276,7 @@ async function verifyDemoData(projectIds) {
 async function main() {
   assertOwnerConfigured();
   await runStep('API health check', () => api('/system/health'));
+  await runStep('Verify isolated demo dataset', assertDemoDatasetIsIsolated);
   await runStep('Clean internal QA/test demo artifacts', cleanupInternalArtifacts);
   await runStep('Clean existing Client Demo records', cleanupExisting);
 
