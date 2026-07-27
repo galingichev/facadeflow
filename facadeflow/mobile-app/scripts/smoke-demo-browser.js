@@ -13,6 +13,24 @@ const BENIGN_CONSOLE_PATTERNS = [
 ];
 const INTERNAL_ARTIFACT_PATTERN = /\b(QA|Everest|test)\b/i;
 const BLANK_EXPENSE_PATTERN = /blank\s+amount/i;
+const BULGARIAN_DEMO_TEXT = {
+  'Boyana Villa Curtain Wall': 'Окачена фасада на вила в Бояна',
+  'Sofia Office Curtain Wall': 'Окачена фасада на офис в София',
+  'Varna Residential Windows': 'Прозорци за жилищен обект във Варна',
+  'Plovdiv Hotel Rainscreen': 'Вентилируема фасада на хотел в Пловдив',
+  'Burgas Aluminium Door Package': 'Алуминиеви врати за обект в Бургас',
+  'Aluminium composite panels deposit': 'Аванс за алуминиеви композитни панели',
+  'Installation crew week 1': 'Монтажна бригада – седмица 1',
+  'Scaffold and panel delivery': 'Доставка на скеле и панели',
+  'Triple-glazed window package': 'Комплект прозорци с троен стъклопакет',
+  'Final installation and sealing': 'Финален монтаж и уплътняване',
+  'Low-E glass units deposit': 'Аванс за нискоемисионни стъклопакети',
+  'Lift rental for second-floor installation': 'Наем на вишка за монтаж на втория етаж',
+};
+
+function canonicalDemoText(value) {
+  return String(value || '').replace(/^Client Demo:\s*/, '');
+}
 
 function normalizeBaseUrl(value) {
   return String(value).replace(/\/+$/, '');
@@ -204,6 +222,21 @@ async function main() {
   ));
   assert.equal(zeroBlankExpenses.length, 0, 'Stale $0.00 blank-amount expense artifacts are still present');
 
+  const expenseProjectIndex = expenseResponses.findIndex((response) => (response.data || []).length > 0);
+  assert(expenseProjectIndex >= 0, 'No project with expenses is available for Bulgarian display checks');
+  const expenseProject = projects[expenseProjectIndex];
+  const expenseProjectId = expenseProject.id;
+  const canonicalProjectName = canonicalDemoText(expenseProject.name);
+  const expectedBulgarianProjectName = BULGARIAN_DEMO_TEXT[canonicalProjectName];
+  assert(expectedBulgarianProjectName, `Missing Bulgarian smoke expectation for project: ${canonicalProjectName}`);
+  const firstExpense = expenseResponses[expenseProjectIndex].data[0];
+  const expectedBulgarianExpense = BULGARIAN_DEMO_TEXT[firstExpense.description];
+  assert(expectedBulgarianExpense, `Missing Bulgarian smoke expectation for expense: ${firstExpense.description}`);
+  const originalProjectNames = projects.map((project) => project.name);
+  const originalExpenseDescriptions = expenseResponses.map((response) => (
+    (response.data || []).map((expense) => expense.description)
+  ));
+
   const browser = await chromium.launch({
     headless: true,
     executablePath: process.env.CHROME_BIN || '/usr/bin/google-chrome',
@@ -251,8 +284,26 @@ async function main() {
     let text = await getBodyText(page);
     assert(text.includes('Profit Snapshot'), 'Dashboard Profit Snapshot is missing');
     assert(text.includes('Revenue pipeline'), 'Dashboard money row is missing');
-    assert(text.includes('USD') || text.includes('$'), 'USD formatting is not visible');
+    assert(text.includes('€') || text.includes('EUR'), 'EUR must be the default visible currency');
     assertNoInternalArtifacts(text, 'Dashboard');
+
+    await page.getByLabel('Choose currency').click();
+    const currencyMenuText = await getBodyText(page);
+    assert(currencyMenuText.includes('EUR'), 'EUR is missing from the currency selector');
+    assert(currencyMenuText.includes('USD'), 'USD is missing from the currency selector');
+    assert(!/BGN|Bulgarian Lev|Български лев|лв\./.test(currencyMenuText), 'BGN/lev must not be selectable');
+    await page.getByLabel(/^USD\b/).click();
+    await page.waitForTimeout(500);
+    const usdText = await getBodyText(page);
+    assert(usdText.includes('$') || usdText.includes('USD'), 'USD formatting is not visible after selection');
+
+    await page.evaluate(() => localStorage.setItem('facadeflow.currency', 'BGN'));
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 45000 });
+    await waitForDashboard(page);
+    text = await getBodyText(page);
+    assert(text.includes('€') || text.includes('EUR'), 'Stored BGN preference did not migrate to EUR');
+    assert.equal(await page.evaluate(() => localStorage.getItem('facadeflow.currency')), 'EUR', 'Migrated currency preference was not persisted as EUR');
+    assert(!/BGN|Bulgarian Lev|Български лев|лв\./.test(text), 'BGN/lev remains visible after migration');
 
     for (const width of [360, 390, 430]) {
       await assertNoDashboardMobileOverflow(page, width);
@@ -267,39 +318,48 @@ async function main() {
     await page.goto(buildUrl('/'), { waitUntil: 'domcontentloaded', timeout: 45000 });
     await waitForDashboard(page);
 
-    const usdText = text;
-    await chooseCurrency(page, 'EUR');
-    text = await getBodyText(page);
-    assert.notEqual(text, usdText, 'Switching USD to EUR did not change visible dashboard text');
-    assert(text.includes('€') || text.includes('EUR'), 'EUR formatting is not visible');
-
-    const eurText = text;
-    await chooseCurrency(page, 'BGN');
-    text = await getBodyText(page);
-    assert.notEqual(text, eurText, 'Switching EUR to BGN did not change visible dashboard text');
-    assert(/BGN|лв\./.test(text), 'BGN formatting is not visible');
-
     await chooseBulgarian(page);
     text = await getBodyText(page);
     assert(text.includes('Преглед на печалбата'), 'Bulgarian dashboard translation is not visible');
-    assert(text.includes('BGN') || text.includes('лв.'), 'Bulgarian + BGN formatting is not visible');
+    assert(text.includes('€') || text.includes('EUR'), 'Bulgarian + EUR formatting is not visible');
+    assert(text.includes('Клиентско демо:'), 'Canonical demo prefix is not translated in Bulgarian');
 
-    await chooseCurrency(page, 'EUR');
+    await chooseCurrency(page, 'USD');
     text = await getBodyText(page);
     assert(text.includes('Преглед на печалбата'), 'Bulgarian language did not remain active after currency switch');
-    assert(text.includes('€') || text.includes('EUR'), 'Bulgarian + EUR formatting is not visible');
+    assert(text.includes('$') || text.includes('USD'), 'Bulgarian + USD formatting is not visible');
+    await chooseCurrency(page, 'EUR');
 
-    await page.goto(buildUrl(`/projects/${projectId}`), { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await page.goto(buildUrl(`/projects/${expenseProjectId}`), { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.getByText(/^(Overview|Преглед)$/).waitFor({ timeout: 30000 });
     text = await getBodyText(page);
     assert(/Overview|Преглед/.test(text), 'Project route did not show overview tab');
     assert(/Expenses|Разходи/.test(text), 'Project route did not show expenses tab');
     assert(text.includes('Детайлен преглед на печалбата'), 'Bulgarian project detail translation is missing');
+    assert(text.includes(expectedBulgarianProjectName), 'Canonical project name is not displayed in Bulgarian');
+    assert(!text.includes(expenseProject.name), 'Stored English demo project name leaked into Bulgarian display');
 
     await page.getByText('Разходи', { exact: true }).click();
     text = await getBodyText(page);
     assert(text.includes('Записани разходи'), 'Bulgarian expenses translation is missing');
     assert(text.includes('Добави разход'), 'Bulgarian add-expense button is missing');
+    assert(text.includes(expectedBulgarianExpense), 'Canonical expense description is not displayed in Bulgarian');
+    assert(!text.includes(firstExpense.description), 'Stored English demo expense description leaked into Bulgarian display');
+
+    const projectsAfterLanguageSwitch = (await fetchJson('/api/projects')).data || [];
+    const expensesAfterLanguageSwitch = await Promise.all(
+      projectsAfterLanguageSwitch.map((project) => fetchJson(`/api/projects/${project.id}/expenses`))
+    );
+    assert.deepEqual(
+      projectsAfterLanguageSwitch.map((project) => project.name),
+      originalProjectNames,
+      'Switching language mutated stored project names'
+    );
+    assert.deepEqual(
+      expensesAfterLanguageSwitch.map((response) => (response.data || []).map((expense) => expense.description)),
+      originalExpenseDescriptions,
+      'Switching language mutated stored expense descriptions'
+    );
 
     await page.getByText('Преглед на отчет', { exact: true }).click();
     text = await getBodyText(page);

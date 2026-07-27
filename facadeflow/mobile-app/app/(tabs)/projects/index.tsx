@@ -11,6 +11,7 @@ import { formatMarginPercent, getBudgetActualPercent, getJobHealth, getLastExpen
 import type { Project } from '../../../src/types';
 import { useI18n } from '../../../src/i18n';
 import { platformShadow } from '../../../src/utils/platformStyles';
+import { translateCanonical } from '../../../src/utils/i18nUtils';
 
 export default function ProjectsListScreen() {
   const router = useRouter();
@@ -56,8 +57,8 @@ function ProjectCard({ project, onPress, isWide }: { project: Project; onPress: 
   return (
     <Card style={[styles.card, isWide && styles.cardWide]} onPress={onPress} padding="large">
       <View style={styles.cardTop}><View style={styles.pillRow}><StatusPill label={getProjectStatusLabel(project.status)} tone={statusTone(project.status)} /><StatusPill label={health.label} tone={health.tone} /></View><MaterialIcons name="chevron-right" size={22} color={config.theme.textMuted} /></View>
-      <Text style={styles.name}>{project.name}</Text>
-      <Text style={styles.client}>{project.client?.name || t('No client')}</Text>
+      <Text style={styles.name}>{translateCanonical(project.name)}</Text>
+      <Text style={styles.client}>{translateCanonical(project.client?.name || t('No client'))}</Text>
       <View style={styles.progressWrap}><View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${progress}%` }]} /></View><Text style={styles.progressText}>{progress}% {t('progress')}</Text></View>
       <View style={styles.budgetPanel}><View style={styles.moneyRow}><Text style={styles.moneyLabel}>{t('Budget vs actual')}</Text><Text style={styles.moneyValue}>{budget == null ? '—' : `${budgetPercent}%`}</Text></View><View style={styles.progressTrack}><View style={[styles.budgetFill, { width: `${budgetPercent}%`, backgroundColor: budgetPercent > 100 ? config.theme.error : config.theme.primaryHover }]} /></View></View>
       <View style={styles.moneyGrid}>
@@ -66,7 +67,7 @@ function ProjectCard({ project, onPress, isWide }: { project: Project; onPress: 
         <MoneyCell label={t('Actual cost')} value={formatCurrency(actualCost)} />
         <MoneyCell label={t('Profit / margin')} value={profit == null ? '—' : `${formatCurrency(profit)} • ${formatMarginPercent(margin)}`} color={profit != null && profit < 0 ? config.theme.error : config.theme.success} />
       </View>
-      <Text style={styles.lastExpense}>{t('Last expense')}: {lastExpense ? `${lastExpense.description} • ${formatCurrency(lastExpense.amount)}` : t('No expenses yet')}</Text>
+      <Text style={styles.lastExpense}>{t('Last expense')}: {lastExpense ? `${translateCanonical(lastExpense.description)} • ${formatCurrency(lastExpense.amount)}` : t('No expenses yet')}</Text>
       <Text style={styles.healthReason}>{t('Job Health')}: {t(health.reason)}</Text>
       <StatusPill label={readiness.label} tone={readiness.tone} />
     </Card>

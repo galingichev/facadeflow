@@ -74,15 +74,32 @@ includesAll('project flow', projectFlow, [
 
 const i18n = read('src/i18n/index.tsx');
 includesAll('currency/localization support', i18n, [
-  "export type AppCurrency = 'USD' | 'EUR' | 'BGN'",
+  "export type AppCurrency = 'USD' | 'EUR'",
+  "let activeCurrency: AppCurrency = 'EUR'",
   'facadeflow.currency',
   'CURRENCY_OPTIONS',
   'readStoredCurrency',
+  "stored === 'BGN'",
+  "setItem(CURRENCY_STORAGE_KEY, 'EUR')",
   'setCurrency',
-  'Bulgarian Lev',
   'Ready for final invoice',
   'Project Profit Report',
+  "'Close': 'Затвори'",
 ]);
+assert(!i18n.includes("code: 'BGN'"), 'BGN must not remain a selectable currency');
+assert(!i18n.includes('Bulgarian Lev'), 'Bulgarian Lev label must be removed');
+
+const canonicalTranslations = read('src/utils/i18nUtils.ts');
+includesAll('canonical demo display translations', canonicalTranslations, [
+  'Клиентско демо:',
+  'Окачена фасада на вила в Бояна',
+  'Вентилируема фасада на хотел в Пловдив',
+  'Аванс за алуминиеви композитни панели',
+  'Фасадна бригада 1',
+]);
+for (const screen of [dashboard, clientFlow, projectFlow]) {
+  assert(screen.includes('translateCanonical'), 'Demo screens must translate canonical display data');
+}
 
 const currencySelector = read('components/CurrencySelector.tsx');
 includesAll('currency selector component', currencySelector, [

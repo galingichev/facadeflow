@@ -81,9 +81,9 @@ export const config = {
   },
 
   currency: {
-    code: 'USD',
-    locale: 'en-US',
-    symbol: '$',
+    code: 'EUR',
+    locale: 'en-IE',
+    symbol: '€',
   },
 
   theme: {

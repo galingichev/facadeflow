@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 export type AppLanguage = 'en' | 'bg';
-export type AppCurrency = 'USD' | 'EUR' | 'BGN';
+export type AppCurrency = 'USD' | 'EUR';
 
 type LanguageOption = {
   code: AppLanguage;
@@ -37,13 +37,12 @@ export const LANGUAGE_OPTIONS: LanguageOption[] = [
 ];
 
 export const CURRENCY_OPTIONS: CurrencyOption[] = [
-  { code: 'USD', label: 'US Dollar', nativeLabel: 'Щатски долар', symbol: '$' },
   { code: 'EUR', label: 'Euro', nativeLabel: 'Евро', symbol: '€' },
-  { code: 'BGN', label: 'Bulgarian Lev', nativeLabel: 'Български лев', symbol: 'лв.' },
+  { code: 'USD', label: 'US Dollar', nativeLabel: 'Щатски долар', symbol: '$' },
 ];
 
 let activeLanguage: AppLanguage = 'en';
-let activeCurrency: AppCurrency = 'USD';
+let activeCurrency: AppCurrency = 'EUR';
 
 const translations: Record<AppLanguage, Record<string, string>> = {
   en: {},
@@ -63,11 +62,22 @@ const translations: Record<AppLanguage, Record<string, string>> = {
     'Currency changed': 'Валутата е сменена',
     'US Dollar': 'Щатски долар',
     'Euro': 'Евро',
-    'Bulgarian Lev': 'Български лев',
     'The app language is now Bulgarian.': 'Езикът на приложението вече е български.',
     'The app language is now English.': 'Езикът на приложението вече е английски.',
     'OK': 'ОК',
     'Cancel': 'Отказ',
+    'Open': 'Отвори',
+    'Close': 'Затвори',
+    'Clear': 'Изчисти',
+    'Reset': 'Нулирай',
+    'Save': 'Запази',
+    'Save Comparison': 'Запази сравнението',
+    'Transcribe': 'Транскрибирай',
+    'Client Name': 'Име на клиента',
+    'Enter client name': 'Въведете име на клиента',
+    'Phone': 'Телефон',
+    'Email': 'Имейл',
+    'YYYY-MM-DD': 'ГГГГ-ММ-ДД',
     'Delete': 'Изтрий',
     'Search...': 'Търсене...',
     'No results found': 'Няма резултати',
@@ -79,18 +89,18 @@ const translations: Record<AppLanguage, Record<string, string>> = {
     'New Project': 'Нов проект',
     'View Projects': 'Виж проекти',
     'Add Client': 'Добави клиент',
-    'Run facade, window and door jobs with profit visible from day one.': 'Управлявайте фасадни, прозоречни и врати проекти с видима печалба от първия ден.',
-    'FacadeFlow turns scattered client notes, budgets and expenses into a clean operating dashboard for contractors who need every project to stay on margin.': 'FacadeFlow превръща разпилени клиентски бележки, бюджети и разходи в ясно табло за изпълнители, които трябва да държат всеки проект на марж.',
+    'Run facade, window and door jobs with profit visible from day one.': 'Управлявайте проекти за фасади, прозорци и врати с видима печалба от първия ден.',
+    'FacadeFlow turns scattered client notes, budgets and expenses into a clean operating dashboard for contractors who need every project to stay on margin.': 'FacadeFlow превръща разпилените бележки, бюджети и разходи в ясно табло, което помага на изпълнителите да поддържат заложения марж за всеки проект.',
     'Client demo storyline': 'Сценарий за клиентско демо',
     'Show the owner how a job moves from quote to expenses to profit report.': 'Покажете на собственика как проектът минава от оферта към разходи и отчет за печалба.',
     'Client and project created': 'Създадени клиент и проект',
     'Budget and contract recorded': 'Въведени бюджет и договор',
     'Expenses tracked by category': 'Разходи по категории',
-    'At-risk jobs highlighted': 'Рисковите проекти са подчертани',
+    'At-risk jobs highlighted': 'Рисковите проекти са отбелязани',
     'One-page profit report preview': 'Преглед на едностраничен отчет',
     'Contract value': 'Стойност по договор',
-    'Budgeted cost': 'Бюджетирана себестойност',
-    'Actual cost': 'Реална себестойност',
+    'Budgeted cost': 'Бюджетни разходи',
+    'Actual cost': 'Реални разходи',
     'Actual profit': 'Реална печалба',
     'profitable projects': 'печеливши проекта',
     'loss projects': 'проекта на загуба',
@@ -101,47 +111,47 @@ const translations: Record<AppLanguage, Record<string, string>> = {
     'Profit Snapshot': 'Преглед на печалбата',
     'Dashboard summary: the client can understand portfolio health in under one minute.': 'Обобщение на таблото: клиентът разбира състоянието на проектите за под минута.',
     'Portfolio margin': 'Марж на портфолиото',
-    'Projects with financials': 'Проекти с финанси',
+    'Projects with financials': 'Проекти с финансови данни',
     'Active projects': 'Активни проекти',
     'Revenue pipeline': 'Потенциален оборот',
     'At-risk projects': 'Рискови проекти',
-    'Highlights jobs that need a quick owner decision.': 'Показва проекти, които искат бързо решение от собственика.',
+    'Highlights jobs that need a quick owner decision.': 'Показва проектите, за които е нужно бързо решение от собственика.',
     'No major margin or status risk in the current demo data.': 'Няма сериозен риск по марж или статус в текущите демо данни.',
     'High risk': 'Висок риск',
     'Watch': 'Наблюдение',
     'Recent expenses': 'Последни разходи',
-    'The live feed that explains why profit changed.': 'Живият поток, който обяснява защо печалбата се промени.',
+    'The live feed that explains why profit changed.': 'Последните разходи, които обясняват промяната в печалбата.',
     'No expenses recorded yet.': 'Все още няма записани разходи.',
     'Report preview': 'Преглед на отчет',
-    'Client-facing snapshot with the next financial action.': 'Клиентски преглед със следващото финансово действие.',
+    'Client-facing snapshot with the next financial action.': 'Кратък клиентски отчет със следващата финансова стъпка.',
     'FacadeFlow Project Report': 'FacadeFlow отчет за проект',
     'Profit / margin': 'Печалба / марж',
     'Notes / next action: verify latest site costs, then send the owner-ready progress claim.': 'Бележки / следващо действие: проверете последните разходи по обекта, после изпратете готовия отчет.',
     'Active demo projects': 'Активни демо проекти',
     'Realistic sample work for client discussion.': 'Реалистични примерни проекти за клиентски разговор.',
-    'Ready for a client walkthrough': 'Готово за клиентска демонстрация',
+    'Ready for a client walkthrough': 'Готово за демонстрация пред клиент',
     'Use the demo data only. Show dashboard → at-risk project → expenses → report preview.': 'Използвайте само демо данните. Покажете табло → рисков проект → разходи → преглед на отчет.',
     'Contract': 'Договор',
     'Budget': 'Бюджет',
-    'Budget vs actual': 'Бюджет срещу реално',
+    'Budget vs actual': 'Бюджет спрямо реални разходи',
     'Last expense': 'Последен разход',
     'No expenses yet': 'Все още няма разходи',
     'No client': 'Няма клиент',
     'Demo portfolio': 'Демо портфолио',
     'Demo client': 'Демо клиент',
     'Job Health': 'Състояние на проекта',
-    'Payment readiness': 'Готовност за плащане',
-    'Recent cost movement': 'Последно движение на разходите',
+    'Payment readiness': 'Готовност за фактуриране',
+    'Recent cost movement': 'Последни промени в разходите',
     'Next owner decision': 'Следващо решение на собственика',
     'All active demo jobs look controlled.': 'Всички активни демо проекти изглеждат под контрол.',
-    'No progress claim is ready yet.': 'Все още няма готов акт/искане за плащане.',
+    'No progress claim is ready yet.': 'Все още няма проект, готов за междинно фактуриране.',
     'Projects that show profit, cost and progress.': 'Проекти, които показват печалба, разход и прогрес.',
     'Every facade job stays connected to its client, budget, expenses and live profitability.': 'Всеки фасаден проект остава свързан с клиент, бюджет, разходи и текуща печалба.',
-    'Project pipeline': 'Проектна фуния',
+    'Project pipeline': 'Етапи на проектите',
     'demo projects loaded': 'демо проекта заредени',
     'No projects yet': 'Все още няма проекти',
     'progress': 'прогрес',
-    'Ready for progress claim': 'Готов за акт/плащане',
+    'Ready for progress claim': 'Готов за междинно фактуриране',
     'Lead / Inquiry': 'Запитване',
     'Survey / Measurement': 'Оглед / мерки',
     'Quote Sent': 'Изпратена оферта',
@@ -153,43 +163,44 @@ const translations: Record<AppLanguage, Record<string, string>> = {
     'Controlled': 'Под контрол',
     'Low margin': 'Нисък марж',
     'Over budget': 'Над бюджет',
-    'Healthy': 'Здравословен',
+    'Healthy': 'Стабилен',
     'Missing budget': 'Липсва бюджет',
-    'Completed but unprofitable': 'Завършен, но непечеливш',
+    'Completed but unprofitable': 'Завършен на загуба',
     'Check costs before invoicing': 'Проверете разходите преди фактуриране',
     'Ready for final invoice': 'Готов за финална фактура',
     'Review after quote approval': 'Преглед след одобрение на офертата',
     'Add budget to see margin risk.': 'Добавете бюджет, за да видите риска за маржа.',
     'Approved job has no costs recorded.': 'Одобреният проект няма записани разходи.',
-    'Finished job closed below zero profit.': 'Завършеният проект е приключил под нулева печалба.',
+    'Finished job closed below zero profit.': 'Завършеният проект е приключил на загуба.',
     'Actual cost is above budget.': 'Реалната себестойност е над бюджета.',
-    'Margin is below the demo target.': 'Маржът е под демо целта.',
+    'Margin is below the demo target.': 'Маржът е под зададената цел.',
     'Status needs owner follow-up.': 'Статусът изисква проследяване от собственика.',
     'Budget, costs and margin are under control.': 'Бюджетът, разходите и маржът са под контрол.',
     'Paused or cancelled status needs attention.': 'Проект на пауза или отказан проект изисква внимание.',
     'Owner review needed': 'Нужен е преглед от собственика',
     'project needs owner review.': 'проект се нуждае от преглед от собственика.',
     'projects need owner review.': 'проекта се нуждаят от преглед от собственика.',
-    'job ready for progress claim.': 'проект е готов за акт/плащане.',
-    'jobs ready for progress claim.': 'проекта са готови за акт/плащане.',
-    'in latest recorded facade expenses.': 'в последните записани фасадни разходи.',
+    'job ready for progress claim.': 'проект е готов за междинно фактуриране.',
+    'jobs ready for progress claim.': 'проекта са готови за междинно фактуриране.',
+    'in latest recorded facade expenses.': 'в последните записани разходи по фасадни проекти.',
     'active project can continue as planned.': 'активен проект може да продължи по план.',
     'active projects can continue as planned.': 'активни проекта могат да продължат по план.',
     'over budget.': 'над бюджета.',
     'Margin at': 'Марж',
     'review pricing or expenses.': 'прегледайте цените или разходите.',
     'Clients, companies and project relationships in one place.': 'Клиенти, компании и проектни връзки на едно място.',
-    'A cleaner client list helps the demo story start with the customer, then move into projects, expenses and profit.': 'Ясният списък с клиенти започва историята от клиента, после преминава към проекти, разходи и печалба.',
-    'Client CRM': 'Клиентски CRM',
+    'A cleaner client list helps the demo story start with the customer, then move into projects, expenses and profit.': 'Подреденият списък започва от клиента и води към неговите проекти, разходи и печалба.',
+    'Client CRM': 'Клиентска база',
     'Linked projects': 'Свързани проекти',
-    'project(s) connected to this client': 'проект(а), свързани с този клиент',
+    'project connected to this client': 'проект, свързан с този клиент',
+    'projects connected to this client': 'проекта, свързани с този клиент',
     'Client list': 'Списък с клиенти',
     'Search by person, company or email.': 'Търсене по човек, компания или имейл.',
     'Search clients...': 'Търси клиенти...',
     'No clients found': 'Няма намерени клиенти',
     'No email': 'Няма имейл',
-    'Ready for project follow-up': 'Готов за проектно проследяване',
-    'Confirm Client Delete': 'Потвърди изтриване на клиент',
+    'Ready for project follow-up': 'Готов за следваща стъпка',
+    'Confirm Client Delete': 'Потвърдете изтриването на клиента',
     'Error': 'Грешка',
     'Retry': 'Опитай пак',
     'Loading dashboard': 'Зареждане на таблото',
@@ -209,7 +220,7 @@ const translations: Record<AppLanguage, Record<string, string>> = {
     'Profit': 'Печалба',
     'Expenses': 'Разходи',
     'Report Preview': 'Преглед на отчет',
-    'Project Control Room': 'Контролна стая на проекта',
+    'Project Control Room': 'Контрол на проекта',
     'Project profit detail view for the client demo: contract value, budget, expenses, current margin and owner-ready report.': 'Детайлен изглед за печалбата: договор, бюджет, разходи, текущ марж и готов отчет за собственика.',
     'Profit detail view': 'Детайлен преглед на печалбата',
     'A simple explanation of whether this job is still on plan.': 'Кратко обяснение дали проектът още върви по план.',
@@ -217,7 +228,7 @@ const translations: Record<AppLanguage, Record<string, string>> = {
     'Contract value minus actual expenses. Budget variance updates as expenses are recorded.': 'Договорната стойност минус реалните разходи. Отклонението от бюджета се обновява при записване на разходи.',
     'This project is currently losing money.': 'Този проект в момента е на загуба.',
     'Profit is positive, but spending is above budget.': 'Печалбата е положителна, но разходите са над бюджета.',
-    'This project is currently profitable and inside the demo control range.': 'Този проект е печеливш и в контролния диапазон на демото.',
+    'This project is currently profitable and inside the demo control range.': 'Този проект е печеливш и е в рамките на зададените параметри.',
     'Client': 'Клиент',
     'N/A': 'Няма данни',
     'Status': 'Статус',
@@ -229,7 +240,7 @@ const translations: Record<AppLanguage, Record<string, string>> = {
     'Last Updated': 'Последно обновен',
     'Description': 'Описание',
     'Record costs and immediately show the client how profit changes.': 'Записвайте разходи и веднага показвайте на клиента как се променя печалбата.',
-    'Actual Cost': 'Реална себестойност',
+    'Actual Cost': 'Реални разходи',
     'Actual Profit': 'Реална печалба',
     'Category': 'Категория',
     'Amount': 'Сума',
@@ -264,9 +275,9 @@ const translations: Record<AppLanguage, Record<string, string>> = {
     'Create Project': 'Създай проект',
     'Select status': 'Изберете статус',
     'Contract Value': 'Стойност по договор',
-    'Budgeted Cost': 'Бюджетирана себестойност',
+    'Budgeted Cost': 'Бюджетни разходи',
     'Total payable by client': 'Обща сума за плащане от клиента',
-    'Expected spend to complete': 'Очаквани разходи до завършване',
+    'Expected spend to complete': 'Очаквани разходи за завършване',
     'Draft': 'Чернова',
     'Inquired': 'Запитване',
     'Quoted': 'Офериран',
@@ -310,14 +321,22 @@ async function readStoredLanguage(): Promise<AppLanguage> {
 async function readStoredCurrency(): Promise<AppCurrency> {
   try {
     if (Platform.OS === 'web') {
-      const stored = globalThis.localStorage?.getItem(CURRENCY_STORAGE_KEY) as AppCurrency | null;
-      return isAppCurrency(stored) ? stored : 'USD';
+      const stored = globalThis.localStorage?.getItem(CURRENCY_STORAGE_KEY);
+      if (stored === 'BGN') {
+        globalThis.localStorage?.setItem(CURRENCY_STORAGE_KEY, 'EUR');
+        return 'EUR';
+      }
+      return isAppCurrency(stored) ? stored : 'EUR';
     }
 
     const stored = await SecureStore.getItemAsync(CURRENCY_STORAGE_KEY);
-    return isAppCurrency(stored) ? stored : 'USD';
+    if (stored === 'BGN') {
+      await SecureStore.setItemAsync(CURRENCY_STORAGE_KEY, 'EUR');
+      return 'EUR';
+    }
+    return isAppCurrency(stored) ? stored : 'EUR';
   } catch {
-    return 'USD';
+    return 'EUR';
   }
 }
 
@@ -348,7 +367,7 @@ async function writeStoredCurrency(currency: AppCurrency) {
 }
 
 function isAppCurrency(value: unknown): value is AppCurrency {
-  return value === 'USD' || value === 'EUR' || value === 'BGN';
+  return value === 'USD' || value === 'EUR';
 }
 
 export function getActiveLanguage() {
@@ -361,7 +380,7 @@ export function getActiveCurrency() {
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<AppLanguage>('en');
-  const [currency, setCurrencyState] = useState<AppCurrency>('USD');
+  const [currency, setCurrencyState] = useState<AppCurrency>('EUR');
 
   useEffect(() => {
     Promise.all([readStoredLanguage(), readStoredCurrency()]).then(([storedLanguage, storedCurrency]) => {

@@ -12,6 +12,7 @@ import { getClients } from '../../src/services/clientService';
 import { config } from '../../src/lib/config';
 import type { Client } from '../../src/types';
 import { useI18n } from '../../src/i18n';
+import { translateCanonical } from '../../src/utils/i18nUtils';
 
 type ClientPickerProps = {
   value: string;
@@ -64,7 +65,7 @@ export default function ClientPicker({ value, onChange, label, error }: ClientPi
         accessibilityState={{ expanded: modalVisible }}
       >
         <Text style={styles.triggerText}>
-          {selectedClient ? selectedClient.name : t('Select a client')}
+          {selectedClient ? translateCanonical(selectedClient.name) : t('Select a client')}
         </Text>
       </TouchableOpacity>
       {hasError ? <Text nativeID={errorId} style={styles.error}>{translatedError}</Text> : null}
@@ -94,7 +95,7 @@ export default function ClientPicker({ value, onChange, label, error }: ClientPi
                       setModalVisible(false);
                     }}
                   >
-                    <Text style={styles.itemName}>{item.name}</Text>
+                    <Text style={styles.itemName}>{translateCanonical(item.name)}</Text>
                     {item.phone && (
                       <Text style={styles.itemPhone}>{item.phone}</Text>
                     )}
