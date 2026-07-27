@@ -14,12 +14,12 @@ mkdir -p "$RUN_DIR"
 bash "$PROJECT_DIR/scripts/stop-demo.sh" >/dev/null 2>/dev/null || true
 
 cd "$PROJECT_DIR/backend"
-PORT="$BACKEND_PORT" npm start >"$RUN_DIR/backend.log" 2>"$RUN_DIR/backend.err" &
+PORT="$BACKEND_PORT" node server.js >"$RUN_DIR/backend.log" 2>"$RUN_DIR/backend.err" &
 echo $! >"$RUN_DIR/backend.pid"
 
 cd "$PROJECT_DIR/facadeflow/mobile-app"
 CI=1 BROWSER=none EXPO_NO_TELEMETRY=1 EXPO_PUBLIC_API_URL=/api \
-  npx expo start --web --port "$WEB_PORT" --host localhost >"$RUN_DIR/expo.log" 2>"$RUN_DIR/expo.err" &
+  node node_modules/expo/bin/cli start --web --port "$WEB_PORT" --host localhost >"$RUN_DIR/expo.log" 2>"$RUN_DIR/expo.err" &
 echo $! >"$RUN_DIR/expo.pid"
 
 cd "$PROJECT_DIR"
@@ -31,7 +31,8 @@ node scripts/web-dev-proxy.js >"$RUN_DIR/proxy.log" 2>"$RUN_DIR/proxy.err" &
 echo $! >"$RUN_DIR/proxy.pid"
 
 for i in $(seq 1 60); do
-  if curl -fsS "http://127.0.0.1:${PROXY_PORT}/api/system/health" >/dev/null 2>/dev/null; then
+  if curl -fsS "http://127.0.0.1:${PROXY_PORT}/api/system/health" >/dev/null 2>/dev/null \
+    && curl -fsS "http://127.0.0.1:${PROXY_PORT}/" >/dev/null 2>/dev/null; then
     echo "FacadeFlow demo is ready."
     echo "Open: $DEMO_URL"
     echo "Logs: $RUN_DIR"
