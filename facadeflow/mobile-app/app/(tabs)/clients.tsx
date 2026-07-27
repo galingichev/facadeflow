@@ -11,6 +11,7 @@ import { formatPhone, initials } from '../../src/utils';
 import { config } from '../../src/lib/config';
 import { useI18n } from '../../src/i18n';
 import { platformShadow } from '../../src/utils/platformStyles';
+import { translateCanonical } from '../../src/utils/i18nUtils';
 
 export default function ClientsScreen() {
   const router = useRouter();
@@ -85,21 +86,21 @@ function ClientCard({ client, projectCount, onDelete, isWide }: { client: any; p
   const router = useRouter();
   const { t } = useI18n();
   const handleDelete = () => {
-    if (Platform.OS === 'web') { if (window.confirm(`${t('Confirm Client Delete')}\n\n${t('Delete')} ${client.name}?`)) onDelete(client.id); return; }
-    Alert.alert(t('Confirm Client Delete'), `${t('Delete')} ${client.name}?`, [{ text: t('Cancel'), style: 'cancel' }, { text: t('OK'), style: 'destructive', onPress: () => onDelete(client.id) }], { cancelable: true });
+    if (Platform.OS === 'web') { if (window.confirm(`${t('Confirm Client Delete')}\n\n${t('Delete')} ${translateCanonical(client.name)}?`)) onDelete(client.id); return; }
+    Alert.alert(t('Confirm Client Delete'), `${t('Delete')} ${translateCanonical(client.name)}?`, [{ text: t('Cancel'), style: 'cancel' }, { text: t('OK'), style: 'destructive', onPress: () => onDelete(client.id) }], { cancelable: true });
   };
   return (
     <Card style={[styles.card, isWide && styles.cardWide]}>
-      <TouchableOpacity onPress={() => router.push(('/clients/' + client.id + '/edit') as any)} accessibilityRole="button" accessibilityLabel={`Open ${client.name}`}>
+      <TouchableOpacity onPress={() => router.push(('/clients/' + client.id + '/edit') as any)} accessibilityRole="button" accessibilityLabel={`${t('Open')} ${translateCanonical(client.name)}`}>
         <View style={styles.avatarContainer}>
-          <View style={styles.avatar}><Text style={styles.avatarText}>{initials(client.name)}</Text></View>
-          <View style={styles.info}><Text style={styles.name}>{client.name}</Text>{client.company ? <Text style={styles.company}>{client.company}</Text> : null}<Text style={styles.email}>{client.email || t('No email')}</Text>{client.phone ? <Text style={styles.phone}>{formatPhone(client.phone)}</Text> : null}</View>
+          <View style={styles.avatar}><Text style={styles.avatarText}>{initials(translateCanonical(client.name))}</Text></View>
+          <View style={styles.info}><Text style={styles.name}>{translateCanonical(client.name)}</Text>{client.company ? <Text style={styles.company}>{client.company}</Text> : null}<Text style={styles.email}>{client.email || t('No email')}</Text>{client.phone ? <Text style={styles.phone}>{formatPhone(client.phone)}</Text> : null}</View>
         </View>
       </TouchableOpacity>
-      <View style={styles.clientStory}><MaterialIcons name="business-center" size={18} color={config.theme.primaryHover} /><Text style={styles.clientStoryText}>{projectCount} {t('project(s) connected to this client')}</Text></View>
+      <View style={styles.clientStory}><MaterialIcons name="business-center" size={18} color={config.theme.primaryHover} /><Text style={styles.clientStoryText}>{projectCount} {t(projectCount === 1 ? 'project connected to this client' : 'projects connected to this client')}</Text></View>
       <View style={styles.cardFooter}>
         <Text style={styles.projectsCount}>{t('Ready for project follow-up')}</Text>
-        <View style={styles.cardActions}><TouchableOpacity style={styles.deleteButton} onPress={handleDelete} accessibilityRole="button" accessibilityLabel={`Delete ${client.name}`}><MaterialIcons name="delete-outline" size={22} color={config.theme.error} /></TouchableOpacity><MaterialIcons name="chevron-right" size={24} color={config.theme.textMuted} /></View>
+        <View style={styles.cardActions}><TouchableOpacity style={styles.deleteButton} onPress={handleDelete} accessibilityRole="button" accessibilityLabel={`${t('Delete')} ${translateCanonical(client.name)}`}><MaterialIcons name="delete-outline" size={22} color={config.theme.error} /></TouchableOpacity><MaterialIcons name="chevron-right" size={24} color={config.theme.textMuted} /></View>
       </View>
     </Card>
   );

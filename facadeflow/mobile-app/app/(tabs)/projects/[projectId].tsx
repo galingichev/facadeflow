@@ -13,6 +13,7 @@ import { DemoPage, FacadeFlowMark, SectionTitle, StatusPill } from '../../../com
 import type { ExpenseCategory, Project, ProjectExpense, ProjectFinancials } from '../../../src/types';
 import { formatCurrency, formatDate, getProjectStatusLabel } from '../../../src/utils';
 import { useI18n } from '../../../src/i18n';
+import { translateCanonical } from '../../../src/utils/i18nUtils';
 
 const EXPENSE_CATEGORY_OPTIONS: { label: string; value: ExpenseCategory }[] = [
   { label: 'Materials', value: 'materials' },
@@ -66,18 +67,18 @@ export default function ProjectDetailScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-      <DemoPage title={project.name} subtitle="Project profit detail view for the client demo: contract value, budget, expenses, current margin and owner-ready report." eyebrow="Project Control Room">
+      <DemoPage title={translateCanonical(project.name)} subtitle="Project profit detail view for the client demo: contract value, budget, expenses, current margin and owner-ready report." eyebrow="Project Control Room">
         <Card style={styles.headerCard} padding="large">
           <View style={[styles.headerTop, isWide && styles.headerTopWide]}>
             <View style={styles.titleBlock}>
               <StatusPill label={getProjectStatusLabel(project.status)} tone={statusTone(project.status)} />
-              <Text style={styles.title}>{project.name}</Text>
-              <View style={styles.clientRow}><MaterialIcons name="person" size={16} color={config.theme.textSecondary} /><Text style={styles.clientName}>{project.client?.name || t('No client')}</Text></View>
+              <Text style={styles.title}>{translateCanonical(project.name)}</Text>
+              <View style={styles.clientRow}><MaterialIcons name="person" size={16} color={config.theme.textSecondary} /><Text style={styles.clientName}>{translateCanonical(project.client?.name || t('No client'))}</Text></View>
               {formattedAddress ? <View style={styles.clientRow}><MaterialIcons name="location-on" size={16} color={config.theme.textSecondary} /><Text style={styles.address}>{formattedAddress}</Text></View> : null}
             </View>
             <View style={styles.headerActions}>
               <Button title="Edit" variant="outline" icon="edit" onPress={() => router.push(`/projects/${project.id}/edit` as any)} />
-              <TouchableOpacity style={styles.deleteButton} onPress={confirmDeleteProject} accessibilityRole="button" accessibilityLabel={`${t('Delete')} ${project.name}`}><MaterialIcons name="delete" size={20} color={config.theme.error} /></TouchableOpacity>
+              <TouchableOpacity style={styles.deleteButton} onPress={confirmDeleteProject} accessibilityRole="button" accessibilityLabel={`${t('Delete')} ${translateCanonical(project.name)}`}><MaterialIcons name="delete" size={20} color={config.theme.error} /></TouchableOpacity>
             </View>
           </View>
           <View style={styles.kpiGrid}>
@@ -113,7 +114,7 @@ function OverviewTab({ project }: { project: Project }) {
         <View style={styles.panelCopy}><Text style={styles.panelTitle}>{t(getProfitStory(financials))}</Text><Text style={styles.muted}>{t('Contract value minus actual expenses. Budget variance updates as expenses are recorded.')}</Text></View>
       </View>
       <View style={styles.detailGrid}>
-        <Detail label="Client" value={project.client?.name || t('N/A')} />
+        <Detail label="Client" value={translateCanonical(project.client?.name || t('N/A'))} />
         <Detail label="Status" value={getProjectStatusLabel(project.status)} />
         <Detail label="Start Date" value={project.start_date || '—'} />
         <Detail label="End Date" value={project.end_date || '—'} />
@@ -189,7 +190,7 @@ function ExpensesTab({ project }: { project: Project }) {
       </View>
       <View style={styles.expenseListHeader}><Text style={styles.expenseListTitle}>{t('Recorded Expenses')}</Text><Text style={styles.expenseListCount}>{expenses.length}</Text></View>
       {isLoadingExpenses ? <ActivityIndicator size="small" color={config.theme.primary} /> : expenses.length === 0 ? <View style={styles.placeholder}><MaterialIcons name="receipt-long" size={48} color={config.theme.border} /><Text style={styles.placeholderText}>{t('No expenses yet')}</Text></View> : expenses.map((expense) => (
-        <View key={expense.id} style={styles.expenseRow}><View style={styles.expenseInfo}><Text style={styles.expenseDescription}>{expense.description}</Text><Text style={styles.expenseMeta}>{[t(formatExpenseCategory(expense.category)), formatDate(expense.expense_date, 'short'), expense.vendor].filter(Boolean).join(' - ')}</Text></View><View style={styles.expenseAmountBlock}><Text style={styles.expenseAmount}>{formatCurrency(expense.amount)}</Text><TouchableOpacity style={styles.expenseDeleteButton} onPress={() => deleteExpense(expense)} accessibilityRole="button" accessibilityLabel={`${t('Delete expense')} ${expense.description}`}><MaterialIcons name="delete-outline" size={20} color={config.theme.error} /></TouchableOpacity></View></View>
+        <View key={expense.id} style={styles.expenseRow}><View style={styles.expenseInfo}><Text style={styles.expenseDescription}>{translateCanonical(expense.description)}</Text><Text style={styles.expenseMeta}>{[t(formatExpenseCategory(expense.category)), formatDate(expense.expense_date, 'short'), translateCanonical(expense.vendor)].filter(Boolean).join(' - ')}</Text></View><View style={styles.expenseAmountBlock}><Text style={styles.expenseAmount}>{formatCurrency(expense.amount)}</Text><TouchableOpacity style={styles.expenseDeleteButton} onPress={() => deleteExpense(expense)} accessibilityRole="button" accessibilityLabel={`${t('Delete expense')} ${translateCanonical(expense.description)}`}><MaterialIcons name="delete-outline" size={20} color={config.theme.error} /></TouchableOpacity></View></View>
       ))}
     </View>
   );
@@ -203,8 +204,8 @@ function ReportPreview({ project }: { project: Project }) {
       <SectionTitle title="Report preview" subtitle="Brand-polished one-page PDF/report style for the client conversation." />
       <View style={styles.reportPage}>
         <View style={styles.reportHeader}><FacadeFlowMark size={38} /><View><Text style={styles.reportBrand}>FacadeFlow</Text><Text style={styles.reportSubtitle}>{t('Project Profit Report')}</Text></View></View>
-        <Text style={styles.reportProject}>{project.name}</Text>
-        <Text style={styles.reportClient}>{project.client?.name || t('No client')} • {t(getProjectStatusLabel(project.status))}</Text>
+        <Text style={styles.reportProject}>{translateCanonical(project.name)}</Text>
+        <Text style={styles.reportClient}>{translateCanonical(project.client?.name || t('No client'))} • {t(getProjectStatusLabel(project.status))}</Text>
         <View style={styles.reportGrid}><ReportMetric label="Contract" value={financials.contract_value} /><ReportMetric label="Budget" value={financials.budgeted_cost} /><ReportMetric label="Actual cost" value={financials.actual_cost} /><ReportMetric label="Actual profit" value={financials.actual_profit} /></View>
         <View style={styles.reportNote}><Text style={styles.reportNoteTitle}>{t('Owner summary')}</Text><Text style={styles.reportNoteText}>{t(getProfitStory(financials))} {t('This preview is designed to become the printable report/PDF styling in Phase 3.')}</Text></View>
       </View>

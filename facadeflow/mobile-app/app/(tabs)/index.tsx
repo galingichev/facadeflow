@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { config, getApiUrl } from '../../src/lib/config/index';
 import { formatCurrency, formatDate, getProjectStatusLabel } from '../../src/utils';
+import { translateCanonical } from '../../src/utils/i18nUtils';
 import { formatMarginPercent, getBudgetActualPercent, getJobHealth, getLastExpense, getPaymentReadiness } from '../../src/utils/projectInsights';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -147,7 +148,7 @@ export default function DashboardScreen() {
             {atRiskProjects.length === 0 ? <View style={styles.safeState}><MaterialIcons name="verified" size={24} color={config.theme.success} /><Text style={styles.muted}>{t('No major margin or status risk in the current demo data.')}</Text></View> : atRiskProjects.map(({ project, reason, tone }) => (
               <View key={project.id} style={styles.riskRow}>
                 <StatusPill label={tone === 'danger' ? 'High risk' : 'Watch'} tone={tone} />
-                <Text style={styles.riskName}>{project.name}</Text>
+                <Text style={styles.riskName}>{translateCanonical(project.name)}</Text>
                 <Text style={styles.riskReason}>{t(reason)}</Text>
               </View>
             ))}
@@ -160,7 +161,7 @@ export default function DashboardScreen() {
             {recentExpenses.length === 0 ? <Text style={styles.muted}>{t('No expenses recorded yet.')}</Text> : recentExpenses.map((expense) => (
               <View key={expense.id} style={styles.expenseRow}>
                 <View style={styles.expenseIcon}><MaterialIcons name="receipt-long" size={18} color={config.theme.warning} /></View>
-                <View style={styles.expenseText}><Text style={styles.expenseTitle}>{expense.description}</Text><Text style={styles.expenseMeta}>{expense.projectName} • {formatDate(expense.expense_date, 'short')}</Text></View>
+                <View style={styles.expenseText}><Text style={styles.expenseTitle}>{translateCanonical(expense.description)}</Text><Text style={styles.expenseMeta}>{translateCanonical(expense.projectName)} • {formatDate(expense.expense_date, 'short')}</Text></View>
                 <Text style={styles.expenseAmount}>{formatCurrency(expense.amount)}</Text>
               </View>
             ))}
@@ -173,7 +174,7 @@ export default function DashboardScreen() {
                 <FacadeFlowMark size={30} />
                 <View style={styles.reportHeaderCopy}>
                   <Text style={styles.reportTitle}>{t('FacadeFlow Project Report')}</Text>
-                  <Text style={styles.reportSub}>{primaryReportProject?.name || t('Demo portfolio')} • {primaryReportProject?.client?.name || t('Demo client')}</Text>
+                  <Text style={styles.reportSub}>{translateCanonical(primaryReportProject?.name || t('Demo portfolio'))} • {translateCanonical(primaryReportProject?.client?.name || t('Demo client'))}</Text>
                 </View>
               </View>
               <FinanceRow label={t('Contract value')} value={formatCurrency(primaryReportProject?.financials?.contract_value ?? primaryReportProject?.contract_value ?? summary?.total_contract_value ?? 0)} />
@@ -215,13 +216,13 @@ function ProjectPreview({ project, onPress }: { project: Project; onPress: () =>
   return (
     <Card style={styles.projectPreview} onPress={onPress} padding="medium">
       <View style={styles.projectPillRow}><StatusPill label={getProjectStatusLabel(project.status)} tone={statusTone(project.status)} /><StatusPill label={health.label} tone={health.tone} /></View>
-      <Text style={styles.projectName}>{project.name}</Text>
-      <Text style={styles.projectClient}>{project.client?.name || t('No client')}</Text>
+      <Text style={styles.projectName}>{translateCanonical(project.name)}</Text>
+      <Text style={styles.projectClient}>{translateCanonical(project.client?.name || t('No client'))}</Text>
       <View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>{t('Contract')}</Text><Text style={styles.smallValue}>{contract != null ? formatCurrency(contract) : '—'}</Text></View>
       <View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>{t('Actual cost')}</Text><Text style={styles.smallValue}>{formatCurrency(actualCost)}</Text></View>
       <View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>{t('Profit / margin')}</Text><Text style={[styles.smallValue, { color: profit != null && profit < 0 ? config.theme.error : config.theme.success }]}>{profit == null ? '—' : `${formatCurrency(profit)} • ${formatMarginPercent(margin)}`}</Text></View>
       <View style={styles.budgetBlock}><View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>{t('Budget vs actual')}</Text><Text style={styles.smallValue}>{budget == null ? '—' : `${budgetPercent}%`}</Text></View><View style={styles.progressTrack}><View style={[styles.budgetFill, { width: `${budgetPercent}%`, backgroundColor: budgetPercent > 100 ? config.theme.error : config.theme.primaryHover }]} /></View></View>
-      <Text style={styles.lastExpense}>{t('Last expense')}: {lastExpense ? `${lastExpense.description} • ${formatCurrency(lastExpense.amount)}` : t('No expenses yet')}</Text>
+      <Text style={styles.lastExpense}>{t('Last expense')}: {lastExpense ? `${translateCanonical(lastExpense.description)} • ${formatCurrency(lastExpense.amount)}` : t('No expenses yet')}</Text>
       <StatusPill label={readiness.label} tone={readiness.tone} />
     </Card>
   );
@@ -240,7 +241,7 @@ function getOwnerBriefing(projects: Project[], summary: DashboardSummary | null,
     { title: 'Job Health', copy: riskCount > 0 ? `${riskCount} ${t(riskCount === 1 ? 'project needs owner review.' : 'projects need owner review.')}` : 'All active demo jobs look controlled.', icon: riskCount > 0 ? 'warning' : 'verified', color: riskCount > 0 ? config.theme.warning : config.theme.success },
     { title: 'Payment readiness', copy: claimReady > 0 ? `${claimReady} ${t(claimReady === 1 ? 'job ready for progress claim.' : 'jobs ready for progress claim.')}` : 'No progress claim is ready yet.', icon: 'request-quote', color: claimReady > 0 ? config.theme.success : config.theme.textMuted },
     { title: 'Recent cost movement', copy: `${formatCurrency(recentTotal)} ${t('in latest recorded facade expenses.')}`, icon: 'receipt-long', color: config.theme.warning },
-    { title: 'Next owner decision', copy: nextRisk ? `${nextRisk.project.name}: ${t(nextRisk.health.reason)}` : `${summary?.active_projects ?? 0} ${t((summary?.active_projects ?? 0) === 1 ? 'active project can continue as planned.' : 'active projects can continue as planned.')}`, icon: 'assignment-late', color: nextRisk ? config.theme.error : config.theme.primaryHover },
+    { title: 'Next owner decision', copy: nextRisk ? `${translateCanonical(nextRisk.project.name)}: ${t(nextRisk.health.reason)}` : `${summary?.active_projects ?? 0} ${t((summary?.active_projects ?? 0) === 1 ? 'active project can continue as planned.' : 'active projects can continue as planned.')}`, icon: 'assignment-late', color: nextRisk ? config.theme.error : config.theme.primaryHover },
   ];
 }
 function getAtRiskProjects(projects: Project[], t: (text: string) => string): RiskProject[] {
