@@ -14,6 +14,7 @@ import type { ExpenseCategory, Project, ProjectExpense, ProjectFinancials } from
 import { formatCurrency, formatDate, getProjectStatusLabel } from '../../../src/utils';
 import { useI18n } from '../../../src/i18n';
 import { translateCanonical } from '../../../src/utils/i18nUtils';
+import { formatMarginPercent, getStageAwareFinancialDisplay } from '../../../src/utils/projectInsights';
 
 const EXPENSE_CATEGORY_OPTIONS: { label: string; value: ExpenseCategory }[] = [
   { label: 'Materials', value: 'materials' },
@@ -63,6 +64,7 @@ export default function ProjectDetailScreen() {
     { id: 'report', label: 'Report Preview', icon: 'summarize' },
   ];
   const financials = getProjectFinancials(project);
+  const profitDisplay = getStageAwareFinancialDisplay(project);
   const formattedAddress = project.address ? [project.address.street, project.address.city, project.address.state, project.address.zip].filter((part) => Boolean(part && String(part).trim())).join(', ') : '';
 
   return (
@@ -85,7 +87,7 @@ export default function ProjectDetailScreen() {
             <Kpi label="Contract" value={financials.contract_value} tone={config.theme.primaryHover} />
             <Kpi label="Budget" value={financials.budgeted_cost} tone="#60a5fa" />
             <Kpi label="Actual cost" value={financials.actual_cost} tone={config.theme.warning} />
-            <Kpi label="Profit" value={financials.actual_profit} tone={(financials.actual_profit ?? 0) < 0 ? config.theme.error : config.theme.success} />
+            <Kpi label={profitDisplay.isActual ? 'Actual Profit' : 'Projected Profit'} value={profitDisplay.profit} tone={(profitDisplay.profit ?? 0) < 0 ? config.theme.error : config.theme.success} />
           </View>
         </Card>
 
@@ -104,14 +106,15 @@ export default function ProjectDetailScreen() {
 function OverviewTab({ project }: { project: Project }) {
   const { t } = useI18n();
   const financials = getProjectFinancials(project);
-  const marginText = financials.actual_margin == null ? '—' : `${Math.round(financials.actual_margin * 1000) / 10}%`;
+  const profitDisplay = getStageAwareFinancialDisplay(project);
+  const marginText = formatMarginPercent(profitDisplay.margin);
   const variance = financials.cost_variance;
   return (
     <View style={styles.sectionStack}>
       <SectionTitle title="Profit detail view" subtitle="A simple explanation of whether this job is still on plan." />
       <View style={styles.profitPanel}>
-        <View><Text style={styles.panelLabel}>{t('Current margin')}</Text><Text style={styles.marginValue}>{marginText}</Text></View>
-        <View style={styles.panelCopy}><Text style={styles.panelTitle}>{t(getProfitStory(financials))}</Text><Text style={styles.muted}>{t('Contract value minus actual expenses. Budget variance updates as expenses are recorded.')}</Text></View>
+        <View><Text style={styles.panelLabel}>{t(profitDisplay.isActual ? 'Current margin' : 'Projected margin')}</Text><Text style={styles.marginValue}>{marginText}</Text></View>
+        <View style={styles.panelCopy}><Text style={styles.panelTitle}>{t(getProfitStory(project))}</Text><Text style={styles.muted}>{t(profitDisplay.isActual ? 'Contract value minus actual expenses. Budget variance updates as expenses are recorded.' : 'Contract value minus budgeted cost. Actual profit becomes available after expenses are recorded.')}</Text></View>
       </View>
       <View style={styles.detailGrid}>
         <Detail label="Client" value={translateCanonical(project.client?.name || t('N/A'))} />
@@ -123,7 +126,7 @@ function OverviewTab({ project }: { project: Project }) {
         <Detail label="Created" value={formatDate(project.created_at, 'long')} />
         <Detail label="Last Updated" value={formatDate(project.updated_at, 'long')} />
       </View>
-      {project.description ? <View style={styles.descriptionBlock}><Text style={styles.detailLabel}>{t('Description')}</Text><Text style={styles.description}>{project.description}</Text></View> : null}
+      {project.description ? <View style={styles.descriptionBlock}><Text style={styles.detailLabel}>{t('Description')}</Text><Text style={styles.description}>{t(project.description)}</Text></View> : null}
     </View>
   );
 }
@@ -146,6 +149,7 @@ function ExpensesTab({ project }: { project: Project }) {
   const vendorRef = React.useRef<TextInput>(null);
   const expenseDateRef = React.useRef<TextInput>(null);
   const financials = getProjectFinancials(project);
+  const profitDisplay = getStageAwareFinancialDisplay(project);
   const loadExpenses = React.useCallback(async () => { setIsLoadingExpenses(true); try { setExpenses(await projectsApi.getExpenses(project.id)); } catch (error: any) { Alert.alert(t('Error'), t(error.response?.data?.error || 'Failed to fetch project expenses')); } finally { setIsLoadingExpenses(false); } }, [project.id, t]);
   React.useEffect(() => { if (project.expenses) setExpenses(project.expenses); else loadExpenses(); }, [loadExpenses, project.expenses]);
   const resetForm = () => { setCategory('materials'); setDescription(''); setAmount(''); setAmountError(''); setVendor(''); setExpenseDate(new Date().toISOString().slice(0, 10)); };
@@ -178,7 +182,7 @@ function ExpensesTab({ project }: { project: Project }) {
   return (
     <View style={styles.sectionStack}>
       <SectionTitle title="Expenses" subtitle="Record costs and immediately show the client how profit changes." />
-      <View style={styles.expenseSummary}><Kpi label="Actual Cost" value={financials.actual_cost} tone={config.theme.warning} /><Kpi label="Actual Profit" value={financials.actual_profit} tone={(financials.actual_profit ?? 0) < 0 ? config.theme.error : config.theme.success} /></View>
+      <View style={styles.expenseSummary}><Kpi label="Actual Cost" value={financials.actual_cost} tone={config.theme.warning} /><Kpi label={profitDisplay.isActual ? 'Actual Profit' : 'Projected Profit'} value={profitDisplay.profit} tone={(profitDisplay.profit ?? 0) < 0 ? config.theme.error : config.theme.success} /></View>
       <View style={styles.expenseForm}>
         <Select label="Category" options={EXPENSE_CATEGORY_OPTIONS} value={category} onValueChange={(value) => setCategory(value as ExpenseCategory)} style={styles.expenseField} />
         <Input ref={descriptionRef} label="Description" value={description} onChangeText={(value) => { setDescription(value); if (successMessage) setSuccessMessage(''); }} placeholder="e.g. Aluminium profiles" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => amountRef.current?.focus()} />
@@ -199,6 +203,7 @@ function ExpensesTab({ project }: { project: Project }) {
 function ReportPreview({ project }: { project: Project }) {
   const { t } = useI18n();
   const financials = getProjectFinancials(project);
+  const profitDisplay = getStageAwareFinancialDisplay(project);
   return (
     <View style={styles.sectionStack}>
       <SectionTitle title="Report preview" subtitle="Brand-polished one-page PDF/report style for the client conversation." />
@@ -206,8 +211,8 @@ function ReportPreview({ project }: { project: Project }) {
         <View style={styles.reportHeader}><FacadeFlowMark size={38} /><View><Text style={styles.reportBrand}>FacadeFlow</Text><Text style={styles.reportSubtitle}>{t('Project Profit Report')}</Text></View></View>
         <Text style={styles.reportProject}>{translateCanonical(project.name)}</Text>
         <Text style={styles.reportClient}>{translateCanonical(project.client?.name || t('No client'))} • {t(getProjectStatusLabel(project.status))}</Text>
-        <View style={styles.reportGrid}><ReportMetric label="Contract" value={financials.contract_value} /><ReportMetric label="Budget" value={financials.budgeted_cost} /><ReportMetric label="Actual cost" value={financials.actual_cost} /><ReportMetric label="Actual profit" value={financials.actual_profit} /></View>
-        <View style={styles.reportNote}><Text style={styles.reportNoteTitle}>{t('Owner summary')}</Text><Text style={styles.reportNoteText}>{t(getProfitStory(financials))} {t('This preview is designed to become the printable report/PDF styling in Phase 3.')}</Text></View>
+        <View style={styles.reportGrid}><ReportMetric label="Contract" value={financials.contract_value} /><ReportMetric label="Budget" value={financials.budgeted_cost} /><ReportMetric label="Actual cost" value={financials.actual_cost} /><ReportMetric label={profitDisplay.isActual ? 'Actual profit' : 'Projected profit'} value={profitDisplay.profit} /></View>
+        <View style={styles.reportNote}><Text style={styles.reportNoteTitle}>{t('Owner summary')}</Text><Text style={styles.reportNoteText}>{t(getProfitStory(project))} {t('This preview is designed to become the printable report/PDF styling in Phase 3.')}</Text></View>
       </View>
     </View>
   );
@@ -219,7 +224,7 @@ function ReportMetric({ label, value }: { label: string; value: number | null })
 function getProjectFinancials(project: Project): ProjectFinancials { return project.financials || { contract_value: project.contract_value ?? null, budgeted_cost: project.budget ?? null, actual_cost: 0, planned_profit: null, actual_profit: null, cost_variance: null, actual_margin: null, expense_count: 0 }; }
 function formatExpenseCategory(category: ExpenseCategory) { return EXPENSE_CATEGORY_OPTIONS.find((option) => option.value === category)?.label || category.replace('_', ' '); }
 function statusTone(status: string): 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'purple' { if (status === 'completed') return 'success'; if (status === 'quoted' || status === 'inquired') return 'warning'; if (status === 'on_hold' || status === 'cancelled') return 'danger'; if (status === 'in_progress') return 'info'; if (status === 'approved') return 'purple'; return 'neutral'; }
-function getProfitStory(financials: ProjectFinancials) { const profit = financials.actual_profit ?? 0; const variance = financials.cost_variance ?? 0; if (profit < 0) return 'This project is currently losing money.'; if (variance < 0) return 'Profit is positive, but spending is above budget.'; return 'This project is currently profitable and inside the demo control range.'; }
+function getProfitStory(project: Project) { const financials = getProjectFinancials(project); const display = getStageAwareFinancialDisplay(project); const profit = display.profit ?? 0; const variance = financials.cost_variance ?? 0; if (!display.isActual) return 'This project is still at quote stage, so profit is projected from the budget.'; if (profit < 0) return 'This project is currently losing money.'; if (variance < 0) return 'Profit is positive, but spending is above budget.'; return 'This project is currently profitable and inside the demo control range.'; }
 
 const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: config.theme.background },

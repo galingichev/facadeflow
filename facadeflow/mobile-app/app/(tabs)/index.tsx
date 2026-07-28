@@ -5,7 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { config, getApiUrl } from '../../src/lib/config/index';
 import { formatCurrency, formatDate, getProjectStatusLabel } from '../../src/utils';
 import { translateCanonical } from '../../src/utils/i18nUtils';
-import { formatMarginPercent, getBudgetActualPercent, getJobHealth, getLastExpense, getPaymentReadiness } from '../../src/utils/projectInsights';
+import { formatMarginPercent, getBudgetActualPercent, getJobHealth, getLastExpense, getPaymentReadiness, getStageAwareFinancialDisplay } from '../../src/utils/projectInsights';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { LanguageSelector } from '../../components/LanguageSelector';
@@ -180,7 +180,7 @@ export default function DashboardScreen() {
               <FinanceRow label={t('Contract value')} value={formatCurrency(primaryReportProject?.financials?.contract_value ?? primaryReportProject?.contract_value ?? summary?.total_contract_value ?? 0)} />
               <FinanceRow label={t('Budgeted cost')} value={formatCurrency(primaryReportProject?.financials?.budgeted_cost ?? primaryReportProject?.budget ?? summary?.total_budgeted_cost ?? 0)} />
               <FinanceRow label={t('Actual cost')} value={formatCurrency(primaryReportProject?.financials?.actual_cost ?? summary?.total_actual_cost ?? 0)} />
-              <FinanceRow label={t('Profit / margin')} value={`${formatCurrency(primaryReportProject?.financials?.actual_profit ?? summary?.total_actual_profit ?? 0)} • ${formatMarginPercent(primaryReportProject?.financials?.actual_margin ?? summary?.actual_margin)}`} />
+              {primaryReportProject ? <FinanceRow label={t(getStageAwareFinancialDisplay(primaryReportProject).label)} value={formatProfitDisplay(primaryReportProject)} /> : <FinanceRow label={t('Actual profit / margin')} value={`${formatCurrency(summary?.total_actual_profit ?? 0)} • ${formatMarginPercent(summary?.actual_margin)}`} />}
               {primaryReportProject ? <StatusPill label={getPaymentReadiness(primaryReportProject).label} tone={getPaymentReadiness(primaryReportProject).tone} /> : null}
               <View style={styles.reportFooter}><Text style={styles.reportFooterText}>{t('Notes / next action: verify latest site costs, then send the owner-ready progress claim.')}</Text></View>
             </View>
@@ -207,8 +207,7 @@ function ProjectPreview({ project, onPress }: { project: Project; onPress: () =>
   const contract = financials?.contract_value ?? project.contract_value ?? null;
   const budget = financials?.budgeted_cost ?? project.budget ?? null;
   const actualCost = financials?.actual_cost ?? 0;
-  const profit = financials?.actual_profit ?? null;
-  const margin = financials?.actual_margin ?? null;
+  const profitDisplay = getStageAwareFinancialDisplay(project);
   const health = getJobHealth(project);
   const readiness = getPaymentReadiness(project);
   const lastExpense = getLastExpense(project);
@@ -220,7 +219,7 @@ function ProjectPreview({ project, onPress }: { project: Project; onPress: () =>
       <Text style={styles.projectClient}>{translateCanonical(project.client?.name || t('No client'))}</Text>
       <View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>{t('Contract')}</Text><Text style={styles.smallValue}>{contract != null ? formatCurrency(contract) : '—'}</Text></View>
       <View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>{t('Actual cost')}</Text><Text style={styles.smallValue}>{formatCurrency(actualCost)}</Text></View>
-      <View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>{t('Profit / margin')}</Text><Text style={[styles.smallValue, { color: profit != null && profit < 0 ? config.theme.error : config.theme.success }]}>{profit == null ? '—' : `${formatCurrency(profit)} • ${formatMarginPercent(margin)}`}</Text></View>
+      <View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>{t(profitDisplay.label)}</Text><Text style={[styles.smallValue, { color: profitDisplay.profit != null && profitDisplay.profit < 0 ? config.theme.error : config.theme.success }]}>{profitDisplay.profit == null ? '—' : `${formatCurrency(profitDisplay.profit)} • ${formatMarginPercent(profitDisplay.margin)}`}</Text></View>
       <View style={styles.budgetBlock}><View style={styles.projectMoneyRow}><Text style={styles.smallLabel}>{t('Budget vs actual')}</Text><Text style={styles.smallValue}>{budget == null ? '—' : `${budgetPercent}%`}</Text></View><View style={styles.progressTrack}><View style={[styles.budgetFill, { width: `${budgetPercent}%`, backgroundColor: budgetPercent > 100 ? config.theme.error : config.theme.primaryHover }]} /></View></View>
       <Text style={styles.lastExpense}>{t('Last expense')}: {lastExpense ? `${translateCanonical(lastExpense.description)} • ${formatCurrency(lastExpense.amount)}` : t('No expenses yet')}</Text>
       <StatusPill label={readiness.label} tone={readiness.tone} />
@@ -230,6 +229,10 @@ function ProjectPreview({ project, onPress }: { project: Project; onPress: () =>
 
 function FinanceRow({ label, value }: { label: string; value: string }) { return <View style={styles.financeRow}><Text style={styles.financeLabel}>{label}</Text><Text style={styles.financeValue}>{value}</Text></View>; }
 function formatMargin(value: number | null | undefined) { return formatMarginPercent(value); }
+function formatProfitDisplay(project: Project) {
+  const display = getStageAwareFinancialDisplay(project);
+  return display.profit == null ? '—' : `${formatCurrency(display.profit)} • ${formatMarginPercent(display.margin)}`;
+}
 function statusTone(status: string): 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'purple' { if (status === 'completed') return 'success'; if (status === 'quoted' || status === 'inquired') return 'warning'; if (status === 'on_hold' || status === 'cancelled') return 'danger'; if (status === 'in_progress') return 'info'; if (status === 'approved') return 'purple'; return 'neutral'; }
 function getOwnerBriefing(projects: Project[], summary: DashboardSummary | null, t: (text: string) => string) {
   const healthRows = projects.map((project) => ({ project, health: getJobHealth(project) }));
@@ -251,7 +254,7 @@ function getAtRiskProjects(projects: Project[], t: (text: string) => string): Ri
     const margin = f?.actual_margin ?? null;
     if (project.status === 'on_hold' || project.status === 'cancelled') return { project, reason: 'Paused or cancelled status needs attention.', tone: 'danger' as const };
     if (variance != null && variance < 0) return { project, reason: `${formatCurrency(Math.abs(variance))} ${t('over budget.')}`, tone: 'danger' as const };
-    if (margin != null && margin < 0.18) return { project, reason: `${t('Margin at')} ${formatMargin(margin)}; ${t('review pricing or expenses.')}`, tone: 'warning' as const };
+    if (margin != null && margin < 0.18) return { project, reason: project.description || `${t('Margin at')} ${formatMargin(margin)}; ${t('review pricing or expenses.')}`, tone: 'warning' as const };
     return null;
   }).filter(Boolean).slice(0, 3) as RiskProject[];
 }

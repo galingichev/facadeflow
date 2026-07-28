@@ -19,6 +19,7 @@ const BULGARIAN_DEMO_TEXT = {
   'Varna Residential Windows': 'Прозорци за жилищен обект във Варна',
   'Plovdiv Hotel Rainscreen': 'Вентилируема фасада на хотел в Пловдив',
   'Burgas Aluminium Door Package': 'Алуминиеви врати за обект в Бургас',
+  'Owner action: approve a variation for extra anchoring plates before the next facade installation shift.': 'Действие за собственика: одобрете допълнително за анкериращи планки преди следващата монтажна смяна по фасадата.',
   'Aluminium composite panels deposit': 'Аванс за алуминиеви композитни панели',
   'Installation crew week 1': 'Монтажна бригада – седмица 1',
   'Scaffold and panel delivery': 'Доставка на скеле и панели',
@@ -212,6 +213,8 @@ async function main() {
   const projectId = projects[0].id;
   assert(projectId, 'First API project has no id');
   assertNoInternalArtifacts(JSON.stringify(projects), 'Projects API response');
+  const quoteProject = projects.find((project) => project.status === 'quoted');
+  assert(quoteProject, 'No quoted project is available for stage-aware profit checks');
 
   const expenseResponses = await Promise.all(
     projects.map((project) => fetchJson(`/api/projects/${project.id}/expenses`))
@@ -284,6 +287,10 @@ async function main() {
     let text = await getBodyText(page);
     assert(text.includes('Profit Snapshot'), 'Dashboard Profit Snapshot is missing');
     assert(text.includes('Revenue pipeline'), 'Dashboard money row is missing');
+    assert(text.includes('Plovdiv Hotel Rainscreen'), 'At-risk Plovdiv facade project is not visible on the English dashboard');
+    assert(text.includes('Owner action: approve a variation for extra anchoring plates before the next facade installation shift.'), 'English owner action for at-risk facade project is missing');
+    assert(text.includes('Projected profit / margin'), 'Quoted project should show projected profit/margin on the English dashboard');
+    assert(!text.includes('€74,000.00 • 100%'), 'Quoted project is still presented as 100% realized actual profit in English');
     assert(text.includes('€') || text.includes('EUR'), 'EUR must be the default visible currency');
     assertNoInternalArtifacts(text, 'Dashboard');
 
@@ -323,12 +330,24 @@ async function main() {
     assert(text.includes('Преглед на печалбата'), 'Bulgarian dashboard translation is not visible');
     assert(text.includes('€') || text.includes('EUR'), 'Bulgarian + EUR formatting is not visible');
     assert(text.includes('Клиентско демо:'), 'Canonical demo prefix is not translated in Bulgarian');
+    assert(text.includes('Вентилируема фасада на хотел в Пловдив'), 'At-risk Plovdiv facade project is not visible on the Bulgarian dashboard');
+    assert(text.includes('Действие за собственика: одобрете допълнително за анкериращи планки преди следващата монтажна смяна по фасадата.'), 'Bulgarian owner action for at-risk facade project is missing');
+    assert(text.includes('Прогнозна печалба / марж'), 'Quoted project should show projected profit/margin on the Bulgarian dashboard');
+    assert(!text.includes('74 000,00 € • 100%'), 'Quoted project is still presented as 100% realized actual profit in Bulgarian');
 
     await chooseCurrency(page, 'USD');
     text = await getBodyText(page);
     assert(text.includes('Преглед на печалбата'), 'Bulgarian language did not remain active after currency switch');
     assert(text.includes('$') || text.includes('USD'), 'Bulgarian + USD formatting is not visible');
     await chooseCurrency(page, 'EUR');
+
+    await page.goto(buildUrl(`/projects/${quoteProject.id}`), { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await page.getByText(/^(Overview|Преглед)$/).waitFor({ timeout: 30000 });
+    text = await getBodyText(page);
+    assert(/Прогнозен марж/i.test(text), 'Bulgarian quoted project detail should show projected margin');
+    assert(text.includes('Проектът още е на етап оферта, затова печалбата е прогнозна според бюджета.'), 'Bulgarian quoted project detail should explain projected profit');
+    assert(text.includes('Действие за собственика: представете прогнозния марж и поискайте одобрение на офертата преди поръчка на профили.'), 'Bulgarian quoted project owner action is not translated');
+    assert(!text.includes('100%'), 'Bulgarian quoted project detail still claims a 100% realized margin');
 
     await page.goto(buildUrl(`/projects/${expenseProjectId}`), { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.getByText(/^(Overview|Преглед)$/).waitFor({ timeout: 30000 });

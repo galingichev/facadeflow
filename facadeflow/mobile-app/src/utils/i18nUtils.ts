@@ -12,6 +12,7 @@ const canonicalBulgarian: Record<string, string> = {
   'Varna Residential Windows': 'Прозорци за жилищен обект във Варна',
   'Plovdiv Hotel Rainscreen': 'Вентилируема фасада на хотел в Пловдив',
   'Burgas Aluminium Door Package': 'Алуминиеви врати за обект в Бургас',
+  'Owner action: approve a variation for extra anchoring plates before the next facade installation shift.': 'Действие за собственика: одобрете допълнително за анкериращи планки преди следващата монтажна смяна по фасадата.',
 
   // Canonical demo expenses
   'Aluminium composite panels deposit': 'Аванс за алуминиеви композитни панели',
