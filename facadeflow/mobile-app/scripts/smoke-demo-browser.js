@@ -191,6 +191,58 @@ async function assertLabelQueriesWork(page, projectId) {
   console.log('Label query checks passed: client, project, expense forms');
 }
 
+async function clickBackAndExpect(page, expectedPath) {
+  await page.waitForTimeout(500);
+  await page.getByLabel(/^(Back|Назад)$/).click();
+  await page.waitForFunction((path) => window.location.pathname === path, expectedPath, { timeout: 10000 });
+}
+
+async function assertBackNavigation(browser, projectId) {
+  const context = await browser.newContext({
+    viewport: { width: 1366, height: 900 },
+    extraHTTPHeaders: { 'ngrok-skip-browser-warning': 'true' },
+  });
+
+  try {
+    const directFallbacks = [
+      { route: '/clients/create', fallback: '/clients', readyLabel: 'Client Name' },
+      { route: '/projects/create', fallback: '/projects', readyLabel: 'Project Name' },
+      { route: `/projects/${projectId}`, fallback: '/projects', readyLabel: /^(Overview|Преглед)$/ },
+    ];
+
+    for (const { route, fallback, readyLabel } of directFallbacks) {
+      const directPage = await context.newPage();
+      await directPage.goto(buildUrl(route), { waitUntil: 'domcontentloaded', timeout: 45000 });
+      await directPage.getByText(readyLabel).waitFor({ timeout: 30000 });
+      await directPage.getByLabel(/^(Back|Назад)$/, { exact: true }).waitFor({ timeout: 10000 });
+      await clickBackAndExpect(directPage, fallback);
+      await directPage.close();
+    }
+
+    const page = await context.newPage();
+    await page.goto(buildUrl('/projects'), { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await page.waitForTimeout(500);
+    await page.getByLabel('New Project', { exact: true }).click();
+    await page.waitForFunction(() => window.location.pathname === '/projects/create', null, { timeout: 10000 });
+    await clickBackAndExpect(page, '/projects');
+
+    await page.goto(buildUrl('/projects'), { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await page.goto(buildUrl(`/projects/${projectId}`), { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await page.getByText(/^(Overview|Преглед)$/).waitFor({ timeout: 30000 });
+    await clickBackAndExpect(page, '/projects');
+
+    await page.goto(buildUrl('/'), { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await waitForDashboard(page);
+    await chooseBulgarian(page);
+    await page.goto(buildUrl('/clients/create'), { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await page.getByLabel('Назад', { exact: true }).waitFor({ timeout: 10000 });
+
+    console.log('Back navigation checks passed: direct fallbacks, history, Bulgarian label');
+  } finally {
+    await context.close();
+  }
+}
+
 async function chooseCurrency(page, code) {
   await page.getByLabel(/Choose currency|Избор на валута/).click();
   await page.getByLabel(new RegExp(`^${code}\\b`)).click();
@@ -245,6 +297,8 @@ async function main() {
     executablePath: process.env.CHROME_BIN || '/usr/bin/google-chrome',
     args: ['--no-sandbox'],
   });
+
+  await assertBackNavigation(browser, projectId);
 
   const context = await browser.newContext({
     viewport: { width: 1366, height: 900 },
@@ -321,7 +375,6 @@ async function main() {
     await page.goto(buildUrl('/'), { waitUntil: 'domcontentloaded', timeout: 45000 });
     await waitForDashboard(page);
     await assertLabelQueriesWork(page, projectId);
-
     await page.goto(buildUrl('/'), { waitUntil: 'domcontentloaded', timeout: 45000 });
     await waitForDashboard(page);
 

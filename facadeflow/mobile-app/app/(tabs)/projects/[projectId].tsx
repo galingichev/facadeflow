@@ -7,6 +7,7 @@ import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Select } from '../../../components/ui/Select';
+import { BackButton } from '../../../components/ui/BackButton';
 import { useProjectsStore } from '../../../src/stores/projectsStore';
 import { projectsApi } from '../../../src/api/endpoints';
 import { DemoPage, FacadeFlowMark, SectionTitle, StatusPill } from '../../../components/ui/DemoShell';
@@ -70,6 +71,7 @@ export default function ProjectDetailScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       <DemoPage title={translateCanonical(project.name)} subtitle="Project profit detail view for the client demo: contract value, budget, expenses, current margin and owner-ready report." eyebrow="Project Control Room">
+        <BackButton fallbackRoute="/projects" />
         <Card style={styles.headerCard} padding="large">
           <View style={[styles.headerTop, isWide && styles.headerTopWide]}>
             <View style={styles.titleBlock}>

@@ -41,6 +41,7 @@ includesAll('client flow', clientFlow, [
   'Client name is required.',
   'Client created. Opening client record...',
   'router.replace(`/clients/${client.id}/edit`',
+  '<BackButton fallbackRoute="/clients" />',
 ]);
 
 const projectFlow = [
@@ -65,6 +66,7 @@ includesAll('project flow', projectFlow, [
   'Client is required.',
   'Project created. Opening project detail...',
   'router.replace(`/projects/${project.id}`',
+  '<BackButton fallbackRoute="/projects" />',
   'Expenses',
   'Job Health',
   'Budget vs actual',

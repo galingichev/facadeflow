@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useClientsStore } from '../../../src/stores/clientsStore';
 import { config } from '../../../src/lib/config';
 import { Input } from '../../../components/ui/Input';
+import { BackButton } from '../../../components/ui/BackButton';
 
 type FormErrors = {
   name?: string;
@@ -50,6 +51,7 @@ export default function CreateClientScreen() {
 
   return (
     <View style={styles.container}>
+      <BackButton fallbackRoute="/clients" />
       <Input
         label="Client Name"
         error={errors.name}
