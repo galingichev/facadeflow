@@ -13,9 +13,9 @@ const EXPECTED = {
   projects: 5,
   expenses: 7,
   activeProjects: 1,
-  contractValue: 298500,
-  actualCost: 58800,
-  actualProfit: 239700,
+  contractValue: 322500,
+  actualCost: 148750,
+  actualProfit: 173750,
 };
 
 function readEnvFile(filePath) {
@@ -93,18 +93,18 @@ const clients = [
 ];
 
 const projects = [
-  { name: `${PREFIX} Boyana Villa Curtain Wall`, clientKey: 'homeowner', status: 'inquired', contract_value: 28000, budget: 18400, start_date: '2026-06-03', end_date: '2026-07-18' },
-  { name: `${PREFIX} Sofia Office Curtain Wall`, clientKey: 'commercial', status: 'quoted', contract_value: 74000, budget: 51200, start_date: '2026-06-10', end_date: '2026-08-12' },
-  { name: `${PREFIX} Varna Residential Windows`, clientKey: 'homeowner', status: 'approved', contract_value: 42000, budget: 27600, start_date: '2026-06-17', end_date: '2026-07-30' },
-  { name: `${PREFIX} Plovdiv Hotel Rainscreen`, clientKey: 'commercial', status: 'in_progress', contract_value: 118000, budget: 83500, start_date: '2026-05-20', end_date: '2026-09-05' },
-  { name: `${PREFIX} Burgas Aluminium Door Package`, clientKey: 'architect', status: 'completed', contract_value: 36500, budget: 24100, start_date: '2026-04-02', end_date: '2026-05-16' },
+  { name: `${PREFIX} Boyana Villa Curtain Wall`, clientKey: 'homeowner', status: 'inquired', contract_value: 28000, budget: 18400, start_date: '2026-06-03', end_date: '2026-07-18', description: 'Owner action: confirm glazing specification before issuing the formal quote.' },
+  { name: `${PREFIX} Sofia Office Curtain Wall`, clientKey: 'commercial', status: 'quoted', contract_value: 74000, budget: 51200, start_date: '2026-06-10', end_date: '2026-08-12', description: 'Owner action: present projected margin and ask for quote approval before ordering profiles.' },
+  { name: `${PREFIX} Varna Residential Windows`, clientKey: 'homeowner', status: 'approved', contract_value: 42000, budget: 27600, start_date: '2026-06-17', end_date: '2026-07-30', description: 'Owner action: confirm lift access and book the second-floor install slot.' },
+  { name: `${PREFIX} Plovdiv Hotel Rainscreen`, clientKey: 'commercial', status: 'in_progress', contract_value: 142000, budget: 121000, start_date: '2026-05-20', end_date: '2026-09-05', description: 'Owner action: approve a variation for extra anchoring plates before the next facade installation shift.' },
+  { name: `${PREFIX} Burgas Aluminium Door Package`, clientKey: 'architect', status: 'completed', contract_value: 36500, budget: 24100, start_date: '2026-04-02', end_date: '2026-05-16', description: 'Owner action: send final invoice and archive signed handover notes.' },
 ];
 
 const expenses = {
   'Plovdiv Hotel Rainscreen': [
-    { category: 'materials', description: 'Aluminium composite panels deposit', amount: 18600, expense_date: '2026-05-24', vendor: 'AluPanel BG' },
-    { category: 'labor', description: 'Installation crew week 1', amount: 9200, expense_date: '2026-05-29', vendor: 'Facade Team 2' },
-    { category: 'transport', description: 'Scaffold and panel delivery', amount: 1450, expense_date: '2026-05-30', vendor: 'TransBuild Logistics' },
+    { category: 'materials', description: 'Aluminium composite panels deposit', amount: 76500, expense_date: '2026-05-24', vendor: 'AluPanel BG' },
+    { category: 'labor', description: 'Installation crew week 1', amount: 34200, expense_date: '2026-05-29', vendor: 'Facade Team 2' },
+    { category: 'transport', description: 'Scaffold and panel delivery', amount: 8500, expense_date: '2026-05-30', vendor: 'TransBuild Logistics' },
   ],
   'Burgas Aluminium Door Package': [
     { category: 'materials', description: 'Triple-glazed window package', amount: 15100, expense_date: '2026-04-09', vendor: 'ThermoGlass' },

@@ -7,7 +7,7 @@ import { DemoPage, SectionTitle, StatusPill } from '../../../components/ui/DemoS
 import { useProjectsStore } from '../../../src/stores/projectsStore';
 import { useEffect } from 'react';
 import { formatCurrency, getProjectStatusLabel } from '../../../src/utils';
-import { formatMarginPercent, getBudgetActualPercent, getJobHealth, getLastExpense, getPaymentReadiness } from '../../../src/utils/projectInsights';
+import { formatMarginPercent, getBudgetActualPercent, getJobHealth, getLastExpense, getPaymentReadiness, getStageAwareFinancialDisplay } from '../../../src/utils/projectInsights';
 import type { Project } from '../../../src/types';
 import { useI18n } from '../../../src/i18n';
 import { platformShadow } from '../../../src/utils/platformStyles';
@@ -47,8 +47,7 @@ function ProjectCard({ project, onPress, isWide }: { project: Project; onPress: 
   const contract = financials?.contract_value ?? project.contract_value ?? null;
   const budget = financials?.budgeted_cost ?? project.budget ?? null;
   const actualCost = financials?.actual_cost ?? 0;
-  const profit = financials?.actual_profit ?? (contract == null ? null : contract - actualCost);
-  const margin = financials?.actual_margin ?? (profit == null || contract == null || contract <= 0 ? null : profit / contract);
+  const profitDisplay = getStageAwareFinancialDisplay(project);
   const progress = getProgress(project.status);
   const health = getJobHealth(project);
   const readiness = getPaymentReadiness(project);
@@ -65,7 +64,7 @@ function ProjectCard({ project, onPress, isWide }: { project: Project; onPress: 
         <MoneyCell label={t('Contract')} value={contract == null ? '—' : formatCurrency(contract)} />
         <MoneyCell label={t('Budget')} value={budget == null ? '—' : formatCurrency(budget)} />
         <MoneyCell label={t('Actual cost')} value={formatCurrency(actualCost)} />
-        <MoneyCell label={t('Profit / margin')} value={profit == null ? '—' : `${formatCurrency(profit)} • ${formatMarginPercent(margin)}`} color={profit != null && profit < 0 ? config.theme.error : config.theme.success} />
+        <MoneyCell label={t(profitDisplay.label)} value={profitDisplay.profit == null ? '—' : `${formatCurrency(profitDisplay.profit)} • ${formatMarginPercent(profitDisplay.margin)}`} color={profitDisplay.profit != null && profitDisplay.profit < 0 ? config.theme.error : config.theme.success} />
       </View>
       <Text style={styles.lastExpense}>{t('Last expense')}: {lastExpense ? `${translateCanonical(lastExpense.description)} • ${formatCurrency(lastExpense.amount)}` : t('No expenses yet')}</Text>
       <Text style={styles.healthReason}>{t('Job Health')}: {t(health.reason)}</Text>

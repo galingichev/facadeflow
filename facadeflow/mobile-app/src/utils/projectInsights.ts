@@ -8,6 +8,13 @@ export type JobHealth = {
   reason: string;
 };
 
+export type StageAwareFinancialDisplay = {
+  label: string;
+  profit: number | null;
+  margin: number | null;
+  isActual: boolean;
+};
+
 export const getIndustryStageLabel = (status: string): string => {
   const labels: Record<string, string> = {
     draft: 'Lead / Inquiry',
@@ -28,8 +35,9 @@ export const getJobHealth = (project: Project): JobHealth => {
   const contract = financials?.contract_value ?? project.contract_value ?? null;
   const actualCost = financials?.actual_cost ?? 0;
   const expenseCount = financials?.expense_count ?? project.expenses?.length ?? 0;
-  const actualProfit = financials?.actual_profit ?? (contract == null ? null : contract - actualCost);
-  const margin = financials?.actual_margin ?? (actualProfit == null || contract == null || contract <= 0 ? null : actualProfit / contract);
+  const displayFinancials = getStageAwareFinancialDisplay(project);
+  const actualProfit = financials?.actual_profit ?? (contract == null || expenseCount === 0 ? null : contract - actualCost);
+  const margin = displayFinancials.margin;
   const variance = financials?.cost_variance ?? (budget == null ? null : budget - actualCost);
 
   if (budget == null || budget <= 0) {
@@ -51,6 +59,27 @@ export const getJobHealth = (project: Project): JobHealth => {
     return { label: 'Watch', tone: 'warning', reason: 'Status needs owner follow-up.' };
   }
   return { label: 'Healthy', tone: 'success', reason: 'Budget, costs and margin are under control.' };
+};
+
+export const getStageAwareFinancialDisplay = (project: Project): StageAwareFinancialDisplay => {
+  const financials = project.financials;
+  const contract = financials?.contract_value ?? project.contract_value ?? null;
+  const budget = financials?.budgeted_cost ?? project.budget ?? null;
+  const actualCost = financials?.actual_cost ?? 0;
+  const expenseCount = financials?.expense_count ?? project.expenses?.length ?? 0;
+  const hasActualExpenses = expenseCount > 0 || actualCost > 0;
+
+  if (hasActualExpenses) {
+    const profit = financials?.actual_profit ?? (contract == null ? null : contract - actualCost);
+    const margin = financials?.actual_margin ?? (profit == null || contract == null || contract <= 0 ? null : profit / contract);
+    return { label: 'Actual profit / margin', profit, margin, isActual: true };
+  }
+
+  const projectedProfit = contract == null || budget == null ? null : contract - budget;
+  const projectedMargin = projectedProfit == null || contract == null || contract <= 0 ? null : projectedProfit / contract;
+  const label = projectedProfit == null ? 'Actual profit unavailable' : 'Projected profit / margin';
+
+  return { label, profit: projectedProfit, margin: projectedMargin, isActual: false };
 };
 
 export const getPaymentReadiness = (project: Project): { label: string; tone: InsightTone } => {
