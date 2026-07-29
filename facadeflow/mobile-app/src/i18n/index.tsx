@@ -66,6 +66,7 @@ const translations: Record<AppLanguage, Record<string, string>> = {
     'The app language is now English.': 'Езикът на приложението вече е английски.',
     'OK': 'ОК',
     'Cancel': 'Отказ',
+    'Back': 'Назад',
     'Open': 'Отвори',
     'Close': 'Затвори',
     'Clear': 'Изчисти',

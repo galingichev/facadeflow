@@ -9,6 +9,7 @@ import ClientPicker from '../../../components/ui/ClientPicker';
 import { Input } from '../../../components/ui/Input';
 import { Select } from '../../../components/ui/Select';
 import { useI18n } from '../../../src/i18n';
+import { BackButton } from '../../../components/ui/BackButton';
 
 const STATUS_OPTIONS: { label: string; value: ProjectStatus }[] = [
   { label: 'Draft', value: 'draft' },
@@ -110,6 +111,7 @@ export default function CreateProjectScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <BackButton fallbackRoute="/projects" />
       <Input
         label="Project Name"
         error={errors.name}
