@@ -76,6 +76,7 @@ const translations: Record<AppLanguage, Record<string, string>> = {
     'Transcribe': 'Транскрибирай',
     'Client Name': 'Име на клиента',
     'Enter client name': 'Въведете име на клиента',
+    'Create Client': 'Създай клиент',
     'Phone': 'Телефон',
     'Email': 'Имейл',
     'YYYY-MM-DD': 'ГГГГ-ММ-ДД',

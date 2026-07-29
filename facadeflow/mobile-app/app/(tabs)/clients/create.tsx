@@ -5,6 +5,7 @@ import { useClientsStore } from '../../../src/stores/clientsStore';
 import { config } from '../../../src/lib/config';
 import { Input } from '../../../components/ui/Input';
 import { BackButton } from '../../../components/ui/BackButton';
+import { useI18n } from '../../../src/i18n';
 
 type FormErrors = {
   name?: string;
@@ -13,6 +14,7 @@ type FormErrors = {
 
 export default function CreateClientScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const { createClient, isLoading } = useClientsStore();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -78,7 +80,7 @@ export default function CreateClientScreen() {
       {successMessage ? <Text style={styles.successText}>{successMessage}</Text> : null}
       <View style={{ height: 20 }} />
       <Button
-        title={isLoading || loading ? 'Creating...' : 'Create Client'}
+        title={isLoading || loading ? t('Creating...') : t('Create Client')}
         onPress={handleSubmit}
         disabled={isLoading || loading}
         color={config.theme.primary}
